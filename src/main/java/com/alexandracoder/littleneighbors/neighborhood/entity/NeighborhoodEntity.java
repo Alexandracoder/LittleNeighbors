@@ -4,10 +4,7 @@ import com.alexandracoder.littleneighbors.city.entity.CityEntity;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.shared.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,6 +15,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(callSuper = true)
 public class NeighborhoodEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,6 +37,5 @@ public class NeighborhoodEntity extends BaseEntity {
     @Builder.Default
     @OneToMany(mappedBy = "neighborhood", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<FamilyEntity> families = new HashSet<>();
-
 }
 
