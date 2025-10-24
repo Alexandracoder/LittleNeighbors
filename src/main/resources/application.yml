@@ -103,3 +103,7 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+
+springdoc:
+  swagger-ui:
+    try-it-out-enabled: false

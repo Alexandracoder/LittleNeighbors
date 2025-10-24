@@ -43,10 +43,10 @@ public class FamilyMapper {
     private static ChildSummaryDTO toChildSummary(ChildEntity child) {
         if (child == null) return null;
         return new ChildSummaryDTO(
-                child.getId(),
-                child.getAge(),
-                child.getGender()
-        );
+                        child.getId(),
+                child.getGender(),
+                child.getAge()
+                );
     }
 }
 
