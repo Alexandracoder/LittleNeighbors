@@ -6,6 +6,5 @@ public record ChildResponseDTO(
         Long id,
         Gender gender,
         Long familyId
-
 ) {
 }

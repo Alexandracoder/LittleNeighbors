@@ -4,9 +4,7 @@ import com.alexandracoder.littleneighbors.enums.Gender;
 
 public record ChildSummaryDTO(
         Long id,
-        Integer age,
-        Gender gender
-
-
+        Gender gender,
+        Integer age
 ) {
 }
