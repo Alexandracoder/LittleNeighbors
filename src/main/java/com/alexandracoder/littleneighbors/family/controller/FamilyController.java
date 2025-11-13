@@ -1,7 +1,6 @@
 package com.alexandracoder.littleneighbors.family.controller;
 
 import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
-import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.family.service.FamilyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
