@@ -17,4 +17,6 @@ public interface FamilyRepository extends JpaRepository<FamilyEntity, Long>,
             "children.interests"
     })
     Optional<FamilyEntity> findWithDetailsById(Long id);
+    Optional<FamilyEntity> findByUserEmail(String email);
 }
+

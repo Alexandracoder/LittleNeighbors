@@ -29,29 +29,7 @@ public class ChildServiceImpl implements ChildService {
     private final InterestRepository interestRepository;
     private final ChildMapper childMapper;
 
-    @Override
-    public ChildResponseDTO create(ChildRequestDTO dto) {
-        return saveChild(dto, null);
-    }
-
-    @Override
-    public ChildResponseDTO update(Long id, ChildRequestDTO dto) {
-        return saveChild(dto, id);
-    }
-
-    @Override
-    public void delete(Long id) {
-        ChildEntity child = childRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Child not found"));
-        childRepository.delete(child);
-    }
-
-    @Override
-    public ChildResponseDTO getById(Long id) {
-        ChildEntity child = childRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Child not found with id: " + id));
-        return childMapper.toResponseDTO(child);
-    }
+    // ADMIN
     @Override
     public List<ChildSummaryDTO> getAllSummaries() {
         return childRepository.findAll()
@@ -60,18 +38,13 @@ public class ChildServiceImpl implements ChildService {
                 .toList();
     }
 
-    private ChildResponseDTO saveChild(ChildRequestDTO dto, Long childId) {
-        ChildEntity child;
+    @Override
+    public ChildResponseDTO create(ChildRequestDTO dto, String username) {
+        FamilyEntity family = getFamilyByUserEmail(username);
 
-        if (childId != null) {
-            child = childRepository.findById(childId)
-                    .orElseThrow(() -> new EntityNotFoundException("Child not found"));
-        } else {
-            child = childMapper.toEntity(dto);
-        }
-
-        FamilyEntity family = familyRepository.findById(dto.familyId())
-                .orElseThrow(() -> new EntityNotFoundException("Family not found"));
+        ChildEntity child = new ChildEntity();
+        child.setBirthDate(dto.birthDate());
+        child.setGender(dto.gender());
         child.setFamily(family);
 
         if (dto.interestIds() != null && !dto.interestIds().isEmpty()) {
@@ -79,6 +52,62 @@ public class ChildServiceImpl implements ChildService {
             child.setInterests(interests);
         }
 
-        return childMapper.toResponseDTO(childRepository.save(child));
+        ChildEntity saved = childRepository.save(child);
+        return childMapper.toResponseDTO(saved);
+    }
+
+    // UPDATE
+    @Override
+    public ChildResponseDTO update(Long id, ChildRequestDTO dto, String username) {
+        ChildEntity child = checkOwnership(id, username);
+
+        child.setBirthDate(dto.birthDate());
+        child.setGender(dto.gender());
+
+        if (dto.interestIds() != null && !dto.interestIds().isEmpty()) {
+            Set<InterestEntity> interests = new HashSet<>(interestRepository.findAllById(dto.interestIds()));
+            child.setInterests(interests);
+        }
+
+        ChildEntity updated = childRepository.save(child);
+        return childMapper.toResponseDTO(updated);
+    }
+
+    // DELETE
+    @Override
+    public void delete(Long id, String username) {
+        ChildEntity child = checkOwnership(id, username);
+        childRepository.delete(child);
+    }
+
+    // GET BY ID
+    @Override
+    public ChildResponseDTO getById(Long id, String username) {
+        ChildEntity child = checkOwnership(id, username);
+        return childMapper.toResponseDTO(child);
+    }
+
+    // AUX
+    @Override
+    public FamilyEntity getFamilyByUserEmail(String email) {
+        return familyRepository.findByUserEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("Family not found for user email: " + email));
+    }
+
+    // Helper privado: válida existencia y propiedad
+    private ChildEntity checkOwnership(Long childId, String username) {
+        ChildEntity child = childRepository.findById(childId)
+                .orElseThrow(() -> new EntityNotFoundException("Child not found with id: " + childId));
+
+        FamilyEntity family = child.getFamily();
+        if (family == null || family.getUser() == null || family.getUser().getEmail() == null) {
+            throw new SecurityException("Child has no associated family/user");
+        }
+
+        if (!family.getUser().getEmail().equals(username)) {
+            throw new SecurityException("You do not have permission to access this child");
+        }
+
+        return child;
     }
 }
