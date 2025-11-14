@@ -36,4 +36,5 @@ jobs:
         run: mvn clean package -DskipTests=false
 
       - name: Run Tests
-        run: mvn test
+        run: mvn -e -X test
+
