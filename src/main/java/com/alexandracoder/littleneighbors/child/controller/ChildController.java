@@ -27,7 +27,6 @@ public class ChildController {
 
     private final ChildService childService;
 
-
     @Operation(summary = "List all children (admin only)",
             description = "Returns a summarized list of all children.",
             security = @SecurityRequirement(name = "bearerAuth"))
@@ -40,7 +39,6 @@ public class ChildController {
     public ResponseEntity<List<ChildSummaryDTO>> getAllSummaries() {
         return ResponseEntity.ok(childService.getAllSummaries());
     }
-
 
     @Operation(summary = "Create a child",
             description = "Creates a new child for the logged-in user's family.",
@@ -110,7 +108,7 @@ public class ChildController {
             @ApiResponse(responseCode = "404", description = "Child not found")
     })
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('FAMILY')")
+    @PreAuthorize("hasRole('FAMILY') or hasRole('ADMIN')")
     public ResponseEntity<Void> deleteChild(
             Principal principal,
             @Parameter(description = "Child ID to delete", required = true)

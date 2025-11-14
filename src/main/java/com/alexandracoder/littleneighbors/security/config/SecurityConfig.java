@@ -6,6 +6,10 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -73,25 +77,49 @@ public class SecurityConfig {
     @Profile("prod")
     public SecurityFilterChain prodSecurityFilterChain(HttpSecurity http) throws Exception {
         http
+                .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::deny))
+
                 .authorizeHttpRequests(auth -> auth
-                        // Swagger en producción (opcional, considerar deshabilitarlo)
+                        // swagger solo admin (opcional)
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).hasRole("ADMIN")
 
-                        // Endpoints públicos
-                        .requestMatchers("/api/public/**").permitAll()
+                        // Endpoints públicos necesarios para el login/registro
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/users",
+                                "/api/public/**"
+                        ).permitAll()
 
                         // El resto requiere autenticación
                         .anyRequest().authenticated()
                 )
-                .csrf(csrf -> csrf.disable())
-                .headers(headers -> headers
-                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
-                );
 
+                // Activamos el soporte JWT
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                        )
+                );
 
         return http.build();
     }
-}
+
+        @Bean
+        public JwtAuthenticationConverter jwtAuthenticationConverter() {
+            JwtGrantedAuthoritiesConverter converter = new JwtGrantedAuthoritiesConverter();
+            converter.setAuthorityPrefix("ROLE_");          // Roles vendrán como ROLE_USER, ROLE_ADMIN
+            converter.setAuthoritiesClaimName("roles");     // Tu JWT usa "roles"
+
+            JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
+            jwtConverter.setJwtGrantedAuthoritiesConverter(converter);
+            return jwtConverter;
+        }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+    }
