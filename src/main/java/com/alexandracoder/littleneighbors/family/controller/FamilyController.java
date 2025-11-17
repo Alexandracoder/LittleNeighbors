@@ -33,7 +33,7 @@ public class FamilyController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('FAMILY')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<FamilyResponseDTO> createFamily(
             Principal principal,
             @RequestBody FamilyRequestDTO dto) {

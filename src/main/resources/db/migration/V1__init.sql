@@ -120,6 +120,4 @@ CREATE TABLE matches (
 CREATE INDEX idx_matches_child_a_id ON matches(child_a_id);
 CREATE INDEX idx_matches_child_b_id ON matches(child_b_id);
 CREATE INDEX idx_matches_status ON matches(status);
--- Note: Uniqueness is enforced by the application/service layer to avoid duplicate matches
--- Alternative: add a composite unique constraint on (child_a_id, child_b_id)
 CREATE UNIQUE INDEX idx_matches_unique_pair ON matches(child_a_id, child_b_id);
