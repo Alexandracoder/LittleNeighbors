@@ -16,8 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class FamilyServiceImpl implements FamilyService {
@@ -57,6 +55,12 @@ public class FamilyServiceImpl implements FamilyService {
         }
 
         FamilyEntity saved = familyRepository.save(family);
+
+        // Promover al usuario de USER a FAMILY al crear su familia
+        user.getRoles().remove(Role.USER);
+        user.getRoles().add(Role.FAMILY);
+        userRepository.save(user);
+
         return FamilyMapper.toResponse(saved);
     }
 
@@ -93,13 +97,18 @@ public class FamilyServiceImpl implements FamilyService {
         UserEntity loggedUser = userRepository.findByEmail(loggedUserEmail)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with email: " + loggedUserEmail));
 
-        // ADMIN puede borrar cualquier familia
         if (loggedUser.getRoles().contains(Role.ADMIN)) {
             familyRepository.delete(family);
+
+            UserEntity owner = family.getUser();
+            if (owner != null) {
+                owner.getRoles().remove(Role.FAMILY);
+                owner.getRoles().add(Role.USER);
+                userRepository.save(owner);
+            }
             return;
         }
 
-        // Si no es admin, debe ser propietario
         if (!family.getUser().getEmail().equals(loggedUserEmail)) {
             throw new SecurityException("You do not have permission to delete this family");
         }
@@ -109,13 +118,16 @@ public class FamilyServiceImpl implements FamilyService {
         }
 
         familyRepository.delete(family);
+
+        loggedUser.getRoles().remove(Role.FAMILY);
+        loggedUser.getRoles().add(Role.USER);
+        userRepository.save(loggedUser);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<FamilyResponseDTO> getAllFamilies(Pageable pageable) {
-        Page<FamilyEntity> families = familyRepository.findAll(pageable);
-        return families.map(FamilyMapper::toResponse);
+        return familyRepository.findAll(pageable).map(FamilyMapper::toResponse);
     }
 }
 

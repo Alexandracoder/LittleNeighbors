@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+
 @RestController
 @RequestMapping("/api/families")
 @RequiredArgsConstructor
@@ -31,6 +32,7 @@ public class FamilyController {
 
         return ResponseEntity.ok(familyService.getFamilyById(id, principal.getName()));
     }
+
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
@@ -71,8 +73,7 @@ public class FamilyController {
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
     public ResponseEntity<Page<FamilyResponseDTO>> getAllFamilies(@ParameterObject Pageable pageable) {
-        return ResponseEntity.ok((Page<FamilyResponseDTO>) familyService.getAllFamilies(pageable));
+
+        return ResponseEntity.ok(familyService.getAllFamilies(pageable));
     }
 }
-
-

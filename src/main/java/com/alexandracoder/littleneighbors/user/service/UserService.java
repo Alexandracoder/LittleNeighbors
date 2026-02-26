@@ -30,7 +30,7 @@ public class UserService {
                 .firstName(dto.firstName())
                 .lastName(dto.lastName())
                 .password(passwordEncoder.encode(dto.password()))
-                .roles(Set.of(Role.FAMILY)) // rol por defecto
+                .roles(Set.of(Role.ROLE_USER)) // rol por defecto
                 .build();
 
         UserEntity saved = userRepository.save(user);
