@@ -4,6 +4,10 @@
 spring:
   profiles:
     active: dev
+    spring:
+      jackson:
+        mapper:
+          default-view-inclusion=true:
 
 
 # ===============================
@@ -37,6 +41,8 @@ spring:
 jwt:
   secret: "12345678901234567890123456789012"
   expiration: 3600000
+
+
 
 
 # ===============================

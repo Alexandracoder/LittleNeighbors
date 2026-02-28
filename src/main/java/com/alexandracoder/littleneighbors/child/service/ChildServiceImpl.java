@@ -29,8 +29,7 @@ public class ChildServiceImpl implements ChildService {
     private final InterestRepository interestRepository;
     private final ChildMapper childMapper;
 
-    // ADMIN
-    @Override
+   @Override
     public List<ChildSummaryDTO> getAllSummaries() {
         return childRepository.findAll()
                 .stream()
@@ -94,18 +93,25 @@ public class ChildServiceImpl implements ChildService {
                 .orElseThrow(() -> new EntityNotFoundException("Family not found for user email: " + email));
     }
 
-    // Helper privado: válida existencia y propiedad
+
     private ChildEntity checkOwnership(Long childId, String username) {
         ChildEntity child = childRepository.findById(childId)
                 .orElseThrow(() -> new EntityNotFoundException("Child not found with id: " + childId));
 
-        FamilyEntity family = child.getFamily();
-        if (family == null || family.getUser() == null || family.getUser().getEmail() == null) {
-            throw new SecurityException("Child has no associated family/user");
+        org.springframework.security.core.Authentication authentication =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+
+
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
+
+        if (isAdmin) {
+            return child;
         }
 
-        if (!family.getUser().getEmail().equals(username)) {
-            throw new SecurityException("You do not have permission to access this child");
+        FamilyEntity family = child.getFamily();
+        if (family == null || family.getUser() == null || !family.getUser().getEmail().equals(username)) {
+            throw new org.springframework.security.access.AccessDeniedException("No tienes permiso para acceder a este perfil");
         }
 
         return child;

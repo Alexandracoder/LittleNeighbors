@@ -4,6 +4,7 @@ import com.alexandracoder.littleneighbors.enums.Gender;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.interest.entity.InterestEntity;
 import com.alexandracoder.littleneighbors.shared.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,11 +15,11 @@ import java.util.Set;
 
 @Entity
 @Table(name = "children")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(callSuper = true)
 public class ChildEntity extends BaseEntity {
 
     @Id
@@ -34,17 +35,19 @@ public class ChildEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "family_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonBackReference
     private FamilyEntity family;
 
     @Builder.Default
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER) // 👈 Recomendado para intereses (suelen ser pocos)
     @JoinTable(
             name = "child_interests",
             joinColumns = @JoinColumn(name = "child_id"),
             inverseJoinColumns = @JoinColumn(name = "interest_id")
     )
     private Set<InterestEntity> interests = new HashSet<>();
-
 
     @Transient
     public int getAge() {
