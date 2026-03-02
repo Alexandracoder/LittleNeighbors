@@ -41,7 +41,7 @@ public class ChildEntity extends BaseEntity {
     private FamilyEntity family;
 
     @Builder.Default
-    @ManyToMany(fetch = FetchType.EAGER) // 👈 Recomendado para intereses (suelen ser pocos)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "child_interests",
             joinColumns = @JoinColumn(name = "child_id"),

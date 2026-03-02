@@ -1,54 +1,59 @@
--- 1. ASEGURAR BARRIOS ADICIONALES (Por si no estaban en el V5)
-INSERT INTO `neighborhoods` (`name`, `street_name`, `postal_code`, `city_id`)
-SELECT 'Chamberí', 'Calle de Fuencarral', '28010', id FROM `cities` WHERE `name` = 'Madrid'
-AND NOT EXISTS (SELECT 1 FROM `neighborhoods` WHERE `name` = 'Chamberí');
+-- 1. ASEGURAR CIUDADES (Por si acaso no están)
+INSERT INTO `cities` (`name`)
+SELECT 'Valencia' WHERE NOT EXISTS (SELECT 1 FROM `cities` WHERE `name` = 'Valencia');
+INSERT INTO `cities` (`name`)
+SELECT 'Mislata' WHERE NOT EXISTS (SELECT 1 FROM `cities` WHERE `name` = 'Mislata');
 
+-- 2. ASEGURAR BARRIOS DE VALENCIA Y MISLATA
+-- Ruzafa (Valencia)
 INSERT INTO `neighborhoods` (`name`, `street_name`, `postal_code`, `city_id`)
-SELECT 'Salamanca', 'Calle de Serrano', '28001', id FROM `cities` WHERE `name` = 'Madrid'
-AND NOT EXISTS (SELECT 1 FROM `neighborhoods` WHERE `name` = 'Salamanca');
+SELECT 'Ruzafa', 'Calle de Cádiz', '46006', id FROM `cities` WHERE `name` = 'Valencia'
+AND NOT EXISTS (SELECT 1 FROM `neighborhoods` WHERE `name` = 'Ruzafa');
 
--- 2. NUEVOS USUARIOS (Password: password123)
+-- Benimaclet (Valencia)
+INSERT INTO `neighborhoods` (`name`, `street_name`, `postal_code`, `city_id`)
+SELECT 'Benimaclet', 'Calle del Barón de San Petrillo', '46020', id FROM `cities` WHERE `name` = 'Valencia'
+AND NOT EXISTS (SELECT 1 FROM `neighborhoods` WHERE `name` = 'Benimaclet');
+
+-- El Carmen (Valencia)
+INSERT INTO `neighborhoods` (`name`, `street_name`, `postal_code`, `city_id`)
+SELECT 'El Carmen', 'Calle de Quart', '46001', id FROM `cities` WHERE `name` = 'Valencia'
+AND NOT EXISTS (SELECT 1 FROM `neighborhoods` WHERE `name` = 'El Carmen');
+
+-- Mislata Centro
+INSERT INTO `neighborhoods` (`name`, `street_name`, `postal_code`, `city_id`)
+SELECT 'Mislata Centro', 'Avenida de Gregorio Gea', '46920', id FROM `cities` WHERE `name` = 'Mislata'
+AND NOT EXISTS (SELECT 1 FROM `neighborhoods` WHERE `name` = 'Mislata Centro');
+
+-- 3. NUEVOS USUARIOS (Password: password123)
 INSERT INTO `users` (`email`, `first_name`, `last_name`, `password`)
 VALUES
-('marcos.ruiz@example.com', 'Marcos', 'Ruiz', '$2a$10$8.UnVuG9HHgffUDAlk8q7Ou5f2LvsS.g6izLbbZ.Z6098U1Cl6N7O'),
-('elena.vazquez@example.com', 'Elena', 'Vázquez', '$2a$10$8.UnVuG9HHgffUDAlk8q7Ou5f2LvsS.g6izLbbZ.Z6098U1Cl6N7O'),
-('sergio.perez@example.com', 'Sergio', 'Pérez', '$2a$10$8.UnVuG9HHgffUDAlk8q7Ou5f2LvsS.g6izLbbZ.Z6098U1Cl6N7O'),
-('clara.bosch@example.com', 'Clara', 'Bosch', '$2a$10$8.UnVuG9HHgffUDAlk8q7Ou5f2LvsS.g6izLbbZ.Z6098U1Cl6N7O');
+('pau.vlc@example.com', 'Pau', 'Navarro', '$2a$10$8.UnVuG9HHgffUDAlk8q7Ou5f2LvsS.g6izLbbZ.Z6098U1Cl6N7O'),
+('amparo.mislata@example.com', 'Amparo', 'García', '$2a$10$8.UnVuG9HHgffUDAlk8q7Ou5f2LvsS.g6izLbbZ.Z6098U1Cl6N7O'),
+('vicent.ruzafa@example.com', 'Vicent', 'Ferrer', '$2a$10$8.UnVuG9HHgffUDAlk8q7Ou5f2LvsS.g6izLbbZ.Z6098U1Cl6N7O');
 
--- 3. ASIGNAR ROLES
+-- 4. ASIGNAR ROLES
 INSERT INTO `user_roles` (`user_id`, `role`)
 SELECT id, 'FAMILY' FROM `users` WHERE `email` IN (
-    'marcos.ruiz@example.com', 'elena.vazquez@example.com',
-    'sergio.perez@example.com', 'clara.bosch@example.com'
+    'pau.vlc@example.com', 'amparo.mislata@example.com', 'vicent.ruzafa@example.com'
 );
 
--- 4. NUEVAS FAMILIAS
--- Familia Ruiz en Chamberí
+-- 5. NUEVAS FAMILIAS
+-- Familia Navarro en Benimaclet
 INSERT INTO `families` (`user_id`, `representative_name`, `family_name`, `description`, `neighborhood_id`)
-SELECT u.id, 'Marcos Ruiz', 'Familia Ruiz-Sanz', 'Nos gusta el senderismo y buscamos otras familias para excursiones.', n.id
-FROM `users` u, `neighborhoods` n WHERE u.`email` = 'marcos.ruiz@example.com' AND n.`name` = 'Chamberí';
+SELECT u.id, 'Pau Navarro', 'Els Navarro', 'Vivim a Benimaclet i busquem grup de criança.', n.id
+FROM `users` u, `neighborhoods` n WHERE u.`email` = 'pau.vlc@example.com' AND n.`name` = 'Benimaclet';
 
--- Familia Vázquez en Retiro
+-- Familia García en Mislata
 INSERT INTO `families` (`user_id`, `representative_name`, `family_name`, `description`, `neighborhood_id`)
-SELECT u.id, 'Elena Vázquez', 'Los Vázquez', 'Recién llegados al barrio. Tenemos una hija de 4 años.', n.id
-FROM `users` u, `neighborhoods` n WHERE u.`email` = 'elena.vazquez@example.com' AND n.`name` = 'Retiro';
+SELECT u.id, 'Amparo García', 'Familia García-Mislata', 'Nos encanta pasear por el Parque de Cabecera.', n.id
+FROM `users` u, `neighborhoods` n WHERE u.`email` = 'amparo.mislata@example.com' AND n.`name` = 'Mislata Centro';
 
--- Familia Pérez en Salamanca
-INSERT INTO `families` (`user_id`, `representative_name`, `family_name`, `description`, `neighborhood_id`)
-SELECT u.id, 'Sergio Pérez', 'Pérez-Gómez', 'Buscamos grupo de juegos para las tardes en el parque.', n.id
-FROM `users` u, `neighborhoods` n WHERE u.`email` = 'sergio.perez@example.com' AND n.`name` = 'Salamanca';
+-- 6. NUEVOS HIJOS (Usando tus nuevos Enums BOY/GIRL)
+-- Hija de Els Navarro
+INSERT INTO `children` (`birth_date`, `gender`, `family_id`)
+SELECT '2020-05-15', 'GIRL', f.id FROM `families` f JOIN `users` u ON f.user_id = u.id WHERE u.email = 'pau.vlc@example.com';
 
--- 5. NUEVOS HIJOS (Varios por familia en algunos casos)
--- Hijos de Familia Ruiz (2 hijos)
+-- Hijo de Amparo (Mislata)
 INSERT INTO `children` (`birth_date`, `gender`, `family_id`)
-SELECT '2019-03-10', 'MALE', f.id FROM `families` f JOIN `users` u ON f.user_id = u.id WHERE u.email = 'marcos.ruiz@example.com';
-INSERT INTO `children` (`birth_date`, `gender`, `family_id`)
-SELECT '2021-08-22', 'FEMALE', f.id FROM `families` f JOIN `users` u ON f.user_id = u.id WHERE u.email = 'marcos.ruiz@example.com';
-
--- Hija de Familia Vázquez
-INSERT INTO `children` (`birth_date`, `gender`, `family_id`)
-SELECT '2020-01-05', 'FEMALE', f.id FROM `families` f JOIN `users` u ON f.user_id = u.id WHERE u.email = 'elena.vazquez@example.com';
-
--- Hijo de Familia Pérez
-INSERT INTO `children` (`birth_date`, `gender`, `family_id`)
-SELECT '2022-12-12', 'MALE', f.id FROM `families` f JOIN `users` u ON f.user_id = u.id WHERE u.email = 'sergio.perez@example.com';
+SELECT '2022-11-20', 'BOY', f.id FROM `families` f JOIN `users` u ON f.user_id = u.id WHERE u.email = 'amparo.mislata@example.com';

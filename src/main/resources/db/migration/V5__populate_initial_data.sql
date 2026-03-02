@@ -1,8 +1,8 @@
 -- 1. CIUDAD Y BARRIO (Requeridos para FamilyEntity)
-INSERT INTO `cities` (`name`) VALUES ('Madrid');
+INSERT INTO `cities` (`name`) VALUES ('Valencia');
 
 INSERT INTO `neighborhoods` (`name`, `street_name`, `postal_code`, `city_id`)
-SELECT 'Mislata', 'Calle de Manuela Malasaña', '28004', id FROM `cities` WHERE `name` = 'Madrid';
+SELECT 'Mislata', 'Calle de Manuela Malasaña', '28004', id FROM `cities` WHERE `name` = 'valencia';
 
 -- 2. USUARIO DE PRUEBA (Password: password123)
 INSERT INTO `users` (`email`, `first_name`, `last_name`, `password`)

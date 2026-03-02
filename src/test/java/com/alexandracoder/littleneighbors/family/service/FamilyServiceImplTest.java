@@ -42,7 +42,7 @@ class FamilyServiceImplTest {
         user = UserEntity.builder()
                 .id(1L)
                 .email("user@example.com")
-                .roles(Set.of(Role.FAMILY))
+                .roles(Set.of(Role.ROLE_FAMILY))
                 .build();
 
         neighborhood = NeighborhoodEntity.builder()
@@ -119,7 +119,7 @@ class FamilyServiceImplTest {
         UserEntity admin = UserEntity.builder()
                 .id(2L)
                 .email("admin@example.com")
-                .roles(Set.of(Role.ADMIN))
+                .roles(Set.of(Role.ROLE_ADMIN))
                 .build();
 
         when(familyRepository.findById(1L)).thenReturn(Optional.of(family));

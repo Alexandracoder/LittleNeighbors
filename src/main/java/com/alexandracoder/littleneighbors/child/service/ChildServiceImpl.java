@@ -111,7 +111,7 @@ public class ChildServiceImpl implements ChildService {
 
         FamilyEntity family = child.getFamily();
         if (family == null || family.getUser() == null || !family.getUser().getEmail().equals(username)) {
-            throw new org.springframework.security.access.AccessDeniedException("No tienes permiso para acceder a este perfil");
+            throw new org.springframework.security.access.AccessDeniedException("you don't have acces to this profile");
         }
 
         return child;

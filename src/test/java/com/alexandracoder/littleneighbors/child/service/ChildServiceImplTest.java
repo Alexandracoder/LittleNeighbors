@@ -60,13 +60,13 @@ class ChildServiceImplTest {
 
         child = new ChildEntity();
         child.setId(10L);
-        child.setGender(Gender.MALE);
+        child.setGender(Gender.BOY);
         child.setBirthDate(LocalDate.of(2015, 1, 1));
         child.setFamily(family);
         child.setInterests(new HashSet<>());
 
-        requestDTO = new ChildRequestDTO(LocalDate.of(2015, 1, 1), Gender.MALE, new HashSet<>(Arrays.asList(2L, 3L, 4L)));
-        responseDTO = new ChildResponseDTO(10L, Gender.MALE, 1L);
+        requestDTO = new ChildRequestDTO(LocalDate.of(2015, 1, 1), Gender.BOY, new HashSet<>(Arrays.asList(2L, 3L, 4L)));
+        responseDTO = new ChildResponseDTO(10L, Gender.BOY, 1L);
     }
 
     @Test
@@ -131,7 +131,7 @@ class ChildServiceImplTest {
 
     @Test
     void getAllSummaries_ShouldReturnMappedList() {
-        ChildSummaryDTO summary = new ChildSummaryDTO(10L, Gender.MALE, 8);
+        ChildSummaryDTO summary = new ChildSummaryDTO(10L, Gender.BOY, 8);
         when(childRepository.findAll()).thenReturn(Collections.singletonList(child));
         when(childMapper.toSummaryDTO(child)).thenReturn(summary);
 
