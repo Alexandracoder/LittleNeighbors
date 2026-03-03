@@ -11,7 +11,9 @@ import java.util.Set;
 
 @Entity
 @Table(name = "interests")
-@Data
+@Getter
+@Setter
+@ToString(exclude = "children")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -31,5 +33,8 @@ public class InterestEntity extends BaseEntity {
     @Builder.Default
     @ManyToMany(mappedBy = "interests")
     private Set<ChildEntity> children = new HashSet<>();
+
+    @Column(nullable = false, length = 500)
+    private String icon;
 }
 

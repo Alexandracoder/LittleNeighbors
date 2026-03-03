@@ -11,13 +11,20 @@ import java.util.List;
 @Component
 public class ChildMapper {
 
-
     public ChildResponseDTO toResponseDTO(ChildEntity entity) {
         if (entity == null) return null;
 
-        List<InterestResponseDTO> interestDTOs = entity.getInterests().stream()
-                .map(i -> new InterestResponseDTO(i.getId(), i.getName(), i.getType()))
-                .toList();
+        // CORRECCIÓN: Añadimos i.getIcon() para que coincida con el Record
+        List<InterestResponseDTO> interestDTOs = entity.getInterests() != null
+                ? entity.getInterests().stream()
+                .map(i -> new InterestResponseDTO(
+                        i.getId(),
+                        i.getName(),
+                        i.getType(),
+                        i.getIcon() // <-- ¡Importante para los emojis!
+                ))
+                .toList()
+                : List.of();
 
         Long familyId = (entity.getFamily() != null) ? entity.getFamily().getId() : null;
 
@@ -31,13 +38,12 @@ public class ChildMapper {
         );
     }
 
-
     public ChildSummaryDTO toSummaryDTO(ChildEntity entity) {
         if (entity == null) return null;
 
         return new ChildSummaryDTO(
                 entity.getId(),
-                entity.getGender().name(), // Convertimos el Enum a String
+                entity.getGender() != null ? entity.getGender().name() : null,
                 entity.getAge()
         );
     }
