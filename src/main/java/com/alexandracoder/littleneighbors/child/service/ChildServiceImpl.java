@@ -6,12 +6,16 @@ import com.alexandracoder.littleneighbors.child.dto.ChildSummaryDTO;
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.child.mapper.ChildMapper;
 import com.alexandracoder.littleneighbors.child.repository.ChildRepository;
+import com.alexandracoder.littleneighbors.child.service.ChildService;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
 import com.alexandracoder.littleneighbors.interest.entity.InterestEntity;
 import com.alexandracoder.littleneighbors.interest.repository.InterestRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,11 +33,13 @@ public class ChildServiceImpl implements ChildService {
     private final InterestRepository interestRepository;
     private final ChildMapper childMapper;
 
-   @Override
+    @Override
+    @Transactional(readOnly = true)
     public List<ChildSummaryDTO> getAllSummaries() {
         return childRepository.findAll()
                 .stream()
-                .map(childMapper::toSummaryDTO)
+                // Asegúrate de que en ChildMapper el método sea toSummaryDTO (con una 'm')
+                .map(child -> childMapper.toSummaryDTO(child))
                 .toList();
     }
 
@@ -46,16 +52,13 @@ public class ChildServiceImpl implements ChildService {
         child.setGender(dto.gender());
         child.setFamily(family);
 
-        if (dto.interestIds() != null && !dto.interestIds().isEmpty()) {
-            Set<InterestEntity> interests = new HashSet<>(interestRepository.findAllById(dto.interestIds()));
-            child.setInterests(interests);
-        }
+        // Pasamos la lista de IDs del DTO
+        updateChildInterests(child, (List<Long>) dto.interestIds());
 
         ChildEntity saved = childRepository.save(child);
         return childMapper.toResponseDTO(saved);
     }
 
-    // UPDATE
     @Override
     public ChildResponseDTO update(Long id, ChildRequestDTO dto, String username) {
         ChildEntity child = checkOwnership(id, username);
@@ -63,55 +66,61 @@ public class ChildServiceImpl implements ChildService {
         child.setBirthDate(dto.birthDate());
         child.setGender(dto.gender());
 
-        if (dto.interestIds() != null && !dto.interestIds().isEmpty()) {
-            Set<InterestEntity> interests = new HashSet<>(interestRepository.findAllById(dto.interestIds()));
-            child.setInterests(interests);
-        }
+        updateChildInterests(child, (List<Long>) dto.interestIds());
 
         ChildEntity updated = childRepository.save(child);
         return childMapper.toResponseDTO(updated);
     }
 
-    // DELETE
     @Override
     public void delete(Long id, String username) {
         ChildEntity child = checkOwnership(id, username);
         childRepository.delete(child);
     }
 
-    // GET BY ID
     @Override
+    @Transactional(readOnly = true)
     public ChildResponseDTO getById(Long id, String username) {
         ChildEntity child = checkOwnership(id, username);
         return childMapper.toResponseDTO(child);
     }
 
-    // AUX
     @Override
+    @Transactional(readOnly = true)
     public FamilyEntity getFamilyByUserEmail(String email) {
         return familyRepository.findByUserEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("Family not found for user email: " + email));
+                .orElseThrow(() -> new EntityNotFoundException("Family not found for user: " + email));
     }
 
+    private void updateChildInterests(ChildEntity child, List<Long> interestIds) {
+        // Limpiamos los intereses actuales para evitar duplicados o basura
+        if (child.getInterests() == null) {
+            child.setInterests(new HashSet<>());
+        } else {
+            child.getInterests().clear();
+        }
+
+        if (interestIds != null && !interestIds.isEmpty()) {
+            // Convertimos la List a Set para findAllById si tu Repo lo pide así,
+            // aunque findAllById suele aceptar Iterable (List es fine)
+            List<InterestEntity> interests = interestRepository.findAllById(interestIds);
+            child.getInterests().addAll(interests);
+        }
+    }
 
     private ChildEntity checkOwnership(Long childId, String username) {
         ChildEntity child = childRepository.findById(childId)
                 .orElseThrow(() -> new EntityNotFoundException("Child not found with id: " + childId));
 
-        org.springframework.security.core.Authentication authentication =
-                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
-
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
-
-        if (isAdmin) {
-            return child;
-        }
+        if (isAdmin) return child;
 
         FamilyEntity family = child.getFamily();
         if (family == null || family.getUser() == null || !family.getUser().getEmail().equals(username)) {
-            throw new org.springframework.security.access.AccessDeniedException("you don't have acces to this profile");
+            throw new AccessDeniedException("You do not have permission to access this child's profile");
         }
 
         return child;

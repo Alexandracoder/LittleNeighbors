@@ -11,6 +11,8 @@ import java.util.List;
 public class FamilyMapper {
 
     public static FamilyResponseDTO toResponse(FamilyEntity entity) {
+        if (entity == null) return null;
+
         NeighborhoodEntity neighborhood = entity.getNeighborhood();
 
         String neighborhoodName = neighborhood != null ? neighborhood.getName() : null;
@@ -42,12 +44,12 @@ public class FamilyMapper {
 
     private static ChildSummaryDTO toChildSummary(ChildEntity child) {
         if (child == null) return null;
+
         return new ChildSummaryDTO(
-                        child.getId(),
-                child.getGender(),
+                child.getId(),
+                child.getGender().name(), // <--- SOLUCIÓN: .name() convierte el Enum a String
                 child.getAge()
-                );
+        );
     }
 }
-
 
