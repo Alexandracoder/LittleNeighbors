@@ -65,8 +65,20 @@ class ChildServiceImplTest {
         child.setFamily(family);
         child.setInterests(new HashSet<>());
 
-        requestDTO = new ChildRequestDTO(LocalDate.of(2015, 1, 1), Gender.BOY, new HashSet<>(Arrays.asList(2L, 3L, 4L)));
-        responseDTO = new ChildResponseDTO(10L, Gender.BOY, 1L);
+        this.requestDTO = new ChildRequestDTO(
+                LocalDate.of(2015, 1, 1),
+                Gender.BOY,
+                new HashSet<>(Arrays.asList(2L, 3L))
+        );
+
+        this.responseDTO = new ChildResponseDTO(
+                10L,
+                Gender.BOY,
+                LocalDate.now().minusYears(8),
+                8,
+                List.of(),
+                1L
+        );
     }
 
     @Test
@@ -78,6 +90,7 @@ class ChildServiceImplTest {
 
         ChildResponseDTO result = childService.create(requestDTO, userEmail);
 
+        assertThat(result).isNotNull();
         assertThat(result.id()).isEqualTo(10L);
         verify(childRepository).save(any());
     }
@@ -91,6 +104,7 @@ class ChildServiceImplTest {
 
         ChildResponseDTO result = childService.update(10L, requestDTO, userEmail);
 
+        assertThat(result).isNotNull();
         assertThat(result.id()).isEqualTo(10L);
         verify(childRepository).save(any());
     }
@@ -118,6 +132,7 @@ class ChildServiceImplTest {
 
         ChildResponseDTO result = childService.getById(10L, userEmail);
 
+        assertThat(result).isNotNull();
         assertThat(result.id()).isEqualTo(10L);
         verify(childRepository).findById(10L);
     }
@@ -131,7 +146,7 @@ class ChildServiceImplTest {
 
     @Test
     void getAllSummaries_ShouldReturnMappedList() {
-        ChildSummaryDTO summary = new ChildSummaryDTO(10L, Gender.BOY, 8);
+        ChildSummaryDTO summary = new ChildSummaryDTO(10L, Gender.BOY.name(), 8);
         when(childRepository.findAll()).thenReturn(Collections.singletonList(child));
         when(childMapper.toSummaryDTO(child)).thenReturn(summary);
 
@@ -144,11 +159,15 @@ class ChildServiceImplTest {
     @Test
     void update_ShouldThrowSecurityExceptionWhenNotOwner() {
         when(childRepository.findById(10L)).thenReturn(Optional.of(child));
-        // Simular otro usuario distinto
-        user.setEmail("other@example.com");
 
-        assertThrows(SecurityException.class, () -> childService.update(10L, requestDTO, userEmail));
+        ChildRequestDTO dto = new ChildRequestDTO(
+                LocalDate.now().minusYears(5),
+                Gender.BOY,
+                java.util.Collections.emptySet()
+        );
+
+        assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> childService.update(10L, dto, "other@example.com"));
     }
 }
-
 

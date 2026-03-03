@@ -6,7 +6,6 @@ import com.alexandracoder.littleneighbors.child.dto.ChildSummaryDTO;
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.child.mapper.ChildMapper;
 import com.alexandracoder.littleneighbors.child.repository.ChildRepository;
-import com.alexandracoder.littleneighbors.child.service.ChildService;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
 import com.alexandracoder.littleneighbors.interest.entity.InterestEntity;
@@ -38,8 +37,7 @@ public class ChildServiceImpl implements ChildService {
     public List<ChildSummaryDTO> getAllSummaries() {
         return childRepository.findAll()
                 .stream()
-                // Asegúrate de que en ChildMapper el método sea toSummaryDTO (con una 'm')
-                .map(child -> childMapper.toSummaryDTO(child))
+                .map(childMapper::toSummaryDTO)
                 .toList();
     }
 
@@ -52,8 +50,8 @@ public class ChildServiceImpl implements ChildService {
         child.setGender(dto.gender());
         child.setFamily(family);
 
-        // Pasamos la lista de IDs del DTO
-        updateChildInterests(child, (List<Long>) dto.interestIds());
+
+        updateChildInterests(child, (Set<Long>) dto.interestIds());
 
         ChildEntity saved = childRepository.save(child);
         return childMapper.toResponseDTO(saved);
@@ -66,7 +64,7 @@ public class ChildServiceImpl implements ChildService {
         child.setBirthDate(dto.birthDate());
         child.setGender(dto.gender());
 
-        updateChildInterests(child, (List<Long>) dto.interestIds());
+        updateChildInterests(child, (Set<Long>) dto.interestIds());
 
         ChildEntity updated = childRepository.save(child);
         return childMapper.toResponseDTO(updated);
@@ -92,8 +90,7 @@ public class ChildServiceImpl implements ChildService {
                 .orElseThrow(() -> new EntityNotFoundException("Family not found for user: " + email));
     }
 
-    private void updateChildInterests(ChildEntity child, List<Long> interestIds) {
-        // Limpiamos los intereses actuales para evitar duplicados o basura
+    private void updateChildInterests(ChildEntity child, Set<Long> interestIds) {
         if (child.getInterests() == null) {
             child.setInterests(new HashSet<>());
         } else {
@@ -101,8 +98,7 @@ public class ChildServiceImpl implements ChildService {
         }
 
         if (interestIds != null && !interestIds.isEmpty()) {
-            // Convertimos la List a Set para findAllById si tu Repo lo pide así,
-            // aunque findAllById suele aceptar Iterable (List es fine)
+
             List<InterestEntity> interests = interestRepository.findAllById(interestIds);
             child.getInterests().addAll(interests);
         }
