@@ -67,7 +67,7 @@ CREATE TABLE children (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_children_family FOREIGN KEY (family_id) REFERENCES families(id) ON DELETE CASCADE,
-    CONSTRAINT chk_gender CHECK (gender IN ('MALE', 'FEMALE'))
+    CONSTRAINT chk_gender CHECK (gender IN ('BOY', 'GIRL'))
 );
 
 -- Create indexes for children

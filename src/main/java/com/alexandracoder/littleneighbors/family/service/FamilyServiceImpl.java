@@ -56,9 +56,9 @@ public class FamilyServiceImpl implements FamilyService {
 
         FamilyEntity saved = familyRepository.save(family);
 
-        // Promover al usuario de USER a FAMILY al crear su familia
-        user.getRoles().remove(Role.ROLE_USER);
-        user.getRoles().add(Role.ROLE_FAMILY);
+
+        user.getRoles().remove(Role.USER);
+        user.getRoles().add(Role.FAMILY);
         userRepository.save(user);
 
         return FamilyMapper.toResponse(saved);
@@ -97,13 +97,13 @@ public class FamilyServiceImpl implements FamilyService {
         UserEntity loggedUser = userRepository.findByEmail(loggedUserEmail)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with email: " + loggedUserEmail));
 
-        if (loggedUser.getRoles().contains(Role.ROLE_ADMIN)) {
+        if (loggedUser.getRoles().contains(Role.ADMIN)) {
             familyRepository.delete(family);
 
             UserEntity owner = family.getUser();
             if (owner != null) {
-                owner.getRoles().remove(Role.ROLE_FAMILY);
-                owner.getRoles().add(Role.ROLE_USER);
+                owner.getRoles().remove(Role.FAMILY);
+                owner.getRoles().add(Role.USER);
                 userRepository.save(owner);
             }
             return;
@@ -119,8 +119,8 @@ public class FamilyServiceImpl implements FamilyService {
 
         familyRepository.delete(family);
 
-        loggedUser.getRoles().remove(Role.ROLE_FAMILY);
-        loggedUser.getRoles().add(Role.ROLE_USER);
+        loggedUser.getRoles().clear();
+        loggedUser.getRoles().add(Role.FAMILY);
         userRepository.save(loggedUser);
     }
 

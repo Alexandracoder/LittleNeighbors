@@ -30,7 +30,7 @@ public class UserService {
                 .firstName(dto.firstName())
                 .lastName(dto.lastName())
                 .password(passwordEncoder.encode(dto.password()))
-                .roles(Set.of(Role.ROLE_USER))
+                .roles(Set.of(Role.USER))
                 .build();
 
         UserEntity saved = userRepository.save(user);

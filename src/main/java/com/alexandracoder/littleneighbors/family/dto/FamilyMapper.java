@@ -47,7 +47,7 @@ public class FamilyMapper {
 
         return new ChildSummaryDTO(
                 child.getId(),
-                child.getGender().name(), // <--- SOLUCIÓN: .name() convierte el Enum a String
+                child.getGender().name(),
                 child.getAge()
         );
     }

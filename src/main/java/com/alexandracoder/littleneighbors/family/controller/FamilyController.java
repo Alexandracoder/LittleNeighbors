@@ -1,8 +1,10 @@
 package com.alexandracoder.littleneighbors.family.controller;
 
+import com.alexandracoder.littleneighbors.family.dto.FamilyAuthResponseDTO;
 import com.alexandracoder.littleneighbors.family.dto.FamilyRequestDTO;
 import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
 import com.alexandracoder.littleneighbors.family.service.FamilyService;
+import com.alexandracoder.littleneighbors.security.JwtService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -13,9 +15,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/families")
@@ -23,6 +29,8 @@ import java.security.Principal;
 public class FamilyController {
 
     private final FamilyService familyService;
+    private final UserDetailsService userDetailsService;
+    private final JwtService jwtService;
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('FAMILY')")
@@ -36,13 +44,29 @@ public class FamilyController {
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<FamilyResponseDTO> createFamily(
+    public ResponseEntity<FamilyAuthResponseDTO> createFamily(
             Principal principal,
             @RequestBody FamilyRequestDTO dto) {
 
-        return ResponseEntity.ok(familyService.createFamily(dto, principal.getName()));
-    }
+        FamilyResponseDTO familyResponse = familyService.createFamily(dto, principal.getName());
 
+        UserDetails userDetails = userDetailsService.loadUserByUsername(principal.getName());
+
+        Map<String, Object> claims = Map.of(
+                "roles", userDetails.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .toList()
+        );
+
+        String newAccessToken = jwtService.generateAccessToken(userDetails.getUsername(), claims);
+        String newRefreshToken = jwtService.generateRefreshToken(userDetails.getUsername());
+
+        return ResponseEntity.ok(new FamilyAuthResponseDTO(
+                familyResponse,
+                newAccessToken,
+                newRefreshToken
+        ));
+    }
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('FAMILY')")
     public ResponseEntity<FamilyResponseDTO> updateFamily(

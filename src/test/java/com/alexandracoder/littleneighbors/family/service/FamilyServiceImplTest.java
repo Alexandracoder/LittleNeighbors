@@ -12,7 +12,6 @@ import com.alexandracoder.littleneighbors.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.*;
 
 import java.util.*;
@@ -41,7 +40,7 @@ class FamilyServiceImplTest {
         familyService = new FamilyServiceImpl(familyRepository, userRepository, neighborhoodRepository);
 
         Set<Role> roles = new HashSet<>();
-        roles.add(Role.ROLE_USER);
+        roles.add(Role.USER);
 
         user = UserEntity.builder()
                 .id(1L)

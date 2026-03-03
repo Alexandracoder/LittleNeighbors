@@ -1,15 +1,15 @@
--- 1. INSERTAR INTERESES
+-- 1. INSERT INTERESTS
 INSERT INTO `interests` (`name`, `type`) VALUES
-('Fútbol', 'SPORTS'),
-('Baloncesto', 'SPORTS'),
-('Pintura', 'ARTS'),
+('Football', 'SPORTS'),
+('Basketball', 'SPORTS'),
+('Painting', 'ARTS'),
 ('Piano', 'MUSIC'),
-('Robótica', 'SCIENCE'),
-('Ajedrez', 'TECHNOLOGY'),
-('Senderismo', 'OUTDOOR'),
-('Teatro', 'OTHER');
+('Robotics', 'SCIENCE'),
+('Chess', 'TECHNOLOGY'),
+('Hiking', 'OUTDOOR'),
+('Theater', 'OTHER');
 
--- 2. VINCULAR INTERESES (Sintaxis JOIN corregida)
+-- 2. LINK INTERESTS
 -- Niño de Lucía
 INSERT INTO `child_interests` (`child_id`, `interest_id`)
 SELECT c.id, i.id
@@ -17,7 +17,7 @@ FROM `children` c
 JOIN `families` f ON c.family_id = f.id
 JOIN `users` u ON f.user_id = u.id
 CROSS JOIN `interests` i
-WHERE u.email = 'lucia@example.com' AND i.name IN ('Pintura', 'Teatro');
+WHERE u.email = 'lucia@example.com' AND i.name IN ('Painting', 'Theater');
 
 -- Niño de Pedro
 INSERT INTO `child_interests` (`child_id`, `interest_id`)
@@ -26,9 +26,9 @@ FROM `children` c
 JOIN `families` f ON c.family_id = f.id
 JOIN `users` u ON f.user_id = u.id
 CROSS JOIN `interests` i
-WHERE u.email = 'pedro@example.com' AND i.name IN ('Fútbol', 'Robótica');
+WHERE u.email = 'pedro@example.com' AND i.name IN ('Football', 'Robotics');
 
--- 3. INSERTAR UN MATCH DE PRUEBA
+-- 3. INSERT TEST MATCH
 INSERT INTO `matches` (`child_a_id`, `child_b_id`, `status`)
 SELECT c1.id, c2.id, 'PENDING'
 FROM `children` c1
