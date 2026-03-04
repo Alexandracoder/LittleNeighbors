@@ -21,6 +21,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -52,12 +53,11 @@ public class FamilyController {
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(principal.getName());
 
-        Map<String, Object> claims = Map.of(
-                "roles", userDetails.getAuthorities().stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .toList()
-        );
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
 
+        Map<String, Object> claims = Map.of("roles", roles);
         String newAccessToken = jwtService.generateAccessToken(userDetails.getUsername(), claims);
         String newRefreshToken = jwtService.generateRefreshToken(userDetails.getUsername());
 

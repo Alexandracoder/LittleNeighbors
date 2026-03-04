@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +42,18 @@ public class ChildServiceImpl implements ChildService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public List<ChildResponseDTO> findAllByFamilyEmail(String email) {
+
+        FamilyEntity family = getFamilyByUserEmail(email);
+
+        return childRepository.findAllByFamilyId(family.getId())
+                .stream()
+                .map(childMapper::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
     @Override
     public ChildResponseDTO create(ChildRequestDTO dto, String username) {
         FamilyEntity family = getFamilyByUserEmail(username);
@@ -50,8 +63,7 @@ public class ChildServiceImpl implements ChildService {
         child.setGender(dto.gender());
         child.setFamily(family);
 
-
-        updateChildInterests(child, (Set<Long>) dto.interestIds());
+        updateChildInterests(child, dto.interestIds());
 
         ChildEntity saved = childRepository.save(child);
         return childMapper.toResponseDTO(saved);
@@ -64,7 +76,7 @@ public class ChildServiceImpl implements ChildService {
         child.setBirthDate(dto.birthDate());
         child.setGender(dto.gender());
 
-        updateChildInterests(child, (Set<Long>) dto.interestIds());
+        updateChildInterests(child, dto.interestIds());
 
         ChildEntity updated = childRepository.save(child);
         return childMapper.toResponseDTO(updated);
@@ -98,7 +110,6 @@ public class ChildServiceImpl implements ChildService {
         }
 
         if (interestIds != null && !interestIds.isEmpty()) {
-
             List<InterestEntity> interests = interestRepository.findAllById(interestIds);
             child.getInterests().addAll(interests);
         }

@@ -106,7 +106,7 @@ class FamilyServiceImplTest {
         UserEntity admin = UserEntity.builder()
                 .id(2L)
                 .email("admin@example.com")
-                .roles(new HashSet<>(Set.of(Role.ROLE_ADMIN)))
+                .roles(new HashSet<>(Set.of(Role.ADMIN)))
                 .build();
 
         when(familyRepository.findById(1L)).thenReturn(Optional.of(family));
