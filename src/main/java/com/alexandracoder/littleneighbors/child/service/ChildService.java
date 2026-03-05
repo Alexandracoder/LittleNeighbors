@@ -26,4 +26,6 @@ public interface ChildService {
 
     // AUXILIAR
     FamilyEntity getFamilyByUserEmail(String email);
+
+    void deleteByIdAndFamilyEmail(Long id, String name);
 }

@@ -102,6 +102,15 @@ public class ChildServiceImpl implements ChildService {
                 .orElseThrow(() -> new EntityNotFoundException("Family not found for user: " + email));
     }
 
+    @Override
+    public void deleteByIdAndFamilyEmail(Long id, String email) {
+        // 1. Verificamos que el niño existe Y que pertenece a la familia que hace la petición
+        // Usamos el método que ya tienes definido para reutilizar la lógica de seguridad
+        ChildEntity child = checkOwnership(id, email);
+
+        // 2. Si checkOwnership no lanzó una excepción (AccessDenied o EntityNotFound), procedemos
+        childRepository.delete(child);
+    }
     private void updateChildInterests(ChildEntity child, Set<Long> interestIds) {
         if (child.getInterests() == null) {
             child.setInterests(new HashSet<>());

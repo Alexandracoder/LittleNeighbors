@@ -33,7 +33,7 @@ public class ChildController {
     @GetMapping("/my-children")
     @PreAuthorize("hasRole('FAMILY')")
     public ResponseEntity<List<ChildResponseDTO>> getMyChildren(Principal principal) {
-        // Usamos principal.getName() para que el Service solo busque lo que es mío
+
         return ResponseEntity.ok(childService.findAllByFamilyEmail(principal.getName()));
     }
 
@@ -57,4 +57,25 @@ public class ChildController {
             @Valid @RequestBody ChildRequestDTO dto) {
         return ResponseEntity.ok(childService.create(dto, principal.getName()));
     }
+
+    @Operation(summary = "Delete a child", security = @SecurityRequirement(name = "bearerAuth"))
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('FAMILY')")
+    public ResponseEntity<Void> deleteChild(@PathVariable Long id, Principal principal) {
+
+        childService.deleteByIdAndFamilyEmail(id, principal.getName());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Update a child", security = @SecurityRequirement(name = "bearerAuth"))
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('FAMILY')")
+    public ResponseEntity<ChildResponseDTO> updateChild(
+            @PathVariable Long id,
+            @Valid @RequestBody ChildRequestDTO dto,
+            Principal principal) {
+        return ResponseEntity.ok(childService.update(id, dto, principal.getName()));
+    }
+
+
 }

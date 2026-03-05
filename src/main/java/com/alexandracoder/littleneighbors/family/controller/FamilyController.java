@@ -33,6 +33,18 @@ public class FamilyController {
     private final UserDetailsService userDetailsService;
     private final JwtService jwtService;
 
+    @GetMapping("/explore")
+    @PreAuthorize("hasRole('FAMILY')")
+    public ResponseEntity<List<FamilyResponseDTO>> explore(
+            Principal principal,
+            @RequestParam(required = false) Long interestId,
+            @RequestParam(required = false) Integer minAge,
+            @RequestParam(required = false) Integer maxAge) {
+
+        // Llamamos al método del servicio que ya tienes creado
+        return ResponseEntity.ok(familyService.explorePlaymateFamilies(
+                principal.getName(), interestId, minAge, maxAge));
+    }
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('FAMILY')")
     public ResponseEntity<FamilyResponseDTO> getFamilyById(
