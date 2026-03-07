@@ -1,16 +1,26 @@
 package com.alexandracoder.littleneighbors.family.dto;
 
+import com.alexandracoder.littleneighbors.auth.service.AuthService;
 import com.alexandracoder.littleneighbors.child.dto.ChildSummaryDTO;
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
 
+@Component
 public class FamilyMapper {
 
-    public static FamilyResponseDTO toResponse(FamilyEntity entity) {
+    private final AuthService authService;
+
+    public FamilyMapper(@Lazy AuthService authService) {
+        this.authService = authService;
+    }
+
+    public FamilyResponseDTO toResponse(FamilyEntity entity) {
         if (entity == null) return null;
 
         NeighborhoodEntity neighborhood = entity.getNeighborhood();
@@ -25,7 +35,7 @@ public class FamilyMapper {
         List<ChildSummaryDTO> children = entity.getChildren() == null
                 ? Collections.emptyList()
                 : entity.getChildren().stream()
-                .map(FamilyMapper::toChildSummary)
+                .map(this::toChildSummary) // Llamamos a la instancia, no a FamilyMapper::toChildSummary
                 .toList();
 
         return new FamilyResponseDTO(
@@ -42,13 +52,14 @@ public class FamilyMapper {
         );
     }
 
-    private static ChildSummaryDTO toChildSummary(ChildEntity child) {
+    private ChildSummaryDTO toChildSummary(ChildEntity child) {
         if (child == null) return null;
 
         return new ChildSummaryDTO(
                 child.getId(),
                 child.getGender().name(),
-                child.getAge()
+                child.getAge(),
+                child.getLifeStage()
         );
     }
 }

@@ -21,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
+
 @Service
 @RequiredArgsConstructor
 public class FamilyServiceImpl implements FamilyService {
@@ -28,13 +30,14 @@ public class FamilyServiceImpl implements FamilyService {
     private final FamilyRepository familyRepository;
     private final UserRepository userRepository;
     private final NeighborhoodRepository neighborhoodRepository;
+    private final FamilyMapper familyMapper; // Inyectado como Bean
 
     @Override
     @Transactional(readOnly = true)
     public FamilyResponseDTO getFamilyById(Long id, String name) {
         FamilyEntity entity = familyRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Family not found with id: " + id));
-        return FamilyMapper.toResponse(entity);
+        return this.familyMapper.toResponse(entity);
     }
 
     @Override
@@ -47,7 +50,6 @@ public class FamilyServiceImpl implements FamilyService {
             throw new IllegalStateException("User already has a family");
         }
 
-        // Creamos la entidad
         FamilyEntity familyEntity = new FamilyEntity();
         familyEntity.setUser(user);
         familyEntity.setFamilyName(dto.familyName());
@@ -60,18 +62,13 @@ public class FamilyServiceImpl implements FamilyService {
                     .orElseThrow(() -> new EntityNotFoundException("Neighborhood not found")));
         }
 
-        // Guardamos la familia
         FamilyEntity saved = familyRepository.save(familyEntity);
 
-        // ACTUALIZAMOS EL ROL DEL USUARIO
         user.getRoles().remove(Role.USER);
         user.getRoles().add(Role.FAMILY);
-
-        // ¡ESTO ES LO MÁS IMPORTANTE!
-        // Flush obliga a Hibernate a escribir en la DB ahora mismo
         userRepository.saveAndFlush(user);
 
-        return FamilyMapper.toResponse(saved);
+        return this.familyMapper.toResponse(saved);
     }
 
     @Override
@@ -95,7 +92,7 @@ public class FamilyServiceImpl implements FamilyService {
         }
 
         FamilyEntity updated = familyRepository.save(family);
-        return FamilyMapper.toResponse(updated);
+        return this.familyMapper.toResponse(updated);
     }
 
     @Override
@@ -109,7 +106,6 @@ public class FamilyServiceImpl implements FamilyService {
 
         if (loggedUser.getRoles().contains(Role.ADMIN)) {
             familyRepository.delete(family);
-
             UserEntity owner = family.getUser();
             if (owner != null) {
                 owner.getRoles().remove(Role.FAMILY);
@@ -128,7 +124,6 @@ public class FamilyServiceImpl implements FamilyService {
         }
 
         familyRepository.delete(family);
-
         loggedUser.getRoles().remove(Role.FAMILY);
         loggedUser.getRoles().add(Role.USER);
         userRepository.save(loggedUser);
@@ -137,23 +132,18 @@ public class FamilyServiceImpl implements FamilyService {
     @Override
     @Transactional(readOnly = true)
     public Page<FamilyResponseDTO> getAllFamilies(Pageable pageable) {
-        return familyRepository.findAll(pageable).map(FamilyMapper::toResponse);
+        return familyRepository.findAll(pageable).map(this.familyMapper::toResponse);
     }
 
     @Transactional(readOnly = true)
     @Override
     public List<FamilyResponseDTO> explorePlaymateFamilies(String userEmail, Long interestId, Integer minAge, Integer maxAge) {
-
         FamilyEntity myFamily = familyRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Family profile not found for: " + userEmail));
 
-        // 1. Empezamos con la condición base: mismo vecindario
         Specification<FamilyEntity> spec = FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId());
-
-        // 2. Excluimos a nuestra propia familia (para no salir nosotros en el Dashboard)
         spec = spec.and((root, query, cb) -> cb.notEqual(root.get("id"), myFamily.getId()));
 
-        // 3. Filtros opcionales
         if (interestId != null) {
             spec = spec.and(FamilySpecifications.hasChildWithInterest(interestId));
         }
@@ -162,9 +152,8 @@ public class FamilyServiceImpl implements FamilyService {
             spec = spec.and(FamilySpecifications.hasChildAgeBetween(minAge, maxAge));
         }
 
-        // 4. Ejecutamos la búsqueda
         return familyRepository.findAll(spec).stream()
-                .map(FamilyMapper::toResponse)
+                .map(this.familyMapper::toResponse)
                 .collect(Collectors.toList());
     }
 }

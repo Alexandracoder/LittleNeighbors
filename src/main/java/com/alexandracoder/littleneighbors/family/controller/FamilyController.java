@@ -41,7 +41,6 @@ public class FamilyController {
             @RequestParam(required = false) Integer minAge,
             @RequestParam(required = false) Integer maxAge) {
 
-        // Llamamos al método del servicio que ya tienes creado
         return ResponseEntity.ok(familyService.explorePlaymateFamilies(
                 principal.getName(), interestId, minAge, maxAge));
     }

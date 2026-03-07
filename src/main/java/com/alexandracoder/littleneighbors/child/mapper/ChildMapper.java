@@ -14,7 +14,7 @@ public class ChildMapper {
     public ChildResponseDTO toResponseDTO(ChildEntity entity) {
         if (entity == null) return null;
 
-        // CORRECCIÓN: Añadimos i.getIcon() para que coincida con el Record
+
         List<InterestResponseDTO> interestDTOs = entity.getInterests() != null
                 ? entity.getInterests().stream()
                 .map(i -> new InterestResponseDTO(
@@ -39,12 +39,15 @@ public class ChildMapper {
     }
 
     public ChildSummaryDTO toSummaryDTO(ChildEntity entity) {
+        // 1. Eliminamos el "new ChildEntity()" porque no se usa
         if (entity == null) return null;
 
+        // 2. Usamos 'entity' en lugar de 'child'
         return new ChildSummaryDTO(
                 entity.getId(),
                 entity.getGender() != null ? entity.getGender().name() : null,
-                entity.getAge()
+                entity.getAge(),
+                entity.getLifeStage() // <--- CORREGIDO: ahora usa 'entity'
         );
     }
 }

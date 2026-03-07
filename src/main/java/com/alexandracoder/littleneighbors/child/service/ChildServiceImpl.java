@@ -6,6 +6,8 @@ import com.alexandracoder.littleneighbors.child.dto.ChildSummaryDTO;
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.child.mapper.ChildMapper;
 import com.alexandracoder.littleneighbors.child.repository.ChildRepository;
+import com.alexandracoder.littleneighbors.family.dto.FamilyMapper;
+import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
 import com.alexandracoder.littleneighbors.interest.entity.InterestEntity;
@@ -18,10 +20,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +37,7 @@ public class ChildServiceImpl implements ChildService {
     private final FamilyRepository familyRepository;
     private final InterestRepository interestRepository;
     private final ChildMapper childMapper;
+    private final FamilyMapper familyMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -45,9 +51,7 @@ public class ChildServiceImpl implements ChildService {
     @Transactional(readOnly = true)
     @Override
     public List<ChildResponseDTO> findAllByFamilyEmail(String email) {
-
         FamilyEntity family = getFamilyByUserEmail(email);
-
         return childRepository.findAllByFamilyId(family.getId())
                 .stream()
                 .map(childMapper::toResponseDTO)
@@ -59,6 +63,7 @@ public class ChildServiceImpl implements ChildService {
         FamilyEntity family = getFamilyByUserEmail(username);
 
         ChildEntity child = new ChildEntity();
+        child.setLifeStage(dto.lifeStage());
         child.setBirthDate(dto.birthDate());
         child.setGender(dto.gender());
         child.setFamily(family);
@@ -73,6 +78,7 @@ public class ChildServiceImpl implements ChildService {
     public ChildResponseDTO update(Long id, ChildRequestDTO dto, String username) {
         ChildEntity child = checkOwnership(id, username);
 
+        child.setLifeStage(dto.lifeStage());
         child.setBirthDate(dto.birthDate());
         child.setGender(dto.gender());
 
@@ -104,13 +110,35 @@ public class ChildServiceImpl implements ChildService {
 
     @Override
     public void deleteByIdAndFamilyEmail(Long id, String email) {
-        // 1. Verificamos que el niño existe Y que pertenece a la familia que hace la petición
-        // Usamos el método que ya tienes definido para reutilizar la lógica de seguridad
         ChildEntity child = checkOwnership(id, email);
-
-        // 2. Si checkOwnership no lanzó una excepción (AccessDenied o EntityNotFound), procedemos
         childRepository.delete(child);
     }
+
+    @Override
+    public FamilyResponseDTO createAndReturnFamily(ChildRequestDTO dto, String userEmail) {
+        FamilyEntity family = getFamilyByUserEmail(userEmail);
+
+        ChildEntity newChild = new ChildEntity();
+        newChild.setLifeStage(dto.lifeStage());
+        newChild.setBirthDate(dto.birthDate());
+        newChild.setGender(dto.gender());
+        newChild.setFamily(family);
+
+        updateChildInterests(newChild, dto.interestIds());
+
+        childRepository.save(newChild);
+
+        if (family.getChildren() == null) {
+            family.setChildren(new ArrayList<>());
+        }
+        family.getChildren().add(newChild);
+
+        // AQUÍ ESTÁ EL CAMBIO:
+        // Antes: return FamilyMapper.toResponse(family); (Estático, falla)
+        // Ahora: Usamos la instancia inyectada:
+        return this.familyMapper.toResponse(family);
+    }
+
     private void updateChildInterests(ChildEntity child, Set<Long> interestIds) {
         if (child.getInterests() == null) {
             child.setInterests(new HashSet<>());

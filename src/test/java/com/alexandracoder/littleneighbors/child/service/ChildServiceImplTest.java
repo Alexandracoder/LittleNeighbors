@@ -146,7 +146,7 @@ class ChildServiceImplTest {
 
     @Test
     void getAllSummaries_ShouldReturnMappedList() {
-        ChildSummaryDTO summary = new ChildSummaryDTO(10L, Gender.BOY.name(), 8);
+        ChildSummaryDTO summary = new ChildSummaryDTO(10L, Gender.BOY.name(), 8, child.getLifeStage());
         when(childRepository.findAll()).thenReturn(Collections.singletonList(child));
         when(childMapper.toSummaryDTO(child)).thenReturn(summary);
 

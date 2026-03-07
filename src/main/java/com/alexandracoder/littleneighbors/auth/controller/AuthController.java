@@ -5,14 +5,15 @@ import com.alexandracoder.littleneighbors.auth.dto.AuthResponse;
 import com.alexandracoder.littleneighbors.auth.dto.RefreshRequest;
 import com.alexandracoder.littleneighbors.auth.dto.RegisterRequest;
 import com.alexandracoder.littleneighbors.auth.service.AuthService;
-import org.springframework.web.bind.annotation.RequestBody;
+import com.alexandracoder.littleneighbors.family.dto.FamilyAuthResponseDTO;
+import com.alexandracoder.littleneighbors.user.dto.UserProfileDTO;
+import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -23,11 +24,8 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
-        System.out.println("Email recibido: [" + request.email() + "]");
-        System.out.println("Password recibida: [" + request.password() + "]");
-
-        AuthResponse response = authService.login(request);
+    public ResponseEntity<FamilyAuthResponseDTO> login(@RequestBody AuthRequest request) {
+        FamilyAuthResponseDTO response = authService.login(request);
         return ResponseEntity.ok(response);
     }
 
@@ -41,6 +39,12 @@ public class AuthController {
     public ResponseEntity<AuthResponse> refresh(@RequestBody RefreshRequest request) {
         AuthResponse response = authService.reloadUserTokenFromRefresh(request.refreshToken());
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<UserProfileDTO> getProfile(Principal principal) {
+        UserProfileDTO profile = authService.getCurrentProfile(principal.getName());
+        return ResponseEntity.ok(profile);
     }
 }
 

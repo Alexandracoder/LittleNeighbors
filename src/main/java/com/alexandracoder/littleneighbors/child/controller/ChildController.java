@@ -4,6 +4,7 @@ import com.alexandracoder.littleneighbors.child.dto.ChildRequestDTO;
 import com.alexandracoder.littleneighbors.child.dto.ChildResponseDTO;
 import com.alexandracoder.littleneighbors.child.dto.ChildSummaryDTO;
 import com.alexandracoder.littleneighbors.child.service.ChildService;
+import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -52,10 +53,10 @@ public class ChildController {
             security = @SecurityRequirement(name = "bearerAuth"))
     @PostMapping
     @PreAuthorize("hasRole('FAMILY')")
-    public ResponseEntity<ChildResponseDTO> createChild(
+    public ResponseEntity<FamilyResponseDTO> createChild(
             Principal principal,
             @Valid @RequestBody ChildRequestDTO dto) {
-        return ResponseEntity.ok(childService.create(dto, principal.getName()));
+        return ResponseEntity.ok(childService.createAndReturnFamily(dto, principal.getName()));
     }
 
     @Operation(summary = "Delete a child", security = @SecurityRequirement(name = "bearerAuth"))

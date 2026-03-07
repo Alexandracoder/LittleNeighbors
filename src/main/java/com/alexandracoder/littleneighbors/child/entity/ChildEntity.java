@@ -1,6 +1,7 @@
 package com.alexandracoder.littleneighbors.child.entity;
 
 import com.alexandracoder.littleneighbors.enums.Gender;
+import com.alexandracoder.littleneighbors.enums.LifeStage;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.interest.entity.InterestEntity;
 import com.alexandracoder.littleneighbors.shared.BaseEntity;
@@ -25,6 +26,9 @@ public class ChildEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Enumerated(EnumType.STRING)
+    private LifeStage lifeStage;
 
     @Column(nullable = false)
     private LocalDate birthDate;

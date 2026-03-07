@@ -3,7 +3,9 @@ package com.alexandracoder.littleneighbors.child.service;
 import com.alexandracoder.littleneighbors.child.dto.ChildRequestDTO;
 import com.alexandracoder.littleneighbors.child.dto.ChildResponseDTO;
 import com.alexandracoder.littleneighbors.child.dto.ChildSummaryDTO;
+import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
+import jakarta.validation.Valid;
 import org.springframework.transaction.annotation.Transactional;
 
 
@@ -28,4 +30,6 @@ public interface ChildService {
     FamilyEntity getFamilyByUserEmail(String email);
 
     void deleteByIdAndFamilyEmail(Long id, String name);
+
+    FamilyResponseDTO createAndReturnFamily(@Valid ChildRequestDTO dto, String name);
 }
