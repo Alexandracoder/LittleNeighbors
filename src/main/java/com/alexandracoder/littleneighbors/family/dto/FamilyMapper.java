@@ -55,9 +55,14 @@ public class FamilyMapper {
     private ChildSummaryDTO toChildSummary(ChildEntity child) {
         if (child == null) return null;
 
+        // Si el género es nulo (embarazo), devolvemos "PRENATAL" o un valor por defecto
+        String genderName = (child.getGender() != null)
+                ? child.getGender().name()
+                : "PRENATAL";
+
         return new ChildSummaryDTO(
                 child.getId(),
-                child.getGender().name(),
+                genderName,
                 child.getAge(),
                 child.getLifeStage()
         );

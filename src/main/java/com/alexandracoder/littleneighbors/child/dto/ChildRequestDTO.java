@@ -11,8 +11,8 @@ import java.util.Set;
 import jakarta.validation.constraints.NotNull;
 
 public record ChildRequestDTO(
-        @JsonProperty("birthDate") @NotNull LocalDate birthDate,
+        @JsonProperty("birthDate")LocalDate birthDate,
         @JsonProperty("lifeStage") @NotNull LifeStage lifeStage,
-        @JsonProperty("gender") @NotNull Gender gender,
+        @JsonProperty("gender") Gender gender,
         @JsonProperty("interestIds") @NotNull Set<Long> interestIds
 ) {}

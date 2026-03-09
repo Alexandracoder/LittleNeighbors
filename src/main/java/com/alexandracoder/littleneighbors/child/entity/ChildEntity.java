@@ -28,14 +28,21 @@ public class ChildEntity extends BaseEntity {
     private Long id;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "life_stage")
     private LifeStage lifeStage;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private LocalDate birthDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
+    @Column(nullable = true, length = 10)
     private Gender gender;
+
+    @Column(name = "due_date", nullable = true)
+    private LocalDate dueDate;
+
+    @Column(name = "is_prenatal")
+    private boolean isPrenatal = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "family_id", nullable = false)
@@ -55,6 +62,7 @@ public class ChildEntity extends BaseEntity {
 
     @Transient
     public int getAge() {
+        // Si no hay fecha de nacimiento (embarazo), la edad es 0
         return birthDate != null ? Period.between(birthDate, LocalDate.now()).getYears() : 0;
     }
 }

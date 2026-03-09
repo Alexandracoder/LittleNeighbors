@@ -56,6 +56,10 @@ public class ChildController {
     public ResponseEntity<FamilyResponseDTO> createChild(
             Principal principal,
             @Valid @RequestBody ChildRequestDTO dto) {
+        System.out.println("--- DTO RECIBIDO ---");
+        System.out.println("LifeStage: " + dto.lifeStage());
+        System.out.println("Gender: " + dto.gender());
+        System.out.println("BirthDate: " + dto.birthDate());
         return ResponseEntity.ok(childService.createAndReturnFamily(dto, principal.getName()));
     }
 
