@@ -7,6 +7,7 @@ import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.child.mapper.ChildMapper;
 import com.alexandracoder.littleneighbors.child.repository.ChildRepository;
 import com.alexandracoder.littleneighbors.enums.Gender;
+import com.alexandracoder.littleneighbors.enums.LifeStage;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
 import com.alexandracoder.littleneighbors.interest.repository.InterestRepository;
@@ -67,6 +68,7 @@ class ChildServiceImplTest {
 
         this.requestDTO = new ChildRequestDTO(
                 LocalDate.of(2015, 1, 1),
+                LifeStage.BORN,
                 Gender.BOY,
                 new HashSet<>(Arrays.asList(2L, 3L))
         );
@@ -162,6 +164,7 @@ class ChildServiceImplTest {
 
         ChildRequestDTO dto = new ChildRequestDTO(
                 LocalDate.now().minusYears(5),
+                LifeStage.BORN,
                 Gender.BOY,
                 java.util.Collections.emptySet()
         );

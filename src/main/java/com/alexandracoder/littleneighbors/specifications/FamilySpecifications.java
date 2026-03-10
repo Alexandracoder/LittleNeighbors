@@ -7,6 +7,7 @@ import jakarta.persistence.criteria.Join;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public class FamilySpecifications {
 
@@ -14,13 +15,13 @@ public class FamilySpecifications {
         return (root, query, cb) -> cb.equal(root.get("neighborhood").get("id"), neighborhoodId);
     }
 
-    public static Specification<FamilyEntity> hasChildWithInterest(Long interestId) {
+    public static Specification<FamilyEntity> hasChildWithInterest(List<Long> interestIds) {
         return (root, query, cb) -> {
-            // Evitamos duplicados si una familia tiene varios niños con el mismo interés
             query.distinct(true);
             Join<Object, Object> children = root.join("children", JoinType.INNER);
             Join<Object, Object> interests = children.join("interests", JoinType.INNER);
-            return cb.equal(interests.get("id"), interestId);
+            // Usamos .in() para la colección de IDs
+            return interests.get("id").in(interestIds);
         };
     }
 

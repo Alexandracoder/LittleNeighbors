@@ -20,6 +20,7 @@ public class FamilyMapper {
         this.authService = authService;
     }
 
+    // Este es tu método principal de mapeo
     public FamilyResponseDTO toResponse(FamilyEntity entity) {
         if (entity == null) return null;
 
@@ -35,7 +36,7 @@ public class FamilyMapper {
         List<ChildSummaryDTO> children = entity.getChildren() == null
                 ? Collections.emptyList()
                 : entity.getChildren().stream()
-                .map(this::toChildSummary) // Llamamos a la instancia, no a FamilyMapper::toChildSummary
+                .map(this::toChildSummary)
                 .toList();
 
         return new FamilyResponseDTO(
@@ -52,10 +53,15 @@ public class FamilyMapper {
         );
     }
 
+    // Renombramos o redirigimos toResponseDTO para que apunte a toResponse
+    // Esto es lo que piden tus tests que fallaban
+    public FamilyResponseDTO toResponseDTO(FamilyEntity entity) {
+        return toResponse(entity);
+    }
+
     private ChildSummaryDTO toChildSummary(ChildEntity child) {
         if (child == null) return null;
 
-        // Si el género es nulo (embarazo), devolvemos "PRENATAL" o un valor por defecto
         String genderName = (child.getGender() != null)
                 ? child.getGender().name()
                 : "PRENATAL";

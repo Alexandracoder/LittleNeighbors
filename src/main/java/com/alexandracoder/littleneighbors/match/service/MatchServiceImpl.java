@@ -50,7 +50,7 @@ public class MatchServiceImpl implements MatchService {
     }
 
     @Override
-    public List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int maxAge, Long interestId) {
+    public List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int maxAge, List<Long> interestId) {
         List<Specification<FamilyEntity>> specs = new ArrayList<>();
 
         specs.add(FamilySpecifications.hasNeighborhood(neighborhoodId));

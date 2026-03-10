@@ -137,23 +137,37 @@ public class FamilyServiceImpl implements FamilyService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<FamilyResponseDTO> explorePlaymateFamilies(String userEmail, Long interestId, Integer minAge, Integer maxAge) {
+    public List<FamilyResponseDTO> explorePlaymateFamilies(String userEmail, List<Long> interestIds, Integer minAge, Integer maxAge) {
         FamilyEntity myFamily = familyRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Family profile not found for: " + userEmail));
 
+        // Iniciamos la especificación directamente con el barrio
         Specification<FamilyEntity> spec = FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId());
+
+        // Excluimos la familia del usuario logueado
         spec = spec.and((root, query, cb) -> cb.notEqual(root.get("id"), myFamily.getId()));
 
-        if (interestId != null) {
-            spec = spec.and(FamilySpecifications.hasChildWithInterest(interestId));
+        // Filtro por intereses (ahora acepta List<Long>)
+        if (interestIds != null && !interestIds.isEmpty()) {
+            spec = spec.and(FamilySpecifications.hasChildWithInterest(interestIds));
         }
 
+        // Filtro por edad
         if (minAge != null && maxAge != null) {
             spec = spec.and(FamilySpecifications.hasChildAgeBetween(minAge, maxAge));
         }
 
+        // El repositorio con @EntityGraph hará el resto
         return familyRepository.findAll(spec).stream()
                 .map(this.familyMapper::toResponse)
                 .collect(Collectors.toList());
     }
+    @Override
+    @Transactional(readOnly = true)
+    public FamilyResponseDTO getFamilyByEmail(String email) {
+        FamilyEntity entity = familyRepository.findByUserEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("No se encontró la familia para el usuario: " + email));
+        return this.familyMapper.toResponse(entity);
+    }
+
 }

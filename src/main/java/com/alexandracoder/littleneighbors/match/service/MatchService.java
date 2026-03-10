@@ -7,6 +7,6 @@ import java.util.List;
 
 public interface MatchService {
     MatchEntity requestMatch(Long childAId, Long chidBId);
-    List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int mazAge, Long interestId);
+    List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int mazAge, List<Long> interestId);
     void validateWeeklyConstraint(Long childId);
 }

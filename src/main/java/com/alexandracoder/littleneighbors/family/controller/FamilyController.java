@@ -37,12 +37,20 @@ public class FamilyController {
     @PreAuthorize("hasRole('FAMILY')")
     public ResponseEntity<List<FamilyResponseDTO>> explore(
             Principal principal,
-            @RequestParam(required = false) Long interestId,
+            @RequestParam(required = false) List<Long> interestIds,
             @RequestParam(required = false) Integer minAge,
             @RequestParam(required = false) Integer maxAge) {
 
         return ResponseEntity.ok(familyService.explorePlaymateFamilies(
-                principal.getName(), interestId, minAge, maxAge));
+                principal.getName(), interestIds, minAge, maxAge));
+    }
+
+    @GetMapping("/my-family")
+    @PreAuthorize("hasRole('FAMILY')")
+    public ResponseEntity<FamilyResponseDTO> getMyFamily(Principal principal) {
+        // Usamos el email del usuario logueado (principal.getName())
+        // para recuperar SU familia.
+        return ResponseEntity.ok(familyService.getFamilyByEmail(principal.getName()));
     }
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('FAMILY')")
