@@ -35,7 +35,7 @@ jobs:
       - name: Build with Maven
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        run: mvn -e -X clean test
+        run: mvn -e -X clean test -Dspring.profiles.active=test
 
 
         

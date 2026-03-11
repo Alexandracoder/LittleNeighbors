@@ -57,8 +57,8 @@ public class FamilyServiceImpl implements FamilyService {
         familyEntity.setRepresentativeName(dto.representativeName());
         familyEntity.setProfilePictureUrl(dto.profilePictureUrl());
 
-        if (dto.neighborhoodId() != null) {
-            familyEntity.setNeighborhood(neighborhoodRepository.findById(dto.neighborhoodId())
+        if (dto.neighborhoodName() != null) {
+            familyEntity.setNeighborhood(neighborhoodRepository.findByName(dto.neighborhoodName())
                     .orElseThrow(() -> new EntityNotFoundException("Neighborhood not found")));
         }
 
@@ -86,9 +86,9 @@ public class FamilyServiceImpl implements FamilyService {
         family.setDescription(dto.description());
         family.setProfilePictureUrl(dto.profilePictureUrl());
 
-        if (dto.neighborhoodId() != null) {
-            family.setNeighborhood(neighborhoodRepository.findById(dto.neighborhoodId())
-                    .orElseThrow(() -> new EntityNotFoundException("Neighborhood not found with id: " + dto.neighborhoodId())));
+        if (dto.neighborhoodName() != null) {
+            family.setNeighborhood(neighborhoodRepository.findByName(dto.neighborhoodName())
+                    .orElseThrow(() -> new EntityNotFoundException("Neighborhood not found with id: " + dto.neighborhoodName())));
         }
 
         FamilyEntity updated = familyRepository.save(family);

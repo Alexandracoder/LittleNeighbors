@@ -65,7 +65,7 @@ class FamilyServiceImplTest {
 
     @Test
     void createFamily_success() {
-        // Orden real: userId, representativeName, familyName, description, profilePictureUrl, neighborhoodId
+        // Orden real: userId, representativeName, familyName, description, profilePictureUrl, neighborhoodName
         FamilyRequestDTO request = new FamilyRequestDTO("1", "Rep Name", "Family Name", "Description", "url", 1L);
 
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
@@ -97,7 +97,7 @@ class FamilyServiceImplTest {
 
     @Test
     void updateFamily_success() {
-        // Orden real: userId, representativeName, familyName, description, profilePictureUrl, neighborhoodId
+        // Orden real: userId, representativeName, familyName, description, profilePictureUrl, neighborhoodName
         FamilyRequestDTO request = new FamilyRequestDTO("1", "Updated Rep", "Updated Family", "Updated Desc", "url", 1L);
 
         when(familyRepository.findById(1L)).thenReturn(Optional.of(familyEntity));
