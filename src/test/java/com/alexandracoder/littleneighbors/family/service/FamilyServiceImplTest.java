@@ -1,6 +1,5 @@
 package com.alexandracoder.littleneighbors.family.service;
 
-import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.enums.Role;
 import com.alexandracoder.littleneighbors.family.dto.FamilyMapper;
 import com.alexandracoder.littleneighbors.family.dto.FamilyRequestDTO;
@@ -53,7 +52,7 @@ class FamilyServiceImplTest {
 
         neighborhood = NeighborhoodEntity.builder()
                 .id(1L)
-                .name("Neighborhood A")
+                .name("Ruzafa")
                 .build();
 
         familyEntity = new FamilyEntity();
@@ -65,17 +64,17 @@ class FamilyServiceImplTest {
 
     @Test
     void createFamily_success() {
-        // Orden real: userId, representativeName, familyName, description, profilePictureUrl, neighborhoodId
-        FamilyRequestDTO request = new FamilyRequestDTO("1", "Rep Name", "Family Name", "Description", "url", 1L);
+        // Orden real: userId, representativeName, familyName, description, profilePictureUrl, neighborhoodName
+        FamilyRequestDTO request = new FamilyRequestDTO("1", "Rep Name", "Family Name", "Description", "url", "Ruzafa");
 
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
-        when(neighborhoodRepository.findById(1L)).thenReturn(Optional.of(neighborhood));
+        when(neighborhoodRepository.findByName("Ruzafa")).thenReturn(Optional.of(neighborhood));
         when(familyRepository.existsByUser(user)).thenReturn(false);
         when(familyRepository.save(any(FamilyEntity.class))).thenReturn(familyEntity);
 
         // Orden real: id, representativeName, familyName, description, profilePictureUrl, neighborhoodName, street, postal, city, children
         when(familyMapper.toResponse(any(FamilyEntity.class)))
-                .thenReturn(new FamilyResponseDTO(1L, "Rep Name", "Family Name", "Description", "url", "Nbhd", "St", "123", "City", new ArrayList<>()));
+                .thenReturn(new FamilyResponseDTO(1L, "Rep Name", "Family Name", "Description", "url", "Ruzafa", "St", "123", "City", new ArrayList<>()));
 
         FamilyResponseDTO response = familyService.createFamily(request, "user@example.com");
 
@@ -87,7 +86,7 @@ class FamilyServiceImplTest {
     void getFamilyByEmail_success() {
         when(familyRepository.findByUserEmail("user@example.com")).thenReturn(Optional.of(familyEntity));
         when(familyMapper.toResponse(any(FamilyEntity.class)))
-                .thenReturn(new FamilyResponseDTO(1L, "Rep", "Fam", "Desc", "url", "Nbhd", "St", "123", "City", new ArrayList<>()));
+                .thenReturn(new FamilyResponseDTO(1L, "Rep", "Fam", "Desc", "url", "Ruzafa", "St", "123", "City", new ArrayList<>()));
 
         FamilyResponseDTO result = familyService.getFamilyByEmail("user@example.com");
 
@@ -97,14 +96,14 @@ class FamilyServiceImplTest {
 
     @Test
     void updateFamily_success() {
-        // Orden real: userId, representativeName, familyName, description, profilePictureUrl, neighborhoodId
-        FamilyRequestDTO request = new FamilyRequestDTO("1", "Updated Rep", "Updated Family", "Updated Desc", "url", 1L);
+        // Orden real: userId, representativeName, familyName, description, profilePictureUrl, neighborhoodName
+        FamilyRequestDTO request = new FamilyRequestDTO("1", "Updated Rep", "Updated Family", "Updated Desc", "url", "Ruzafa");
 
         when(familyRepository.findById(1L)).thenReturn(Optional.of(familyEntity));
-        when(neighborhoodRepository.findById(1L)).thenReturn(Optional.of(neighborhood));
+        when(neighborhoodRepository.findByName("Ruzafa")).thenReturn(Optional.of(neighborhood));
         when(familyRepository.save(any(FamilyEntity.class))).thenReturn(familyEntity);
         when(familyMapper.toResponse(any(FamilyEntity.class)))
-                .thenReturn(new FamilyResponseDTO(1L, "Updated Rep", "Updated Family", "Updated Desc", "url", "Nbhd", "St", "123", "City", new ArrayList<>()));
+                .thenReturn(new FamilyResponseDTO(1L, "Updated Rep", "Updated Family", "Updated Desc", "url", "Ruzafa", "St", "123", "City", new ArrayList<>()));
 
         FamilyResponseDTO response = familyService.updateFamily(1L, request, "user@example.com");
 
@@ -121,7 +120,7 @@ class FamilyServiceImplTest {
 
         // Mock del mapper devolviendo un DTO con 10 argumentos
         when(familyMapper.toResponse(any(FamilyEntity.class)))
-                .thenReturn(new FamilyResponseDTO(1L, "Rep", "Fam", "Desc", "url", "Nbhd", "St", "123", "City", new ArrayList<>()));
+                .thenReturn(new FamilyResponseDTO(1L, "Rep", "Fam", "Desc", "url", "Ruzafa", "St", "123", "City", new ArrayList<>()));
 
         List<FamilyResponseDTO> results = familyService.explorePlaymateFamilies(userEmail, null, 2, 5);
 
