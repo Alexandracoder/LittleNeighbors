@@ -66,7 +66,7 @@ class FamilyServiceImplTest {
     @Test
     void createFamily_success() {
         // Orden real: userId, representativeName, familyName, description, profilePictureUrl, neighborhoodName
-        FamilyRequestDTO request = new FamilyRequestDTO("1", "Rep Name", "Family Name", "Description", "url", 1L);
+        FamilyRequestDTO request = new FamilyRequestDTO("1", "Rep Name", "Family Name", "Description", "url", "Ruzafa");
 
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
         when(neighborhoodRepository.findById(1L)).thenReturn(Optional.of(neighborhood));
@@ -98,10 +98,10 @@ class FamilyServiceImplTest {
     @Test
     void updateFamily_success() {
         // Orden real: userId, representativeName, familyName, description, profilePictureUrl, neighborhoodName
-        FamilyRequestDTO request = new FamilyRequestDTO("1", "Updated Rep", "Updated Family", "Updated Desc", "url", 1L);
+        FamilyRequestDTO request = new FamilyRequestDTO("1", "Updated Rep", "Updated Family", "Updated Desc", "url", "Ruzafa");
 
         when(familyRepository.findById(1L)).thenReturn(Optional.of(familyEntity));
-        when(neighborhoodRepository.findById(1L)).thenReturn(Optional.of(neighborhood));
+        when(neighborhoodRepository.findByName("Ruzafa")).thenReturn(Optional.of(neighborhood));
         when(familyRepository.save(any(FamilyEntity.class))).thenReturn(familyEntity);
         when(familyMapper.toResponse(any(FamilyEntity.class)))
                 .thenReturn(new FamilyResponseDTO(1L, "Updated Rep", "Updated Family", "Updated Desc", "url", "Nbhd", "St", "123", "City", new ArrayList<>()));
