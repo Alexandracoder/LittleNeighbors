@@ -9,6 +9,6 @@ public record EventResponseDTO(
         LocalDateTime eventDate,
         Double latitude,
         Double longitude,
-        String neighborhoodName
+        Long neighborhoodId
 ) {
 }

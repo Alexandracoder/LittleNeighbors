@@ -10,7 +10,7 @@ public record FamilyRequestDTO(
         @NotBlank @Size(max = 255) String familyName,
         @NotBlank @Size(max = 1000) String description,
         String profilePictureUrl,
-        @NotNull String neighborhoodName
+        @NotNull Long neighborhoodId
 ) {}
 
 

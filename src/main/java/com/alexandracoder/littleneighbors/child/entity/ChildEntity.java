@@ -31,7 +31,7 @@ public class ChildEntity extends BaseEntity {
     @Column(name = "life_stage")
     private LifeStage lifeStage;
 
-    @Column(nullable = true)
+    @Column(name = "birth_date", nullable = true)
     private LocalDate birthDate;
 
     @Enumerated(EnumType.STRING)
@@ -41,7 +41,8 @@ public class ChildEntity extends BaseEntity {
     @Column(name = "due_date", nullable = true)
     private LocalDate dueDate;
 
-    @Column(name = "is_prenatal")
+    @Column(name = "is_prenatal", nullable = false)
+    @Builder.Default
     private boolean isPrenatal = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -52,7 +53,7 @@ public class ChildEntity extends BaseEntity {
     private FamilyEntity family;
 
     @Builder.Default
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "child_interests",
             joinColumns = @JoinColumn(name = "child_id"),
@@ -62,7 +63,9 @@ public class ChildEntity extends BaseEntity {
 
     @Transient
     public int getAge() {
-        // Si no hay fecha de nacimiento (embarazo), la edad es 0
-        return birthDate != null ? Period.between(birthDate, LocalDate.now()).getYears() : 0;
+        if (this.isPrenatal || this.birthDate == null) {
+            return 0;
+        }
+        return Period.between(this.birthDate, LocalDate.now()).getYears();
     }
 }
