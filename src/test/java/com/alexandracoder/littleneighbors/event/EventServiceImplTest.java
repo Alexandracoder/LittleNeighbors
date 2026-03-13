@@ -40,7 +40,7 @@ public class EventServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        neighborhood = NeighborhoodEntity.builder().id(1L).name("Mislata").build();
+        neighborhood = NeighborhoodEntity.builder().id(1L).build();
         eventEntity = EventEntity.builder()
                 .id(1L)
                 .title("Test Event")
@@ -49,13 +49,16 @@ public class EventServiceImplTest {
     }
     @Test
     void CreateEvent_Succes() {
-        EventRequestDTO request = new EventRequestDTO("Title", "Description", LocalDateTime.now(), 0.0,  0.0, "Mislata");
+        // 1. Corregimos el DTO: El último parámetro es el ID (1L), no el nombre ("Mislata")
+        EventRequestDTO request = new EventRequestDTO("Title", "Description", LocalDateTime.now(), 0.0, 0.0, 1L);
 
-        when(neighborhoodRepository.findByName("Mislata")).thenReturn(Optional.of(neighborhood));
+        // 2. Corregimos el Mock: Ahora buscamos por ID, no por nombre
+        when(neighborhoodRepository.findById(1L)).thenReturn(Optional.of(neighborhood));
+
         when(eventMapper.toEntity(any(EventRequestDTO.class))).thenReturn(eventEntity);
         when(eventRepository.save(any(EventEntity.class))).thenReturn(eventEntity);
         when(eventMapper.toResponse(any(EventEntity.class)))
-                .thenReturn(new EventResponseDTO(1L, "Title", "Desc", LocalDateTime.now(), 0.0, 0.0, "Ruzafa"));
+                .thenReturn(new EventResponseDTO(1L, "Title", "Desc", LocalDateTime.now(), 0.0, 0.0, 1L));
 
         EventResponseDTO response = eventService.createEvent(request);
 
@@ -70,7 +73,7 @@ public class EventServiceImplTest {
 
         when(eventRepository.findAll(any(Specification.class))).thenReturn(events);
         when(eventMapper.toResponse(any(EventEntity.class)))
-                .thenReturn(new EventResponseDTO(1L, "Event 1", "Desc", LocalDateTime.now(), 1.0, 1.0, "Ruzafa"));
+                .thenReturn(new EventResponseDTO(1L, "Event 1", "Desc", LocalDateTime.now(), 1.0, 1.0, 1L));
 
         List<EventResponseDTO> results = eventService.getEventsInArea(0.0, 2.0, 0.0, 2.0);
 

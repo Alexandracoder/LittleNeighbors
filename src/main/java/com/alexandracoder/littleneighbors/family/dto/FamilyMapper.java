@@ -45,7 +45,7 @@ public class FamilyMapper {
                 entity.getFamilyName(),
                 entity.getDescription(),
                 entity.getProfilePictureUrl(),
-                neighborhoodName,
+                neighborhood.getId(),
                 streetName,
                 postalCode,
                 cityName,

@@ -11,6 +11,6 @@ public record EventRequestDTO(
         @NotNull LocalDateTime eventDate,
         @NotNull Double latitude,
         @NotNull Double longitude,
-        String neighborhoodName
+        Long neighborhoodId
         ) {
 }

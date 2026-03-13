@@ -28,8 +28,8 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public EventResponseDTO createEvent(EventRequestDTO requestDTO) {
         // 1. Buscamos el barrio en SU propio repositorio usando el nombre
-        NeighborhoodEntity neighborhood = neighborhoodRepository.findByName(requestDTO.neighborhoodName())
-                .orElseThrow(() -> new EntityNotFoundException("Barrio no encontrado: " + requestDTO.neighborhoodName()));
+        NeighborhoodEntity neighborhood = neighborhoodRepository.findById(requestDTO.neighborhoodId())
+                .orElseThrow(() -> new EntityNotFoundException("Barrio no encontrado: " + requestDTO.neighborhoodId()));
 
         // 2. Mapeamos el DTO a la entidad (usando tu mapper)
         EventEntity event = eventMapper.toEntity(requestDTO);

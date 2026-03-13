@@ -30,7 +30,7 @@ public class FamilyServiceImpl implements FamilyService {
     private final FamilyRepository familyRepository;
     private final UserRepository userRepository;
     private final NeighborhoodRepository neighborhoodRepository;
-    private final FamilyMapper familyMapper; // Inyectado como Bean
+    private final FamilyMapper familyMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -57,11 +57,10 @@ public class FamilyServiceImpl implements FamilyService {
         familyEntity.setRepresentativeName(dto.representativeName());
         familyEntity.setProfilePictureUrl(dto.profilePictureUrl());
 
-        if (dto.neighborhoodName() != null) {
-            familyEntity.setNeighborhood(neighborhoodRepository.findByName(dto.neighborhoodName())
-                    .orElseThrow(() -> new EntityNotFoundException("Neighborhood not found")));
+        if (dto.neighborhoodId() != null) {
+            familyEntity.setNeighborhood(neighborhoodRepository.findById(dto.neighborhoodId())
+                    .orElseThrow(() -> new EntityNotFoundException("Neighborhood not found with ID: " + dto.neighborhoodId())));
         }
-
         FamilyEntity saved = familyRepository.save(familyEntity);
 
         user.getRoles().remove(Role.USER);
@@ -86,9 +85,9 @@ public class FamilyServiceImpl implements FamilyService {
         family.setDescription(dto.description());
         family.setProfilePictureUrl(dto.profilePictureUrl());
 
-        if (dto.neighborhoodName() != null) {
-            family.setNeighborhood(neighborhoodRepository.findByName(dto.neighborhoodName())
-                    .orElseThrow(() -> new EntityNotFoundException("Neighborhood not found with id: " + dto.neighborhoodName())));
+        if (dto.neighborhoodId() != null) {
+            family.setNeighborhood(neighborhoodRepository.findById(dto.neighborhoodId())
+                    .orElseThrow(() -> new EntityNotFoundException("Neighborhood not found with id: " + dto.neighborhoodId())));
         }
 
         FamilyEntity updated = familyRepository.save(family);

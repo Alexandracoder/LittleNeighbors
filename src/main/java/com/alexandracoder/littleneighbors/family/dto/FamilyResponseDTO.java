@@ -10,7 +10,7 @@ public record FamilyResponseDTO(
         String familyName,
         String description,
         String profilePictureUrl,
-        String neighborhoodName,
+        Long neighborhoodId,
         String streetName,
         String postalCode,
         String cityName,
