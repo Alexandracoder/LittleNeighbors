@@ -39,7 +39,7 @@ public class FamilyEntity extends BaseEntity {
     private String profilePictureUrl;
 
     @ManyToOne
-    @JoinColumn(name = "neighborhood_id")
+    @JoinColumn(name = "neighborhood_id" , nullable = false)
     private NeighborhoodEntity neighborhood;
 
     @ToString.Exclude
