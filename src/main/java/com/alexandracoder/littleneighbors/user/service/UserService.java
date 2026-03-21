@@ -3,6 +3,7 @@ package com.alexandracoder.littleneighbors.user.service;
 import com.alexandracoder.littleneighbors.enums.Role;
 import com.alexandracoder.littleneighbors.user.dto.UserRegisterDTO;
 import com.alexandracoder.littleneighbors.user.dto.UserResponseDTO;
+import com.alexandracoder.littleneighbors.user.dto.UserStatusDTO;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
 import jakarta.persistence.EntityExistsException;
@@ -35,5 +36,25 @@ public class UserService {
 
         UserEntity saved = userRepository.save(user);
         return new UserResponseDTO(saved.getId(), saved.getEmail(), saved.getFirstName(), saved.getLastName());
+    }
+
+    @Transactional(readOnly = true) // Importante para leer colecciones Lazy
+    public UserStatusDTO getUserStatus(String email) {
+        // 1. Buscamos tu UserEntity
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // 2. Comprobamos la familia
+        boolean hasFamily = user.getFamily() != null;
+
+        // 3. Comprobamos los hijos (añadimos una verificación extra de seguridad)
+        boolean hasChildren = false;
+        if (hasFamily && user.getFamily().getChildren() != null) {
+            // Forzamos la carga de la colección
+            hasChildren = !user.getFamily().getChildren().isEmpty();
+        }
+
+        // 4. Devolvemos el Record (el Record calcula isRegistrationComplete solo)
+        return new UserStatusDTO(hasFamily, hasChildren);
     }
 }
