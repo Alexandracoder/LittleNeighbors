@@ -54,4 +54,45 @@ public class EventServiceImpl implements EventService {
                 .map(eventMapper::toResponse)
                 .toList();
     }
+
+    @Override
+    @Transactional
+    public void deleteEvent(Long id) {
+        if (!eventRepository.existsById(id)) {
+            throw new EntityNotFoundException("No se puede borrar: Evento no encontrado con ID " + id);
+        }
+        eventRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EventResponseDTO getEventById(Long id) {
+        return eventRepository.findById(id)
+                .map(eventMapper::toResponse)
+                .orElseThrow(() -> new EntityNotFoundException("Evento no encontrado con ID " + id));
+    }
+
+    @Transactional
+    @Override
+    public EventResponseDTO updateEvent(Long id, EventRequestDTO requestDTO) {
+        // 1. Buscamos el evento existente
+        EventEntity existingEvent = eventRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("No se puede actualizar: Evento no encontrado"));
+
+        // 2. Si el barrio cambia, lo buscamos
+        if (!existingEvent.getNeighborhood().getId().equals(requestDTO.neighborhoodId())) {
+            NeighborhoodEntity neighborhood = neighborhoodRepository.findById(requestDTO.neighborhoodId())
+                    .orElseThrow(() -> new EntityNotFoundException("Barrio no encontrado"));
+            existingEvent.setNeighborhood(neighborhood);
+        }
+
+        // 3. Actualizamos los campos básicos (puedes usar el mapper si tiene lógica de update o hacerlo manual)
+        existingEvent.setTitle(requestDTO.title());
+        existingEvent.setDescription(requestDTO.description());
+        existingEvent.setEventDate(requestDTO.eventDate());
+        existingEvent.setLatitude(requestDTO.latitude());
+        existingEvent.setLongitude(requestDTO.longitude());
+
+        return eventMapper.toResponse(eventRepository.save(existingEvent));
+    }
 }
