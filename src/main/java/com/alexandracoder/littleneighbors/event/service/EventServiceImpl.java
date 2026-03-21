@@ -72,27 +72,29 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new EntityNotFoundException("Evento no encontrado con ID " + id));
     }
 
-    @Transactional
     @Override
+    @Transactional
     public EventResponseDTO updateEvent(Long id, EventRequestDTO requestDTO) {
-        // 1. Buscamos el evento existente
+        // 1. Buscamos el evento existente (Si no existe, lanzamos error)
         EventEntity existingEvent = eventRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("No se puede actualizar: Evento no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("No se puede actualizar: Evento no encontrado con ID " + id));
 
-        // 2. Si el barrio cambia, lo buscamos
-        if (!existingEvent.getNeighborhood().getId().equals(requestDTO.neighborhoodId())) {
-            NeighborhoodEntity neighborhood = neighborhoodRepository.findById(requestDTO.neighborhoodId())
-                    .orElseThrow(() -> new EntityNotFoundException("Barrio no encontrado"));
-            existingEvent.setNeighborhood(neighborhood);
-        }
+        // 2. Buscamos la entidad del Barrio (Crucial para que JPA no falle)
+        NeighborhoodEntity neighborhood = neighborhoodRepository.findById(requestDTO.neighborhoodId())
+                .orElseThrow(() -> new EntityNotFoundException("Barrio no encontrado con ID " + requestDTO.neighborhoodId()));
 
-        // 3. Actualizamos los campos básicos (puedes usar el mapper si tiene lógica de update o hacerlo manual)
+        // 3. Actualizamos los campos básicos
         existingEvent.setTitle(requestDTO.title());
         existingEvent.setDescription(requestDTO.description());
         existingEvent.setEventDate(requestDTO.eventDate());
         existingEvent.setLatitude(requestDTO.latitude());
         existingEvent.setLongitude(requestDTO.longitude());
 
-        return eventMapper.toResponse(eventRepository.save(existingEvent));
+        // 4. ASIGNAMOS LA ENTIDAD COMPLETA DEL BARRIO
+        existingEvent.setNeighborhood(neighborhood);
+
+        // 5. Guardamos y mapeamos a respuesta
+        EventEntity savedEvent = eventRepository.save(existingEvent);
+        return eventMapper.toResponse(savedEvent);
     }
 }
