@@ -53,8 +53,6 @@ public class FamilyMapper {
         );
     }
 
-    // Renombramos o redirigimos toResponseDTO para que apunte a toResponse
-    // Esto es lo que piden tus tests que fallaban
     public FamilyResponseDTO toResponseDTO(FamilyEntity entity) {
         return toResponse(entity);
     }
@@ -73,5 +71,28 @@ public class FamilyMapper {
                 child.getLifeStage()
         );
     }
-}
 
+    public FamilyExplorerDTO toExplorerDTO(FamilyEntity family, boolean isLocked) {
+        // 1. Intereses (Child -> Interest -> Name)
+        List<String> interests = family.getChildren().stream()
+                .flatMap(child -> child.getInterests().stream())
+                .map(interest -> interest.getName())
+                .distinct()
+                .toList();
+
+        // 2. Etapas vitales (Child -> LifeStage)
+        List<String> childStages = family.getChildren().stream()
+                .map(child -> child.getLifeStage().name())
+                .toList();
+
+        return new FamilyExplorerDTO(
+                family.getId(),
+                family.getFamilyName(),
+                family.getNeighborhood().getName(),
+                childStages,
+                interests,
+                family.getDescription(),
+                isLocked
+        );
+    }
+}
