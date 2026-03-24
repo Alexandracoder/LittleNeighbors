@@ -59,7 +59,9 @@ public class ChildServiceImpl implements ChildService {
         ChildEntity child = new ChildEntity();
         child.setLifeStage(dto.lifeStage());
         child.setBirthDate(dto.birthDate());
+        child.setDueDate(dto.dueDate());
         child.setGender(dto.gender());
+        child.setPrenatal(dto.isPrenatal() != null && dto.isPrenatal());
         child.setFamily(family);
 
         updateChildInterests(child, dto.interestIds());

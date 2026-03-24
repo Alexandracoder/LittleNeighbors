@@ -70,6 +70,7 @@ public class FamilyMapper {
         List<String> interests = family.getChildren() == null
                 ? Collections.emptyList()
                 : family.getChildren().stream()
+                .filter(child -> child.getInterests() != null)
                 .flatMap(child -> child.getInterests().stream())
                 .map(interest -> interest.getName())
                 .distinct()

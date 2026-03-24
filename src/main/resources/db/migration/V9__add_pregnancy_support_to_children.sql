@@ -1,7 +1,7 @@
--- 1. Permitir que birth_date y gender sean NULL para embarazos
-ALTER TABLE children MODIFY COLUMN birth_date DATE NULL;
-ALTER TABLE children MODIFY COLUMN gender VARCHAR(255) NULL;
+-- 1. Permitir que birth_date y gender sean NULL
+ALTER TABLE children ALTER COLUMN birth_date DROP NOT NULL;
+ALTER TABLE children ALTER COLUMN gender DROP NOT NULL;
 
--- 2. Añadir campos para el seguimiento del embarazo
-ALTER TABLE children ADD COLUMN due_date DATE NULL;
+-- 2. Añadir las nuevas columnas (si no las habías añadido aún)
+ALTER TABLE children ADD COLUMN due_date DATE;
 ALTER TABLE children ADD COLUMN is_prenatal BOOLEAN DEFAULT FALSE NOT NULL;

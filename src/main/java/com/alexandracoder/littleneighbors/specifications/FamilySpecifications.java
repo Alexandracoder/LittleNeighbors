@@ -38,7 +38,7 @@ public class FamilySpecifications {
             Join<FamilyEntity, ChildEntity> children = root.join("children", JoinType.INNER);
 
             LocalDate today = LocalDate.now();
-            // Si tiene 2 años, nació hace máximo 2 años. Si tiene 5, nació hace mínimo 5.
+
             LocalDate maxBirthDate = today.minusYears(minAge);
             LocalDate minBirthDate = today.minusYears(maxAge);
 
@@ -46,28 +46,38 @@ public class FamilySpecifications {
         };
     }
 
-    /**
-     * Filtra familias que NO han tenido un match reciente (última semana).
-     * Esto limpia el Explorer de familias "ocupadas".
-     */
+
     public static Specification<FamilyEntity> hasNoRecentMatch(LocalDateTime since) {
         return (root, query, cb) -> {
-            // Subquery para buscar matches existentes
+
             Subquery<Integer> subquery = query.subquery(Integer.class);
             Root<MatchEntity> matchRoot = subquery.from(MatchEntity.class);
 
             subquery.select(cb.literal(1))
                     .where(cb.and(
                             cb.or(
-                                    // Comparamos IDs para evitar problemas de persistencia
+
                                     cb.equal(matchRoot.get("childA").get("family").get("id"), root.get("id")),
                                     cb.equal(matchRoot.get("childB").get("family").get("id"), root.get("id"))
                             ),
                             cb.greaterThan(matchRoot.get("createdAt"), since)
                     ));
 
-            // Solo devolvemos familias donde NO existe (cb.not) ese registro reciente
             return cb.not(cb.exists(subquery));
         };
     }
-}
+
+        public static Specification<FamilyEntity> fetchFullFamilyByEmail(String email) {
+            return (root, query, cb) -> {
+
+                if (query.getResultType() != Long.class && query.getResultType() != long.class) {
+                    root.fetch("neighborhood", JoinType.LEFT)
+                            .fetch("city", JoinType.LEFT);
+
+                    root.fetch("children", JoinType.LEFT)
+                            .fetch("interests", JoinType.LEFT);
+                }
+                return cb.equal(root.get("user").get("email"), email);
+            };
+        }
+    }

@@ -61,10 +61,6 @@ public class ChildEntity extends BaseEntity {
     )
     private Set<InterestEntity> interests = new HashSet<>();
 
-    /**
-     * Calcula la edad dinámicamente.
-     * Si es prenatal o no tiene fecha de nacimiento, devuelve 0.
-     */
     @Transient
     public int getAge() {
         if (this.isPrenatal || this.birthDate == null) {
@@ -73,7 +69,6 @@ public class ChildEntity extends BaseEntity {
         return Period.between(this.birthDate, LocalDate.now()).getYears();
     }
 
-    // Helpers para sincronización de la relación ManyToMany si fuera necesario
     public void addInterest(InterestEntity interest) {
         this.interests.add(interest);
     }

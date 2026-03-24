@@ -1,116 +1,115 @@
 package com.alexandracoder.littleneighbors.auth.service;
 
-import com.alexandracoder.littleneighbors.auth.dto.AuthRequest;
-import com.alexandracoder.littleneighbors.auth.dto.AuthResponse;
-import com.alexandracoder.littleneighbors.auth.dto.RegisterRequest;
-import com.alexandracoder.littleneighbors.family.dto.FamilyAuthResponseDTO;
-import com.alexandracoder.littleneighbors.family.dto.FamilyMapper;
+import com.alexandracoder.littleneighbors.auth.dto.*;
+import com.alexandracoder.littleneighbors.enums.Role;
 import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
-import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
+import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO;
 import com.alexandracoder.littleneighbors.security.JwtService;
-import com.alexandracoder.littleneighbors.user.dto.UserProfileDTO;
-import com.alexandracoder.littleneighbors.user.entity.UserEntity;
-import com.alexandracoder.littleneighbors.enums.Role;
-import com.alexandracoder.littleneighbors.user.repository.UserRepository;
-import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
-import com.alexandracoder.littleneighbors.shared.exceptions.BusinessLogicException;
 import com.alexandracoder.littleneighbors.shared.exceptions.UnauthorizedAccessException;
+import com.alexandracoder.littleneighbors.specifications.UserSpecifications;
+import com.alexandracoder.littleneighbors.user.entity.UserEntity;
+import com.alexandracoder.littleneighbors.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository repository;
-    private final PasswordEncoder encoder;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final FamilyRepository familyRepository;
-
-    private final FamilyMapper familyMapper;
 
     @Transactional
     public void register(RegisterRequest request) {
-        if (repository.existsByEmail(request.email())) {
-            throw new BusinessLogicException("Email already in use");
+        if (userRepository.existsByEmail(request.email())) {
+            throw new RuntimeException("Email already taken");
         }
 
-        UserEntity user = new UserEntity();
-        user.setFirstName(request.firstName());
-        user.setLastName(request.lastName());
-        user.setEmail(request.email());
-        user.setPassword(encoder.encode(request.password()));
+        UserEntity user = UserEntity.builder()
+                .email(request.email())
+                .firstName("Nuevo")
+                .lastName("Vecino")
+                .password(passwordEncoder.encode(request.password()))
+                .roles(new HashSet<>(Set.of(Role.USER)))
+                .build();
 
-        Set<Role> defaultRoles = new HashSet<>();
-        defaultRoles.add(Role.USER);
-        user.setRoles(defaultRoles);
-
-        repository.save(user);
+        userRepository.save(user);
     }
 
     @Transactional(readOnly = true)
-    public FamilyAuthResponseDTO login(AuthRequest request) {
-        UserEntity user = repository.findByEmail(request.email())
-                .orElseThrow(() -> new UnauthorizedAccessException("Invalid email or password"));
+    public AuthResponse login(AuthRequest request) {
+        UserEntity user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new UnauthorizedAccessException("Invalid credentials"));
 
-        if (!encoder.matches(request.password(), user.getPassword())) {
-            throw new UnauthorizedAccessException("Invalid email or password");
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new UnauthorizedAccessException("Invalid credentials");
         }
 
-        Optional<FamilyEntity> familyOpt = familyRepository.findByUserEmail(user.getEmail());
-        FamilyResponseDTO familyDto = familyOpt.map(this.familyMapper::toResponse).orElse(null);
-
-        List<String> rolesList = user.getRoles().stream()
-                .map(Enum::name)
-                .collect(Collectors.toList());
-
         Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", rolesList);
+        claims.put("roles", user.getRoles().stream().map(Enum::name).toList());
 
-        String access = jwtService.generateAccessToken(user.getEmail(), claims);
-        String refresh = jwtService.generateRefreshToken(user.getEmail());
-
-        return new FamilyAuthResponseDTO(familyDto, access, refresh);
+        return new AuthResponse(
+                jwtService.generateAccessToken(user.getEmail(), claims),
+                jwtService.generateRefreshToken(user.getEmail())
+        );
     }
 
     @Transactional(readOnly = true)
     public UserProfileDTO getCurrentProfile(String email) {
-        UserEntity user = repository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User profile not found"));
+        UserEntity user = userRepository.findOne(UserSpecifications.hasEmailWithFullProfile(email))
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Optional<FamilyEntity> familyOpt = familyRepository.findByUserEmail(email);
-        FamilyResponseDTO familyDto = familyOpt.map(this.familyMapper::toResponse).orElse(null);
-
-        List<String> roles = user.getRoles().stream()
-                .map(Enum::name)
-                .toList();
-
-        return new UserProfileDTO(user.getEmail(), roles, familyDto);
+        return new UserProfileDTO(
+                user.getEmail(),
+                user.getRoles().stream().map(Enum::name).toList(),
+                user.getFamily() != null ? mapToFamilyDTO(user.getFamily()) : null
+        );
     }
 
+    private FamilyResponseDTO mapToFamilyDTO(FamilyEntity family) {
+        var neighborhood = family.getNeighborhood();
+        Long neighborhoodId = (neighborhood != null) ? neighborhood.getId() : null;
+        String street = (neighborhood != null) ? neighborhood.getStreetName() : "";
+        String zip = (neighborhood != null) ? neighborhood.getPostalCode() : "";
+        String city = (neighborhood != null && neighborhood.getCity() != null)
+                ? neighborhood.getCity().getName()
+                : "Unknown";
+
+        return new FamilyResponseDTO(
+                family.getId(),
+                family.getRepresentativeName(),
+                family.getFamilyName(),
+                family.getDescription(),
+                family.getProfilePictureUrl(),
+                neighborhoodId,
+                street,
+                zip,
+                city,
+                new ArrayList<>()
+        );
+    }
+
+    @Transactional(readOnly = true)
     public AuthResponse reloadUserTokenFromRefresh(String refreshToken) {
         String email = jwtService.extractEmail(refreshToken);
 
-        UserEntity user = repository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found during token refresh"));
-
-        List<String> rolesList = user.getRoles().stream()
-                .map(Enum::name)
-                .collect(Collectors.toList());
+        UserEntity user = userRepository.findOne(UserSpecifications.hasEmailWithFullProfile(email))
+                .orElseThrow(() -> new UnauthorizedAccessException("Invalid session or user not found"));
 
         Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", rolesList);
+        claims.put("roles", user.getRoles().stream()
+                .map(Enum::name)
+                .toList());
 
-        String newAccessToken = jwtService.generateAccessToken(user.getEmail(), claims);
-        String newRefreshToken = jwtService.generateRefreshToken(user.getEmail());
-
-        return new AuthResponse(newAccessToken, newRefreshToken);
+        return new AuthResponse(
+                jwtService.generateAccessToken(email, claims),
+                refreshToken
+        );
     }
 }
