@@ -4,6 +4,8 @@ import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
 import com.alexandracoder.littleneighbors.shared.BaseEntity;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,6 +26,7 @@ public class FamilyEntity extends BaseEntity {
 
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JsonBackReference
     private UserEntity user;
 
     @Column(name = "representative_name", length = 255)
@@ -46,5 +49,6 @@ public class FamilyEntity extends BaseEntity {
     @Builder.Default
     @OneToMany(mappedBy = "family", cascade = CascadeType.ALL, orphanRemoval = true)
     @EqualsAndHashCode.Exclude
+    @JsonManagedReference
     private List<ChildEntity> children = new ArrayList<>();
 }

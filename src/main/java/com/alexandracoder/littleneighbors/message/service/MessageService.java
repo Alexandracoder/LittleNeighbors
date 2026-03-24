@@ -6,9 +6,7 @@ import java.util.List;
 
 public interface MessageService {
 
-    // Al enviar, también devolvemos el DTO para que el Front confirme el envío
-    MessageResponseDTO sendMessage(SendMessageDTO dto);
+    MessageResponseDTO sendMessage(SendMessageDTO dto, String senderEmail);
 
-    // El historial ahora devuelve la lista de DTOs mapeados
     List<MessageResponseDTO> getChatHistory(Long matchId);
 }

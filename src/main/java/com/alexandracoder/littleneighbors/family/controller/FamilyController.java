@@ -15,9 +15,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -30,8 +27,38 @@ import java.util.Map;
 public class FamilyController {
 
     private final FamilyService familyService;
-    private final UserDetailsService userDetailsService;
     private final JwtService jwtService;
+
+    @PostMapping
+    @PreAuthorize("hasRole('USER')")
+    @Operation(summary = "Create a new family", description = "Creates a family profile and upgrades user role to FAMILY.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Family created and tokens refreshed"),
+            @ApiResponse(responseCode = "400", description = "User already has a family or invalid data")
+    })
+    public ResponseEntity<FamilyAuthResponseDTO> createFamily(
+            Principal principal,
+            @RequestBody FamilyRequestDTO dto) {
+
+        // 1. Llamada al servicio (aquí se crea la familia y se cambia el rol en DB)
+        FamilyResponseDTO familyResponse = familyService.createFamily(dto, principal.getName());
+
+        // 2. Definimos los nuevos roles manualmente.
+        // Como acabamos de crear la familia con éxito, sabemos que el usuario ahora es ROLE_FAMILY.
+        // Esto evita llamar a UserDetailsService y posibles errores de sincronización/500.
+        List<String> roles = List.of("ROLE_FAMILY");
+
+        // 3. Generamos los nuevos claims y tokens
+        Map<String, Object> claims = Map.of("roles", roles);
+        String newAccessToken = jwtService.generateAccessToken(principal.getName(), claims);
+        String newRefreshToken = jwtService.generateRefreshToken(principal.getName());
+
+        return ResponseEntity.ok(new FamilyAuthResponseDTO(
+                familyResponse,
+                newAccessToken,
+                newRefreshToken
+        ));
+    }
 
     @GetMapping("/explore")
     @PreAuthorize("hasRole('FAMILY')")
@@ -48,51 +75,23 @@ public class FamilyController {
     @GetMapping("/my-family")
     @PreAuthorize("hasRole('FAMILY')")
     public ResponseEntity<FamilyResponseDTO> getMyFamily(Principal principal) {
-        // Usamos el email del usuario logueado (principal.getName())
-        // para recuperar SU familia.
         return ResponseEntity.ok(familyService.getFamilyByEmail(principal.getName()));
     }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('FAMILY')")
     public ResponseEntity<FamilyResponseDTO> getFamilyById(
             @PathVariable Long id,
             Principal principal) {
-
         return ResponseEntity.ok(familyService.getFamilyById(id, principal.getName()));
     }
 
-
-    @PostMapping
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<FamilyAuthResponseDTO> createFamily(
-            Principal principal,
-            @RequestBody FamilyRequestDTO dto) {
-
-        FamilyResponseDTO familyResponse = familyService.createFamily(dto, principal.getName());
-
-        UserDetails userDetails = userDetailsService.loadUserByUsername(principal.getName());
-
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList();
-
-        Map<String, Object> claims = Map.of("roles", roles);
-        String newAccessToken = jwtService.generateAccessToken(userDetails.getUsername(), claims);
-        String newRefreshToken = jwtService.generateRefreshToken(userDetails.getUsername());
-
-        return ResponseEntity.ok(new FamilyAuthResponseDTO(
-                familyResponse,
-                newAccessToken,
-                newRefreshToken
-        ));
-    }
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('FAMILY')")
     public ResponseEntity<FamilyResponseDTO> updateFamily(
             @PathVariable Long id,
             Principal principal,
             @RequestBody FamilyRequestDTO dto) {
-
         return ResponseEntity.ok(familyService.updateFamily(id, dto, principal.getName()));
     }
 
@@ -101,22 +100,14 @@ public class FamilyController {
     public ResponseEntity<Void> deleteFamily(
             @PathVariable Long id,
             Principal principal) {
-
         familyService.deleteFamily(id, principal.getName());
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "List all families (admin only)",
-            description = "Returns a paginated list of all families.",
-            security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Families successfully retrieved"),
-            @ApiResponse(responseCode = "403", description = "Access denied")
-    })
+    @Operation(summary = "List all families (admin only)", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Page<FamilyResponseDTO>> getAllFamilies(@ParameterObject Pageable pageable) {
-
         return ResponseEntity.ok(familyService.getAllFamilies(pageable));
     }
 }

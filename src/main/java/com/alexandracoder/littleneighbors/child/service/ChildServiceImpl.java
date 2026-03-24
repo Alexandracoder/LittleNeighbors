@@ -12,9 +12,9 @@ import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
 import com.alexandracoder.littleneighbors.interest.entity.InterestEntity;
 import com.alexandracoder.littleneighbors.interest.repository.InterestRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
+import com.alexandracoder.littleneighbors.shared.exceptions.UnauthorizedAccessException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -25,8 +25,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-
 
 @Service
 @RequiredArgsConstructor
@@ -105,7 +103,7 @@ public class ChildServiceImpl implements ChildService {
     @Transactional(readOnly = true)
     public FamilyEntity getFamilyByUserEmail(String email) {
         return familyRepository.findByUserEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("Family not found for user: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException("Family not found for user: " + email));
     }
 
     @Override
@@ -133,9 +131,6 @@ public class ChildServiceImpl implements ChildService {
         }
         family.getChildren().add(newChild);
 
-        // AQUÍ ESTÁ EL CAMBIO:
-        // Antes: return FamilyMapper.toResponse(family); (Estático, falla)
-        // Ahora: Usamos la instancia inyectada:
         return this.familyMapper.toResponse(family);
     }
 
@@ -154,7 +149,7 @@ public class ChildServiceImpl implements ChildService {
 
     private ChildEntity checkOwnership(Long childId, String username) {
         ChildEntity child = childRepository.findById(childId)
-                .orElseThrow(() -> new EntityNotFoundException("Child not found with id: " + childId));
+                .orElseThrow(() -> new ResourceNotFoundException("Child not found with id: " + childId));
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         boolean isAdmin = auth != null && auth.getAuthorities().stream()
@@ -164,7 +159,7 @@ public class ChildServiceImpl implements ChildService {
 
         FamilyEntity family = child.getFamily();
         if (family == null || family.getUser() == null || !family.getUser().getEmail().equals(username)) {
-            throw new AccessDeniedException("You do not have permission to access this child's profile");
+            throw new UnauthorizedAccessException("You do not have permission to access this child's profile");
         }
 
         return child;

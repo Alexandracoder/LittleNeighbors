@@ -2,7 +2,6 @@ package com.alexandracoder.littleneighbors.auth.service;
 
 import com.alexandracoder.littleneighbors.auth.dto.AuthRequest;
 import com.alexandracoder.littleneighbors.auth.dto.AuthResponse;
-import com.alexandracoder.littleneighbors.auth.dto.RefreshRequest;
 import com.alexandracoder.littleneighbors.auth.dto.RegisterRequest;
 import com.alexandracoder.littleneighbors.family.dto.FamilyAuthResponseDTO;
 import com.alexandracoder.littleneighbors.family.dto.FamilyMapper;
@@ -14,6 +13,9 @@ import com.alexandracoder.littleneighbors.user.dto.UserProfileDTO;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.enums.Role;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
+import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
+import com.alexandracoder.littleneighbors.shared.exceptions.BusinessLogicException;
+import com.alexandracoder.littleneighbors.shared.exceptions.UnauthorizedAccessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,8 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
-
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -33,13 +33,13 @@ public class AuthService {
     private final PasswordEncoder encoder;
     private final JwtService jwtService;
     private final FamilyRepository familyRepository;
-    @Lazy
-    private final FamilyMapper familyMapper; // Ya es un Bean inyectado
+
+    private final FamilyMapper familyMapper;
 
     @Transactional
     public void register(RegisterRequest request) {
         if (repository.existsByEmail(request.email())) {
-            throw new RuntimeException("Email already in use");
+            throw new BusinessLogicException("Email already in use");
         }
 
         UserEntity user = new UserEntity();
@@ -58,15 +58,13 @@ public class AuthService {
     @Transactional(readOnly = true)
     public FamilyAuthResponseDTO login(AuthRequest request) {
         UserEntity user = repository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("DEBUG: Email no encontrado"));
+                .orElseThrow(() -> new UnauthorizedAccessException("Invalid email or password"));
 
         if (!encoder.matches(request.password(), user.getPassword())) {
-            throw new RuntimeException("DEBUG: Password incorrecta");
+            throw new UnauthorizedAccessException("Invalid email or password");
         }
 
         Optional<FamilyEntity> familyOpt = familyRepository.findByUserEmail(user.getEmail());
-
-        // CORRECCIÓN: Usamos la instancia inyectada familyMapper
         FamilyResponseDTO familyDto = familyOpt.map(this.familyMapper::toResponse).orElse(null);
 
         List<String> rolesList = user.getRoles().stream()
@@ -82,16 +80,12 @@ public class AuthService {
         return new FamilyAuthResponseDTO(familyDto, access, refresh);
     }
 
-    // ... (Métodos refresh, reloadUserToken, etc. se mantienen igual)
-
     @Transactional(readOnly = true)
     public UserProfileDTO getCurrentProfile(String email) {
         UserEntity user = repository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("User profile not found"));
 
         Optional<FamilyEntity> familyOpt = familyRepository.findByUserEmail(email);
-
-        // CORRECCIÓN: Se eliminó la línea duplicada y se corrigió la llamada al mapper
         FamilyResponseDTO familyDto = familyOpt.map(this.familyMapper::toResponse).orElse(null);
 
         List<String> roles = user.getRoles().stream()
@@ -102,14 +96,11 @@ public class AuthService {
     }
 
     public AuthResponse reloadUserTokenFromRefresh(String refreshToken) {
-        // 1. Extraer el email del token de refresco
         String email = jwtService.extractEmail(refreshToken);
 
-        // 2. Verificar que el usuario existe
         UserEntity user = repository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found during token refresh"));
 
-        // 3. Preparar los claims (roles)
         List<String> rolesList = user.getRoles().stream()
                 .map(Enum::name)
                 .collect(Collectors.toList());
@@ -117,7 +108,6 @@ public class AuthService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", rolesList);
 
-        // 4. Generar el nuevo par de tokens
         String newAccessToken = jwtService.generateAccessToken(user.getEmail(), claims);
         String newRefreshToken = jwtService.generateRefreshToken(user.getEmail());
 
