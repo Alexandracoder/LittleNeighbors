@@ -53,14 +53,12 @@ public class ChildController {
             security = @SecurityRequirement(name = "bearerAuth"))
     @PostMapping
     @PreAuthorize("hasRole('FAMILY')")
-    public ResponseEntity<FamilyResponseDTO> createChild(
-            Principal principal,
-            @Valid @RequestBody ChildRequestDTO dto) {
-        System.out.println("--- DTO RECIBIDO ---");
-        System.out.println("LifeStage: " + dto.lifeStage());
-        System.out.println("Gender: " + dto.gender());
-        System.out.println("BirthDate: " + dto.birthDate());
-        return ResponseEntity.ok(childService.createAndReturnFamily(dto, principal.getName()));
+    public ResponseEntity<ChildResponseDTO> createChild( // Cambia el retorno a ChildResponseDTO
+                                                         Principal principal,
+                                                         @Valid @RequestBody ChildRequestDTO dto) {
+
+        // Cambia el método del service para que devuelva el hijo creado, no la familia
+        return ResponseEntity.ok(childService.create(dto, principal.getName()));
     }
 
     @Operation(summary = "Delete a child", security = @SecurityRequirement(name = "bearerAuth"))
@@ -81,6 +79,4 @@ public class ChildController {
             Principal principal) {
         return ResponseEntity.ok(childService.update(id, dto, principal.getName()));
     }
-
-
 }

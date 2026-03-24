@@ -6,8 +6,6 @@ import com.alexandracoder.littleneighbors.child.dto.ChildSummaryDTO;
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.child.mapper.ChildMapper;
 import com.alexandracoder.littleneighbors.child.repository.ChildRepository;
-import com.alexandracoder.littleneighbors.family.dto.FamilyMapper;
-import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
 import com.alexandracoder.littleneighbors.interest.entity.InterestEntity;
@@ -20,7 +18,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,14 +25,12 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class ChildServiceImpl implements ChildService {
 
     private final ChildRepository childRepository;
     private final FamilyRepository familyRepository;
     private final InterestRepository interestRepository;
     private final ChildMapper childMapper;
-    private final FamilyMapper familyMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -46,8 +41,8 @@ public class ChildServiceImpl implements ChildService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     @Override
+    @Transactional(readOnly = true)
     public List<ChildResponseDTO> findAllByFamilyEmail(String email) {
         FamilyEntity family = getFamilyByUserEmail(email);
         return childRepository.findAllByFamilyId(family.getId())
@@ -57,6 +52,7 @@ public class ChildServiceImpl implements ChildService {
     }
 
     @Override
+    @Transactional
     public ChildResponseDTO create(ChildRequestDTO dto, String username) {
         FamilyEntity family = getFamilyByUserEmail(username);
 
@@ -73,6 +69,7 @@ public class ChildServiceImpl implements ChildService {
     }
 
     @Override
+    @Transactional
     public ChildResponseDTO update(Long id, ChildRequestDTO dto, String username) {
         ChildEntity child = checkOwnership(id, username);
 
@@ -87,8 +84,9 @@ public class ChildServiceImpl implements ChildService {
     }
 
     @Override
-    public void delete(Long id, String username) {
-        ChildEntity child = checkOwnership(id, username);
+    @Transactional
+    public void deleteByIdAndFamilyEmail(Long id, String email) {
+        ChildEntity child = checkOwnership(id, email);
         childRepository.delete(child);
     }
 
@@ -99,41 +97,13 @@ public class ChildServiceImpl implements ChildService {
         return childMapper.toResponseDTO(child);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public FamilyEntity getFamilyByUserEmail(String email) {
+    // Helper para obtener la familia de forma centralizada
+    private FamilyEntity getFamilyByUserEmail(String email) {
         return familyRepository.findByUserEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Family not found for user: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException("Family profile not found for user: " + email));
     }
 
-    @Override
-    public void deleteByIdAndFamilyEmail(Long id, String email) {
-        ChildEntity child = checkOwnership(id, email);
-        childRepository.delete(child);
-    }
-
-    @Override
-    public FamilyResponseDTO createAndReturnFamily(ChildRequestDTO dto, String userEmail) {
-        FamilyEntity family = getFamilyByUserEmail(userEmail);
-
-        ChildEntity newChild = new ChildEntity();
-        newChild.setLifeStage(dto.lifeStage());
-        newChild.setBirthDate(dto.birthDate());
-        newChild.setGender(dto.gender());
-        newChild.setFamily(family);
-
-        updateChildInterests(newChild, dto.interestIds());
-
-        childRepository.save(newChild);
-
-        if (family.getChildren() == null) {
-            family.setChildren(new ArrayList<>());
-        }
-        family.getChildren().add(newChild);
-
-        return this.familyMapper.toResponse(family);
-    }
-
+    // Lógica de intereses separada para reutilización
     private void updateChildInterests(ChildEntity child, Set<Long> interestIds) {
         if (child.getInterests() == null) {
             child.setInterests(new HashSet<>());
@@ -143,10 +113,14 @@ public class ChildServiceImpl implements ChildService {
 
         if (interestIds != null && !interestIds.isEmpty()) {
             List<InterestEntity> interests = interestRepository.findAllById(interestIds);
+            if (interests.size() != interestIds.size()) {
+                throw new ResourceNotFoundException("One or more interest IDs not found");
+            }
             child.getInterests().addAll(interests);
         }
     }
 
+    // Verificación de seguridad robusta
     private ChildEntity checkOwnership(Long childId, String username) {
         ChildEntity child = childRepository.findById(childId)
                 .orElseThrow(() -> new ResourceNotFoundException("Child not found with id: " + childId));
@@ -157,11 +131,11 @@ public class ChildServiceImpl implements ChildService {
 
         if (isAdmin) return child;
 
-        FamilyEntity family = child.getFamily();
-        if (family == null || family.getUser() == null || !family.getUser().getEmail().equals(username)) {
-            throw new UnauthorizedAccessException("You do not have permission to access this child's profile");
+        if (!child.getFamily().getUser().getEmail().equals(username)) {
+            throw new UnauthorizedAccessException("You do not have permission to manage this child");
         }
 
         return child;
     }
-}
+
+    }

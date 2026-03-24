@@ -28,17 +28,17 @@ public class ChildEntity extends BaseEntity {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "life_stage")
+    @Column(name = "life_stage", nullable = false)
     private LifeStage lifeStage;
 
-    @Column(name = "birth_date", nullable = true)
+    @Column(name = "birth_date")
     private LocalDate birthDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = true, length = 10)
+    @Column(length = 20)
     private Gender gender;
 
-    @Column(name = "due_date", nullable = true)
+    @Column(name = "due_date")
     private LocalDate dueDate;
 
     @Column(name = "is_prenatal", nullable = false)
@@ -53,7 +53,7 @@ public class ChildEntity extends BaseEntity {
     private FamilyEntity family;
 
     @Builder.Default
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "child_interests",
             joinColumns = @JoinColumn(name = "child_id"),
@@ -61,11 +61,24 @@ public class ChildEntity extends BaseEntity {
     )
     private Set<InterestEntity> interests = new HashSet<>();
 
+    /**
+     * Calcula la edad dinámicamente.
+     * Si es prenatal o no tiene fecha de nacimiento, devuelve 0.
+     */
     @Transient
     public int getAge() {
         if (this.isPrenatal || this.birthDate == null) {
             return 0;
         }
         return Period.between(this.birthDate, LocalDate.now()).getYears();
+    }
+
+    // Helpers para sincronización de la relación ManyToMany si fuera necesario
+    public void addInterest(InterestEntity interest) {
+        this.interests.add(interest);
+    }
+
+    public void removeInterest(InterestEntity interest) {
+        this.interests.remove(interest);
     }
 }
