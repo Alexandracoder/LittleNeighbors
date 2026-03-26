@@ -20,7 +20,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
-        // El service ahora devuelve solo los tokens (access y refresh)
+
         return ResponseEntity.ok(authService.login(request));
     }
 
@@ -32,21 +32,16 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
-        // Asegúrate de que RefreshRequest sea un record: record RefreshRequest(String refreshToken) {}
         AuthResponse response = authService.reloadUserTokenFromRefresh(request.refreshToken());
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Este es el endpoint que tu AuthContext de React llama
-     * justo después del login para poblar la familia y los hijos.
-     */
     @GetMapping("/profile")
     public ResponseEntity<UserProfileDTO> getProfile(Principal principal) {
         if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        // principal.getName() nos da el email extraído del JWT por Spring Security
+
         UserProfileDTO profile = authService.getCurrentProfile(principal.getName());
         return ResponseEntity.ok(profile);
     }

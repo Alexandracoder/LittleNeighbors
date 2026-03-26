@@ -45,6 +45,15 @@ public class ChildEntity extends BaseEntity {
     @Builder.Default
     private boolean isPrenatal = false;
 
+    /**
+     * Sincronizado con la columna 'is_pregnancy_support' de la DB.
+     * Usamos este nombre para que Lombok genere un solo 'setPregnancySupport'
+     * y 'isPregnancySupport' sin ambigüedades.
+     */
+    @Column(name = "is_pregnancy_support", nullable = false)
+    @Builder.Default
+    private boolean pregnancySupport = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "family_id", nullable = false)
     @ToString.Exclude
@@ -63,6 +72,7 @@ public class ChildEntity extends BaseEntity {
 
     @Transient
     public int getAge() {
+        // Usamos isPrenatal que es el booleano estándar para lógica de edad
         if (this.isPrenatal || this.birthDate == null) {
             return 0;
         }

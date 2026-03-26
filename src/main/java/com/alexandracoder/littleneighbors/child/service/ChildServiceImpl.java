@@ -62,8 +62,11 @@ public class ChildServiceImpl implements ChildService {
         child.setDueDate(dto.dueDate());
         child.setGender(dto.gender());
         child.setPrenatal(dto.isPrenatal() != null && dto.isPrenatal());
-        child.setFamily(family);
 
+
+        child.setPregnancySupport(false);
+
+        child.setFamily(family);
         updateChildInterests(child, dto.interestIds());
 
         ChildEntity saved = childRepository.save(child);
@@ -99,13 +102,13 @@ public class ChildServiceImpl implements ChildService {
         return childMapper.toResponseDTO(child);
     }
 
-    // Helper para obtener la familia de forma centralizada
+
     private FamilyEntity getFamilyByUserEmail(String email) {
         return familyRepository.findByUserEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Family profile not found for user: " + email));
     }
 
-    // Lógica de intereses separada para reutilización
+
     private void updateChildInterests(ChildEntity child, Set<Long> interestIds) {
         if (child.getInterests() == null) {
             child.setInterests(new HashSet<>());
@@ -122,7 +125,7 @@ public class ChildServiceImpl implements ChildService {
         }
     }
 
-    // Verificación de seguridad robusta
+
     private ChildEntity checkOwnership(Long childId, String username) {
         ChildEntity child = childRepository.findById(childId)
                 .orElseThrow(() -> new ResourceNotFoundException("Child not found with id: " + childId));

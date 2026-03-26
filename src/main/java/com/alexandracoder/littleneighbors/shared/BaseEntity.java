@@ -21,4 +21,7 @@ public abstract class BaseEntity implements Serializable {
     @UpdateTimestamp
     @Column(nullable = false)
     protected LocalDateTime updatedAt;
+
+    public void setPregnancySupport(boolean b) {
+    }
 }
