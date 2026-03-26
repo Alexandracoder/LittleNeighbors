@@ -53,11 +53,11 @@ public class ChildController {
             security = @SecurityRequirement(name = "bearerAuth"))
     @PostMapping
     @PreAuthorize("hasRole('FAMILY')")
-    public ResponseEntity<ChildResponseDTO> createChild( // Cambia el retorno a ChildResponseDTO
+    public ResponseEntity<ChildResponseDTO> createChild(
                                                          Principal principal,
                                                          @Valid @RequestBody ChildRequestDTO dto) {
 
-        // Cambia el método del service para que devuelva el hijo creado, no la familia
+
         return ResponseEntity.ok(childService.create(dto, principal.getName()));
     }
 

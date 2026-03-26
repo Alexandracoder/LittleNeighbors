@@ -22,7 +22,6 @@ import java.util.List;
         private final MatchMapper matchMapper;
         private final FamilyMapper familyMapper;
 
-        // 1. ENDPOINT PARA EL EXPLORER (Ver las cards como "The Fayes")
         @GetMapping("/explorer")
         public ResponseEntity<List<FamilyExplorerDTO>> getExplorer(
                 @RequestParam Long neighborhoodId,
