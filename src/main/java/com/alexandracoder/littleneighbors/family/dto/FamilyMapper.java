@@ -60,38 +60,36 @@ public class FamilyMapper {
                 child.getId(),
                 genderName,
                 child.getAge(),
-                child.getLifeStage() != null ? child.getLifeStage(): null
+                child.getLifeStage() != null ? child.getLifeStage() : null
         );
     }
 
     public FamilyExplorerDTO toExplorerDTO(FamilyEntity family, boolean isLocked) {
         if (family == null) return null;
 
-        List<String> interests = family.getChildren() == null
+        // Mapeo anónimo de los niños de la familia vecina
+        List<ChildSummaryDTO> childrenSummaries = family.getChildren() == null
                 ? Collections.emptyList()
                 : family.getChildren().stream()
-                .filter(child -> child.getInterests() != null)
-                .flatMap(child -> child.getInterests().stream())
-                .map(interest -> interest.getName())
+                .map(this::toChildSummary) // Usamos el método que ya tienes que da género y edad
+                .toList();
+
+        // Intereses únicos de toda la familia para las etiquetas de la card
+        List<String> allInterests = family.getChildren() == null
+                ? Collections.emptyList()
+                : family.getChildren().stream()
+                .filter(c -> c.getInterests() != null)
+                .flatMap(c -> c.getInterests().stream())
+                .map(i -> i.getName())
                 .distinct()
                 .toList();
-
-        List<String> childStages = family.getChildren() == null
-                ? Collections.emptyList()
-                : family.getChildren().stream()
-                .map(child -> child.getLifeStage() != null ? child.getLifeStage().name() : "UNKNOWN")
-                .toList();
-
-        String neighborhoodName = (family.getNeighborhood() != null)
-                ? family.getNeighborhood().getName()
-                : "No neighborhood assigned";
 
         return new FamilyExplorerDTO(
                 family.getId(),
                 family.getFamilyName(),
-                neighborhoodName,
-                childStages,
-                interests,
+                family.getNeighborhood() != null ? family.getNeighborhood().getName() : "Unknown",
+                childrenSummaries,
+                allInterests,
                 family.getDescription(),
                 isLocked
         );

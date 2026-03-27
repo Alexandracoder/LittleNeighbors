@@ -34,7 +34,7 @@ public class FamilyServiceImpl implements FamilyService {
     @Override
     @Transactional
     public FamilyResponseDTO createFamily(FamilyRequestDTO dto, String userEmail) {
-        // 1. Validar usuario
+
         UserEntity user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -42,7 +42,6 @@ public class FamilyServiceImpl implements FamilyService {
             throw new BusinessLogicException("User already has a family profile");
         }
 
-        // 2. Crear Entidad
         FamilyEntity familyEntity = new FamilyEntity();
         familyEntity.setUser(user);
         familyEntity.setFamilyName(dto.familyName());
@@ -57,7 +56,6 @@ public class FamilyServiceImpl implements FamilyService {
 
         FamilyEntity saved = familyRepository.save(familyEntity);
 
-        // 3. Actualizar Roles (Importante: Cambiamos a ROLE_FAMILY)
         user.getRoles().remove(Role.USER);
         user.getRoles().add(Role.FAMILY);
         userRepository.save(user);
@@ -129,6 +127,7 @@ public class FamilyServiceImpl implements FamilyService {
     @Override
     @Transactional(readOnly = true)
     public List<FamilyResponseDTO> explorePlaymateFamilies(String userEmail, List<Long> interestIds, Integer minAge, Integer maxAge) {
+
         FamilyEntity myFamily = familyRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Family profile not found"));
 
@@ -136,22 +135,23 @@ public class FamilyServiceImpl implements FamilyService {
             throw new BusinessLogicException("You must assign a neighborhood to explore");
         }
 
-        Specification<FamilyEntity> spec = FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId());
-        spec = spec.and((root, query, cb) -> cb.notEqual(root.get("id"), myFamily.getId()));
+        Specification<FamilyEntity> spec = Specification.where(FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId()))
+                .and((root, query, cb) -> cb.notEqual(root.get("id"), myFamily.getId()));
 
-        if (interestIds != null && !interestIds.isEmpty()) {
-            spec = spec.and(FamilySpecifications.hasChildWithInterest(interestIds));
-        }
 
-        if (minAge != null && maxAge != null) {
-            spec = spec.and(FamilySpecifications.hasChildAgeBetween(minAge, maxAge));
+        if ((interestIds != null && !interestIds.isEmpty()) || (minAge != null && maxAge != null)) {
+
+
+            int effectiveMin = (minAge != null) ? minAge : 0;
+            int effectiveMax = (maxAge != null) ? maxAge : 99;
+
+            spec = spec.and(FamilySpecifications.hasChildWithCriteria(effectiveMin, effectiveMax, interestIds));
         }
 
         return familyRepository.findAll(spec).stream()
                 .map(this.familyMapper::toResponse)
                 .collect(Collectors.toList());
     }
-
     @Override
     @Transactional(readOnly = true)
     public FamilyResponseDTO getFamilyByEmail(String email) {

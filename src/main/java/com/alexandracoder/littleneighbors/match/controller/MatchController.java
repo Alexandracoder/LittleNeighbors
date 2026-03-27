@@ -28,17 +28,17 @@ import java.util.List;
                 @RequestParam int minAge,
                 @RequestParam int maxAge,
                 @RequestParam(required = false) List<Long> interestIds,
-                @RequestParam Long currentChildId) {
+                @RequestParam(required = false) Long currentChildId) {
 
-            // Filtramos familias compatibles
+
             List<FamilyEntity> families = matchService.findCompatibleFamilies(
                     neighborhoodId, minAge, maxAge, interestIds
             );
 
-            // Verificamos si el usuario ya gastó su "bala" semanal
+
             boolean isUserLocked = matchService.hasActiveMatchThisWeek(currentChildId);
 
-            // Convertimos a DTOs anónimos (sin nombres de niños)
+
             List<FamilyExplorerDTO> response = families.stream()
                     .map(f -> familyMapper.toExplorerDTO(f, isUserLocked))
                     .toList();
@@ -46,21 +46,21 @@ import java.util.List;
             return ResponseEntity.ok(response);
         }
 
-        // 2. ENDPOINT PARA SOLICITAR EL MATCH (Botón "Match to Chat")
+
         @PostMapping("/request")
         public ResponseEntity<?> requestMatch(@RequestBody MatchRequestDTO request) {
             try {
-                // Ejecutamos la lógica de negocio
+
                 MatchEntity match = matchService.requestMatch(
                         request.initiatorChildId(),
                         request.targetChildId()
                 );
 
-                // Devolvemos el DTO de respuesta limpio
+
                 return ResponseEntity.ok(matchMapper.toResponseDTO(match));
 
             } catch (IllegalStateException e) {
-                // Aquí capturamos: "Solo un match por semana" o "Diferente barrio"
+
                 return ResponseEntity.badRequest().body(e.getMessage());
             } catch (Exception e) {
                 return ResponseEntity.internalServerError().body("Error inesperado: " + e.getMessage());
