@@ -127,7 +127,7 @@ class FamilyServiceImplTest {
         when(familyMapper.toResponse(any(FamilyEntity.class)))
                 .thenReturn(new FamilyResponseDTO(1L, "Rep", "Fam", "Desc", "url", 1L, "St", "123", "City", new ArrayList<>()));
 
-        List<FamilyResponseDTO> results = familyService.explorePlaymateFamilies(userEmail, null, 2, 5);
+        List<FamilyResponseDTO> results = familyService.explorePlaymateFamilies(userEmail, , null, 2, 5);
 
         assertFalse(results.isEmpty());
     }

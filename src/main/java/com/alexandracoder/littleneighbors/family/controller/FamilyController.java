@@ -40,15 +40,10 @@ public class FamilyController {
             Principal principal,
             @RequestBody FamilyRequestDTO dto) {
 
-        // 1. Llamada al servicio (aquí se crea la familia y se cambia el rol en DB)
         FamilyResponseDTO familyResponse = familyService.createFamily(dto, principal.getName());
 
-        // 2. Definimos los nuevos roles manualmente.
-        // Como acabamos de crear la familia con éxito, sabemos que el usuario ahora es ROLE_FAMILY.
-        // Esto evita llamar a UserDetailsService y posibles errores de sincronización/500.
         List<String> roles = List.of("ROLE_FAMILY");
 
-        // 3. Generamos los nuevos claims y tokens
         Map<String, Object> claims = Map.of("roles", roles);
         String newAccessToken = jwtService.generateAccessToken(principal.getName(), claims);
         String newRefreshToken = jwtService.generateRefreshToken(principal.getName());
@@ -64,12 +59,14 @@ public class FamilyController {
     @PreAuthorize("hasRole('FAMILY')")
     public ResponseEntity<List<FamilyResponseDTO>> explore(
             Principal principal,
+            @RequestParam(required = false) Long currentChildId,
             @RequestParam(required = false) List<Long> interestIds,
             @RequestParam(required = false) Integer minAge,
             @RequestParam(required = false) Integer maxAge) {
 
+
         return ResponseEntity.ok(familyService.explorePlaymateFamilies(
-                principal.getName(), interestIds, minAge, maxAge));
+                principal.getName(), currentChildId, interestIds, minAge, maxAge));
     }
 
     @GetMapping("/my-family")

@@ -30,16 +30,13 @@ public class ProfileServiceImpl implements ProfileService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
 
 
-        FamilyResponseDTO familyDto = familyRepository.findOne(
-                        FamilySpecifications.fetchFullFamilyByEmail(email)
-                )
+        FamilyResponseDTO familyDto = familyRepository.findByUserEmail(email)
                 .map(familyMapper::toResponse)
                 .orElse(null);
 
         List<String> roles = user.getRoles().stream()
                 .map(Enum::name)
                 .toList();
-
 
         return new UserProfileDTO(user.getEmail(), roles, familyDto);
     }

@@ -67,14 +67,12 @@ public class FamilyMapper {
     public FamilyExplorerDTO toExplorerDTO(FamilyEntity family, boolean isLocked) {
         if (family == null) return null;
 
-        // Mapeo anónimo de los niños de la familia vecina
         List<ChildSummaryDTO> childrenSummaries = family.getChildren() == null
                 ? Collections.emptyList()
                 : family.getChildren().stream()
-                .map(this::toChildSummary) // Usamos el método que ya tienes que da género y edad
+                .map(this::toChildSummary)
                 .toList();
 
-        // Intereses únicos de toda la familia para las etiquetas de la card
         List<String> allInterests = family.getChildren() == null
                 ? Collections.emptyList()
                 : family.getChildren().stream()

@@ -104,7 +104,6 @@ public class FamilyServiceImpl implements FamilyService {
         UserEntity loggedUser = userRepository.findByEmail(loggedUserEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + loggedUserEmail));
 
-        // Lógica de borrado (Admin o Dueño)
         if (loggedUser.getRoles().contains(Role.ADMIN) || family.getUser().getEmail().equals(loggedUserEmail)) {
             if (!family.getChildren().isEmpty()) {
                 throw new BusinessLogicException("Cannot delete family with children profiles");
@@ -126,7 +125,13 @@ public class FamilyServiceImpl implements FamilyService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<FamilyResponseDTO> explorePlaymateFamilies(String userEmail, List<Long> interestIds, Integer minAge, Integer maxAge) {
+    public List<FamilyResponseDTO> explorePlaymateFamilies(
+            String userEmail,
+            Long currentChildId,
+            List<Long> interestIds,
+            Integer minAge,
+            Integer maxAge
+    ) {
 
         FamilyEntity myFamily = familyRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Family profile not found"));
@@ -135,16 +140,23 @@ public class FamilyServiceImpl implements FamilyService {
             throw new BusinessLogicException("You must assign a neighborhood to explore");
         }
 
-        Specification<FamilyEntity> spec = Specification.where(FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId()))
-                .and((root, query, cb) -> cb.notEqual(root.get("id"), myFamily.getId()));
+        Long myNeighborhoodId = myFamily.getNeighborhood().getId();
+        Long myFamilyId = myFamily.getId();
 
+        Specification<FamilyEntity> spec = Specification
+                .where(FamilySpecifications.hasNeighborhood(myNeighborhoodId))
+                .and((root, query, cb) -> cb.notEqual(root.get("id"), myFamilyId));
+
+        if (currentChildId != null) {
+            spec = spec.and((root, query, cb) -> {
+                query.distinct(true);
+                return cb.notEqual(root.join("children").get("id"), currentChildId);
+            });
+        }
 
         if ((interestIds != null && !interestIds.isEmpty()) || (minAge != null && maxAge != null)) {
-
-
             int effectiveMin = (minAge != null) ? minAge : 0;
-            int effectiveMax = (maxAge != null) ? maxAge : 99;
-
+            int effectiveMax = (maxAge != null) ? maxAge : 18;
             spec = spec.and(FamilySpecifications.hasChildWithCriteria(effectiveMin, effectiveMax, interestIds));
         }
 
@@ -152,11 +164,13 @@ public class FamilyServiceImpl implements FamilyService {
                 .map(this.familyMapper::toResponse)
                 .collect(Collectors.toList());
     }
+
     @Override
     @Transactional(readOnly = true)
     public FamilyResponseDTO getFamilyByEmail(String email) {
-        FamilyEntity entity = familyRepository.findByUserEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Family not found for user email: " + email));
-        return this.familyMapper.toResponse(entity);
+
+        return familyRepository.findByUserEmail(email)
+                .map(familyMapper::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Family not found"));
     }
 }

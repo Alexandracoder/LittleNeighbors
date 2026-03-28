@@ -8,6 +8,7 @@ import com.alexandracoder.littleneighbors.shared.BaseEntity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDate;
 import java.time.Period;
@@ -45,11 +46,6 @@ public class ChildEntity extends BaseEntity {
     @Builder.Default
     private boolean isPrenatal = false;
 
-    /**
-     * Sincronizado con la columna 'is_pregnancy_support' de la DB.
-     * Usamos este nombre para que Lombok genere un solo 'setPregnancySupport'
-     * y 'isPregnancySupport' sin ambigüedades.
-     */
     @Column(name = "is_pregnancy_support", nullable = false)
     @Builder.Default
     private boolean pregnancySupport = false;
@@ -61,6 +57,7 @@ public class ChildEntity extends BaseEntity {
     @JsonBackReference
     private FamilyEntity family;
 
+    @BatchSize(size = 20)
     @Builder.Default
     @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
@@ -72,7 +69,6 @@ public class ChildEntity extends BaseEntity {
 
     @Transient
     public int getAge() {
-        // Usamos isPrenatal que es el booleano estándar para lógica de edad
         if (this.isPrenatal || this.birthDate == null) {
             return 0;
         }

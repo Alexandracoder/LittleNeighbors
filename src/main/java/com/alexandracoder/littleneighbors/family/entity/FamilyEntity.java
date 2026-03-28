@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,5 +51,7 @@ public class FamilyEntity extends BaseEntity {
     @OneToMany(mappedBy = "family", cascade = CascadeType.ALL, orphanRemoval = true)
     @EqualsAndHashCode.Exclude
     @JsonManagedReference
+    @BatchSize(size = 10)
+
     private List<ChildEntity> children = new ArrayList<>();
 }

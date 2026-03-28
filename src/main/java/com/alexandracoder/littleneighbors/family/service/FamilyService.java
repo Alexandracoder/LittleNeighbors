@@ -10,12 +10,23 @@ import java.util.List;
 
 public interface FamilyService {
     FamilyResponseDTO getFamilyById(Long id, String name);
+
     FamilyResponseDTO getFamilyByEmail(String email);
+
     FamilyResponseDTO createFamily(FamilyRequestDTO dto, String username);
+
     FamilyResponseDTO updateFamily(Long id, FamilyRequestDTO dto, String username);
+
     void deleteFamily(Long id, String loggedUser);
+
     Page<FamilyResponseDTO> getAllFamilies(Pageable pageable);
 
     @Transactional(readOnly = true)
-    List<FamilyResponseDTO> explorePlaymateFamilies(String userEmail, List<Long> interestId, Integer minAge, Integer maxAge);
+    List<FamilyResponseDTO> explorePlaymateFamilies(
+            String userEmail,
+            Long currentChildId,
+            List<Long> interestIds,
+            Integer minAge,
+            Integer maxAge
+    );
 }

@@ -17,10 +17,14 @@ public interface FamilyRepository extends JpaRepository<FamilyEntity, Long>,
             "children.interests"
     })
     Optional<FamilyEntity> findWithDetailsById(Long id);
+
+    @EntityGraph(attributePaths = {
+            "neighborhood",
+            "neighborhood.city",
+            "children",
+            "children.interests"
+    })
     Optional<FamilyEntity> findByUserEmail(String email);
+
     boolean existsByUser(UserEntity user);
-
-
-
 }
-
