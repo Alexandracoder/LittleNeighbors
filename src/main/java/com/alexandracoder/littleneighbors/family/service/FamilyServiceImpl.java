@@ -13,6 +13,7 @@ import com.alexandracoder.littleneighbors.user.repository.UserRepository;
 import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
 import com.alexandracoder.littleneighbors.shared.exceptions.BusinessLogicException;
 import com.alexandracoder.littleneighbors.shared.exceptions.UnauthorizedAccessException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -123,48 +124,24 @@ public class FamilyServiceImpl implements FamilyService {
         return familyRepository.findAll(pageable).map(this.familyMapper::toResponse);
     }
 
-    @Override
     @Transactional(readOnly = true)
-    public List<FamilyResponseDTO> explorePlaymateFamilies(
-            String userEmail,
-            Long currentChildId,
-            List<Long> interestIds,
-            Integer minAge,
-            Integer maxAge
-    ) {
-
+    public List<FamilyResponseDTO> explorePlaymateFamilies(String userEmail, Long currentChildId, List<Long> interestIds, Integer minAge, Integer maxAge) {
         FamilyEntity myFamily = familyRepository.findByUserEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Family profile not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Family not found for: " + userEmail));
 
-        if (myFamily.getNeighborhood() == null) {
-            throw new BusinessLogicException("You must assign a neighborhood to explore");
-        }
-
-        Long myNeighborhoodId = myFamily.getNeighborhood().getId();
-        Long myFamilyId = myFamily.getId();
+        int min = minAge != null ? minAge : 0;
+        int max = maxAge != null ? maxAge : 18;
 
         Specification<FamilyEntity> spec = Specification
-                .where(FamilySpecifications.hasNeighborhood(myNeighborhoodId))
-                .and((root, query, cb) -> cb.notEqual(root.get("id"), myFamilyId));
+                .where(FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId()))
+                .and(FamilySpecifications.isNotMyFamily(myFamily.getId()))
+                .and(FamilySpecifications.hasChildWithCriteria(min, max, interestIds));
 
-        if (currentChildId != null) {
-            spec = spec.and((root, query, cb) -> {
-                query.distinct(true);
-                return cb.notEqual(root.join("children").get("id"), currentChildId);
-            });
-        }
 
-        if ((interestIds != null && !interestIds.isEmpty()) || (minAge != null && maxAge != null)) {
-            int effectiveMin = (minAge != null) ? minAge : 0;
-            int effectiveMax = (maxAge != null) ? maxAge : 18;
-            spec = spec.and(FamilySpecifications.hasChildWithCriteria(effectiveMin, effectiveMax, interestIds));
-        }
-
-        return familyRepository.findAll(spec).stream()
-                .map(this.familyMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
+    return familyRepository.findAll(spec).stream()
+            .map(this.familyMapper::toResponse)
+             .collect(Collectors.toList());
+  }
     @Override
     @Transactional(readOnly = true)
     public FamilyResponseDTO getFamilyByEmail(String email) {

@@ -20,8 +20,6 @@ public class FamilySpecifications {
 
     public static Specification<FamilyEntity> hasChildWithCriteria(int minAge, int maxAge, List<Long> interestIds) {
         return (root, query, cb) -> {
-            query.distinct(true);
-
             Subquery<Long> sub = query.subquery(Long.class);
             Root<ChildEntity> child = sub.from(ChildEntity.class);
             sub.select(child.get("id"));
@@ -42,6 +40,7 @@ public class FamilySpecifications {
 
             return cb.exists(sub);
         };
+
     }
 
     public static Specification<FamilyEntity> hasNoRecentMatch(LocalDateTime since) {
