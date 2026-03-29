@@ -11,59 +11,64 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-    @RequestMapping("/api/matches")
-    @RequiredArgsConstructor
-    public class MatchController {
+@RequestMapping("/api/matches")
+@RequiredArgsConstructor
+public class MatchController {
 
-        private final MatchService matchService;
-        private final MatchMapper matchMapper;
-        private final FamilyMapper familyMapper;
+    private final MatchService matchService;
+    private final MatchMapper matchMapper;
+    private final FamilyMapper familyMapper;
 
-        @GetMapping("/explorer")
-        public ResponseEntity<List<FamilyExplorerDTO>> getExplorer(
-                @RequestParam Long neighborhoodId,
-                @RequestParam int minAge,
-                @RequestParam int maxAge,
-                @RequestParam(required = false) List<Long> interestIds,
-                @RequestParam(required = false) Long currentChildId) {
+    @GetMapping("/explorer")
+    public ResponseEntity<List<FamilyExplorerDTO>> getExplorer(
+            @RequestParam(required = false) Long neighborhoodId, // Cambiado a false
+            @RequestParam(defaultValue = "0") int minAge,
+            @RequestParam(defaultValue = "18") int maxAge,
+            @RequestParam(required = false) List<Long> interestIds,
+            @RequestParam(required = false) Long currentChildId) {
 
-
-            List<FamilyEntity> families = matchService.findCompatibleFamilies(
-                    neighborhoodId, minAge, maxAge, interestIds
-            );
-
-
-            boolean isUserLocked = matchService.hasActiveMatchThisWeek(currentChildId);
-
-
-            List<FamilyExplorerDTO> response = families.stream()
-                    .map(f -> familyMapper.toExplorerDTO(f, isUserLocked))
-                    .toList();
-
-            return ResponseEntity.ok(response);
+        // Si no hay barrio, devolvemos una lista vacía con un 200 OK (Clean UI)
+        if (neighborhoodId == null) {
+            return ResponseEntity.ok(new ArrayList<>());
         }
 
+        List<Long> filterInterests = (interestIds == null) ? new ArrayList<>() : interestIds;
 
-        @PostMapping("/request")
-        public ResponseEntity<?> requestMatch(@RequestBody MatchRequestDTO request) {
-            try {
+        List<FamilyEntity> families = matchService.findCompatibleFamilies(
+                neighborhoodId, minAge, maxAge, filterInterests
+        );
 
-                MatchEntity match = matchService.requestMatch(
-                        request.initiatorChildId(),
-                        request.targetChildId()
-                );
+        boolean isUserLocked;
+        if (currentChildId != null) {
+            isUserLocked = matchService.hasActiveMatchThisWeek(currentChildId);
+        } else {
+            isUserLocked = false;
+        }
 
+        List<FamilyExplorerDTO> response = families.stream()
+                .distinct()
+                .map(f -> familyMapper.toExplorerDTO(f, isUserLocked))
+                .toList();
 
-                return ResponseEntity.ok(matchMapper.toResponseDTO(match));
+        return ResponseEntity.ok(response);
+    }
 
-            } catch (IllegalStateException e) {
-
-                return ResponseEntity.badRequest().body(e.getMessage());
-            } catch (Exception e) {
-                return ResponseEntity.internalServerError().body("Error inesperado: " + e.getMessage());
-            }
+    @PostMapping("/request")
+    public ResponseEntity<?> requestMatch(@RequestBody MatchRequestDTO request) {
+        try {
+            MatchEntity match = matchService.requestMatch(
+                    request.initiatorChildId(),
+                    request.targetChildId()
+            );
+            return ResponseEntity.ok(matchMapper.toResponseDTO(match));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
         }
     }
+}

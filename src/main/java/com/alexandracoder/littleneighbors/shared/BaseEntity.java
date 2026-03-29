@@ -12,6 +12,9 @@ import java.time.LocalDateTime;
 @MappedSuperclass
 @Getter
 @Setter
+@jakarta.persistence.EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
+@lombok.experimental.SuperBuilder // <--- Cambio CRÍTICO
+@lombok.NoArgsConstructor // Necesario para JPA
 public abstract class BaseEntity implements Serializable {
 
     @CreationTimestamp
@@ -22,6 +25,4 @@ public abstract class BaseEntity implements Serializable {
     @Column(nullable = false)
     protected LocalDateTime updatedAt;
 
-    public void setPregnancySupport(boolean b) {
-    }
 }

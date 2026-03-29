@@ -25,7 +25,7 @@ public class FamilySpecifications {
 
             LocalDate today = LocalDate.now();
             LocalDate maxBirthDate = today.minusYears(minAge);
-            LocalDate minBirthDate = today.minusYears(maxAge + 1).plusDays(1);
+            LocalDate minBirthDate = today.minusYears(maxAge).minusYears(1).plusDays(1);
 
             Predicate agePredicate = cb.between(children.get("birthDate"), minBirthDate, maxBirthDate);
 
@@ -37,13 +37,14 @@ public class FamilySpecifications {
         };
     }
 
-
     public static Specification<FamilyEntity> hasNoRecentMatch(LocalDateTime since) {
         return (root, query, cb) -> {
-            Subquery<Integer> subquery = query.subquery(Integer.class);
+            if (since == null) return null;
+
+            Subquery<Long> subquery = query.subquery(Long.class);
             Root<MatchEntity> matchRoot = subquery.from(MatchEntity.class);
 
-            subquery.select(cb.literal(1))
+            subquery.select(matchRoot.get("id"))
                     .where(cb.and(
                             cb.or(
                                     cb.equal(matchRoot.get("childA").get("family").get("id"), root.get("id")),
@@ -60,9 +61,10 @@ public class FamilySpecifications {
         return (root, query, cb) -> {
             query.distinct(true);
             LocalDate today = LocalDate.now();
-            return cb.between(root.join("children").get("birthDate"),
-                    today.minusYears(maxAge + 1).plusDays(1),
-                    today.minusYears(minAge));
+            LocalDate maxBirthDate = today.minusYears(minAge);
+            LocalDate minBirthDate = today.minusYears(maxAge).minusYears(1).plusDays(1);
+
+            return cb.between(root.join("children").get("birthDate"), minBirthDate, maxBirthDate);
         };
     }
 
@@ -73,14 +75,16 @@ public class FamilySpecifications {
 
     public static Specification<FamilyEntity> isNotChild(Long currentChildId) {
         if (currentChildId == null) return null;
-        return (root, query, cb) -> cb.notEqual(root.join("children").get("id"), currentChildId);
+        return (root, query, cb) -> {
+            query.distinct(true);
+            return cb.notEqual(root.join("children").get("id"), currentChildId);
+        };
     }
 
     public static Specification<FamilyEntity> hasChildWithInterest(List<Long> interestIds) {
         if (interestIds == null || interestIds.isEmpty()) return null;
         return (root, query, cb) -> {
             query.distinct(true);
-
             return root.join("children")
                     .join("interests")
                     .get("id")

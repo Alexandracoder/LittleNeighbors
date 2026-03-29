@@ -1,11 +1,9 @@
 package com.alexandracoder.littleneighbors.family.dto;
 
-import com.alexandracoder.littleneighbors.auth.service.AuthService;
 import com.alexandracoder.littleneighbors.child.dto.ChildSummaryDTO;
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -13,17 +11,25 @@ import java.util.List;
 
 @Component
 public class FamilyMapper {
+
     public FamilyResponseDTO toResponse(FamilyEntity entity) {
         if (entity == null) return null;
 
         NeighborhoodEntity neighborhood = entity.getNeighborhood();
 
-        Long neighborhoodId = (neighborhood != null) ? neighborhood.getId() : null;
-        String streetName = (neighborhood != null) ? neighborhood.getStreetName() : null;
-        String postalCode = (neighborhood != null) ? neighborhood.getPostalCode() : null;
-        String cityName = (neighborhood != null && neighborhood.getCity() != null)
-                ? neighborhood.getCity().getName()
-                : null;
+        Long neighborhoodId = null;
+        String streetName = null;
+        String postalCode = null;
+        String cityName = "No asignado";
+
+        if (neighborhood != null) {
+            neighborhoodId = neighborhood.getId();
+            streetName = neighborhood.getStreetName();
+            postalCode = neighborhood.getPostalCode();
+            if (neighborhood.getCity() != null) {
+                cityName = neighborhood.getCity().getName();
+            }
+        }
 
         List<ChildSummaryDTO> children = (entity.getChildren() == null)
                 ? Collections.emptyList()
@@ -60,7 +66,7 @@ public class FamilyMapper {
                 child.getId(),
                 genderName,
                 child.getAge(),
-                child.getLifeStage() != null ? child.getLifeStage() : null
+                child.getLifeStage()
         );
     }
 
@@ -82,10 +88,14 @@ public class FamilyMapper {
                 .distinct()
                 .toList();
 
+        String neighborhoodName = (family.getNeighborhood() != null)
+                ? family.getNeighborhood().getName()
+                : "No neighborhood";
+
         return new FamilyExplorerDTO(
                 family.getId(),
                 family.getFamilyName(),
-                family.getNeighborhood() != null ? family.getNeighborhood().getName() : "Unknown",
+                neighborhoodName,
                 childrenSummaries,
                 allInterests,
                 family.getDescription(),

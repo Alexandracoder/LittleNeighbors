@@ -31,25 +31,22 @@ public class MatchServiceImpl implements MatchService {
     @Transactional
     public MatchEntity requestMatch(Long childAId, Long childBId) {
         if (childAId.equals(childBId)) {
-            throw new BusinessLogicException("Cannot request a match with the same child.");
+            throw new BusinessLogicException("No puedes solicitar un match con el mismo niño.");
         }
 
         ChildEntity childA = childRepository.findById(childAId)
-                .orElseThrow(() -> new ResourceNotFoundException("Initiator child not found ID: " + childAId));
+                .orElseThrow(() -> new ResourceNotFoundException("Niño iniciador no encontrado: " + childAId));
         ChildEntity childB = childRepository.findById(childBId)
-                .orElseThrow(() -> new ResourceNotFoundException("Target child not found ID: " + childBId));
+                .orElseThrow(() -> new ResourceNotFoundException("Niño destino no encontrado: " + childBId));
 
         validateWeeklyConstraint(childAId);
 
         if (childA.getFamily().getNeighborhood() == null || childB.getFamily().getNeighborhood() == null) {
-            throw new BusinessLogicException("Both families must have an assigned neighborhood.");
+            throw new BusinessLogicException("Ambas familias deben tener un barrio asignado para conectar.");
         }
 
-        Long neighborhoodA = childA.getFamily().getNeighborhood().getId();
-        Long neighborhoodB = childB.getFamily().getNeighborhood().getId();
-
-        if (!neighborhoodA.equals(neighborhoodB)) {
-            throw new BusinessLogicException("Connections are only allowed within the same neighborhood.");
+        if (!childA.getFamily().getNeighborhood().getId().equals(childB.getFamily().getNeighborhood().getId())) {
+            throw new BusinessLogicException("Solo se permiten conexiones dentro del mismo barrio.");
         }
 
         MatchEntity newMatch = MatchEntity.builder()
@@ -62,7 +59,11 @@ public class MatchServiceImpl implements MatchService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int maxAge, List<Long> interestIds) {
+
+        if (neighborhoodId == null) return List.of();
+
         LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
 
         Specification<FamilyEntity> spec = Specification
@@ -81,14 +82,15 @@ public class MatchServiceImpl implements MatchService {
     @Override
     public void validateWeeklyConstraint(Long childId) {
         if (hasActiveMatchThisWeek(childId)) {
-            throw new BusinessLogicException("Only one match request per week is allowed.");
+            throw new BusinessLogicException("Solo se permite una solicitud de match por semana.");
         }
     }
 
     @Override
     public boolean hasActiveMatchThisWeek(Long childId) {
+        if (childId == null) return false;
         LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
-        long count = matchRepository.count(MatchSpecifications.hasMatchForChildInLastWeek(childId, oneWeekAgo));
-        return count > 0;
+
+        return matchRepository.exists(MatchSpecifications.hasMatchForChildInLastWeek(childId, oneWeekAgo));
     }
 }

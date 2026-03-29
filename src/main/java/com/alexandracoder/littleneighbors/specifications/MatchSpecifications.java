@@ -7,16 +7,18 @@ import java.time.LocalDateTime;
 
 public class MatchSpecifications {
 
-    public static Specification<MatchEntity> hasMatchForChildInLastWeek(Long childId, LocalDateTime after) {
-        return (root, query, cb) -> {
 
-            Predicate childA = cb.equal(root.get("childA").get("id"), childId);
-            Predicate childB = cb.equal(root.get("childB").get("id"), childId);
-            Predicate childOr = cb.or(childA, childB);
+        public static Specification<MatchEntity> hasMatchForChildInLastWeek(Long childId, LocalDateTime after) {
+            return (root, query, cb) -> {
+                if (childId == null || after == null) return null;
 
-            Predicate dateAfter = cb.greaterThan(root.get("createdAt"), after);
+                Predicate isChildA = cb.equal(root.get("childA").get("id"), childId);
+                Predicate isChildB = cb.equal(root.get("childB").get("id"), childId);
 
-            return cb.and(childOr, dateAfter);
-        };
+                Predicate participatingInMatch = cb.or(isChildA, isChildB);
+                Predicate isRecent = cb.greaterThan(root.get("createdAt"), after);
+
+                return cb.and(participatingInMatch, isRecent);
+            };
+        }
     }
-}
