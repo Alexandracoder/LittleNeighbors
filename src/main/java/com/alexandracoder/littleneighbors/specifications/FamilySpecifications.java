@@ -21,19 +21,26 @@ public class FamilySpecifications {
     public static Specification<FamilyEntity> hasChildWithCriteria(int minAge, int maxAge, List<Long> interestIds) {
         return (root, query, cb) -> {
             query.distinct(true);
-            Join<FamilyEntity, ChildEntity> children = root.join("children", JoinType.INNER);
+
+            Subquery<Long> sub = query.subquery(Long.class);
+            Root<ChildEntity> child = sub.from(ChildEntity.class);
+            sub.select(child.get("id"));
 
             LocalDate today = LocalDate.now();
             LocalDate maxBirthDate = today.minusYears(minAge);
             LocalDate minBirthDate = today.minusYears(maxAge).minusYears(1).plusDays(1);
 
-            Predicate agePredicate = cb.between(children.get("birthDate"), minBirthDate, maxBirthDate);
+            Predicate belongsToFamily = cb.equal(child.get("family"), root);
+            Predicate agePredicate = cb.between(child.get("birthDate"), minBirthDate, maxBirthDate);
 
             if (interestIds != null && !interestIds.isEmpty()) {
-                Join<ChildEntity, InterestEntity> interests = children.join("interests", JoinType.INNER);
-                return cb.and(agePredicate, interests.get("id").in(interestIds));
+                Join<ChildEntity, InterestEntity> interests = child.join("interests", JoinType.INNER);
+                sub.where(cb.and(belongsToFamily, agePredicate, interests.get("id").in(interestIds)));
+            } else {
+                sub.where(cb.and(belongsToFamily, agePredicate));
             }
-            return agePredicate;
+
+            return cb.exists(sub);
         };
     }
 
@@ -56,19 +63,7 @@ public class FamilySpecifications {
             return cb.not(cb.exists(subquery));
         };
     }
-
-    public static Specification<FamilyEntity> hasChildAgeBetween(int minAge, int maxAge) {
-        return (root, query, cb) -> {
-            query.distinct(true);
-            LocalDate today = LocalDate.now();
-            LocalDate maxBirthDate = today.minusYears(minAge);
-            LocalDate minBirthDate = today.minusYears(maxAge).minusYears(1).plusDays(1);
-
-            return cb.between(root.join("children").get("birthDate"), minBirthDate, maxBirthDate);
-        };
-    }
-
-    public static Specification<FamilyEntity> isNotMyFamily(Long myFamilyId) {
+        public static Specification<FamilyEntity> isNotMyFamily(Long myFamilyId) {
         if (myFamilyId == null) return null;
         return (root, query, cb) -> cb.notEqual(root.get("id"), myFamilyId);
     }
@@ -76,19 +71,14 @@ public class FamilySpecifications {
     public static Specification<FamilyEntity> isNotChild(Long currentChildId) {
         if (currentChildId == null) return null;
         return (root, query, cb) -> {
-            query.distinct(true);
-            return cb.notEqual(root.join("children").get("id"), currentChildId);
-        };
-    }
-
-    public static Specification<FamilyEntity> hasChildWithInterest(List<Long> interestIds) {
-        if (interestIds == null || interestIds.isEmpty()) return null;
-        return (root, query, cb) -> {
-            query.distinct(true);
-            return root.join("children")
-                    .join("interests")
-                    .get("id")
-                    .in(interestIds);
+            Subquery<Long> sub = query.subquery(Long.class);
+            Root<ChildEntity> child = sub.from(ChildEntity.class);
+            sub.select(child.get("id"))
+                    .where(cb.and(
+                            cb.equal(child.get("family"), root),
+                            cb.equal(child.get("id"), currentChildId)
+                    ));
+            return cb.not(cb.exists(sub));
         };
     }
 }

@@ -25,13 +25,12 @@ public class MatchController {
 
     @GetMapping("/explorer")
     public ResponseEntity<List<FamilyExplorerDTO>> getExplorer(
-            @RequestParam(required = false) Long neighborhoodId, // Cambiado a false
+            @RequestParam(required = false) Long neighborhoodId,
             @RequestParam(defaultValue = "0") int minAge,
             @RequestParam(defaultValue = "18") int maxAge,
             @RequestParam(required = false) List<Long> interestIds,
             @RequestParam(required = false) Long currentChildId) {
 
-        // Si no hay barrio, devolvemos una lista vacía con un 200 OK (Clean UI)
         if (neighborhoodId == null) {
             return ResponseEntity.ok(new ArrayList<>());
         }
@@ -39,24 +38,17 @@ public class MatchController {
         List<Long> filterInterests = (interestIds == null) ? new ArrayList<>() : interestIds;
 
         List<FamilyEntity> families = matchService.findCompatibleFamilies(
-                neighborhoodId, minAge, maxAge, filterInterests
+                neighborhoodId, minAge, maxAge, filterInterests, currentChildId  // ← added currentChildId
         );
 
-        boolean isUserLocked;
-        if (currentChildId != null) {
-            isUserLocked = matchService.hasActiveMatchThisWeek(currentChildId);
-        } else {
-            isUserLocked = false;
-        }
+        boolean isUserLocked = currentChildId != null && matchService.hasActiveMatchThisWeek(currentChildId);
 
         List<FamilyExplorerDTO> response = families.stream()
-                .distinct()
                 .map(f -> familyMapper.toExplorerDTO(f, isUserLocked))
-                .toList();
+                .toList();  // ← removed .distinct()
 
         return ResponseEntity.ok(response);
     }
-
     @PostMapping("/request")
     public ResponseEntity<?> requestMatch(@RequestBody MatchRequestDTO request) {
         try {

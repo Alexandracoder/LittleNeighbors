@@ -60,21 +60,25 @@ public class MatchServiceImpl implements MatchService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int maxAge, List<Long> interestIds) {
+    public List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int maxAge, List<Long> interestIds, Long currentChildId) {
 
         if (neighborhoodId == null) return List.of();
 
         LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
 
-        Specification<FamilyEntity> spec = Specification
-                .where(FamilySpecifications.hasNeighborhood(neighborhoodId))
-                .and(FamilySpecifications.hasChildAgeBetween(minAge, maxAge));
-
-        if (interestIds != null && !interestIds.isEmpty()) {
-            spec = spec.and(FamilySpecifications.hasChildWithInterest(interestIds));
+        Long myFamilyId = null;
+        if (currentChildId != null) {
+            myFamilyId = childRepository.findById(currentChildId)
+                    .map(child -> child.getFamily().getId())
+                    .orElse(null);
         }
 
-        spec = spec.and(FamilySpecifications.hasNoRecentMatch(oneWeekAgo));
+        Specification<FamilyEntity> spec = Specification
+                .where(FamilySpecifications.hasNeighborhood(neighborhoodId))
+                .and(FamilySpecifications.hasChildWithCriteria(minAge, maxAge, interestIds))
+                .and(FamilySpecifications.hasNoRecentMatch(oneWeekAgo))
+                .and(FamilySpecifications.isNotChild(currentChildId))
+                .and(FamilySpecifications.isNotMyFamily(myFamilyId));
 
         return familyRepository.findAll(spec);
     }
