@@ -11,7 +11,7 @@
 	<groupId>com.alexandracoder</groupId>
 	<artifactId>littleneghbors</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>littleneghbors</name>
+	<name>littleneighbors</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
 	<licenses>
@@ -62,7 +62,6 @@
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.mysql</groupId>
@@ -152,13 +151,15 @@
 					</excludes>
 				</configuration>
 			</plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <source>21</source>
+                    <target>21</target>
                     <compilerArgs>
                         <arg>-parameters</arg>
+                        <arg>--enable-preview</arg>
                     </compilerArgs>
                     <annotationProcessorPaths>
                         <path>

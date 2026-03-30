@@ -52,13 +52,13 @@ spring:
     activate:
       on-profile: test
   datasource:
-    url: jdbc:h2:mem:littleneighbors_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:littleneighbors_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE_MySQL
   jpa:
     hibernate:
       ddl-auto: create-drop
-    show-sql: false
+    show-sql: true
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
 
 jwt:
