@@ -1,11 +1,13 @@
 package com.alexandracoder.littleneighbors.family.service;
 
+import com.alexandracoder.littleneighbors.enums.FamilyStatus;
 import com.alexandracoder.littleneighbors.enums.Role;
 import com.alexandracoder.littleneighbors.family.dto.FamilyMapper;
 import com.alexandracoder.littleneighbors.family.dto.FamilyRequestDTO;
 import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
+import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
 import com.alexandracoder.littleneighbors.neighborhood.repository.NeighborhoodRepository;
 import com.alexandracoder.littleneighbors.specifications.FamilySpecifications;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
@@ -20,8 +22,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.springdoc.core.service.GenericResponseService.setDescription;
+import static org.springframework.http.ResponseEntity.status;
 
 @Service
 @RequiredArgsConstructor
@@ -43,17 +50,22 @@ public class FamilyServiceImpl implements FamilyService {
             throw new BusinessLogicException("User already has a family profile");
         }
 
-        FamilyEntity familyEntity = new FamilyEntity();
-        familyEntity.setUser(user);
-        familyEntity.setFamilyName(dto.familyName());
-        familyEntity.setDescription(dto.description());
-        familyEntity.setRepresentativeName(dto.representativeName());
-        familyEntity.setProfilePictureUrl(dto.profilePictureUrl());
-
+        NeighborhoodEntity neighborhood = null;
         if (dto.neighborhoodId() != null) {
-            familyEntity.setNeighborhood(neighborhoodRepository.findById(dto.neighborhoodId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Neighborhood not found")));
+            neighborhood = neighborhoodRepository.findById(dto.neighborhoodId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Neighborhood not found"));
         }
+
+        FamilyEntity familyEntity = FamilyEntity.builder()
+                .user(user)
+                .familyName(dto.familyName())
+                .description(dto.description())
+                .representativeName(dto.representativeName())
+                .profilePictureUrl(dto.profilePictureUrl())
+                .status(dto.status() != null ? dto.status() : FamilyStatus.SURPRISE)
+                .familyInterests(dto.familyInterests() != null ? dto.familyInterests() : new ArrayList<>())
+                .neighborhood(neighborhood)
+                .build();
 
         FamilyEntity saved = familyRepository.save(familyEntity);
 
@@ -63,7 +75,6 @@ public class FamilyServiceImpl implements FamilyService {
 
         return this.familyMapper.toResponse(saved);
     }
-
     @Override
     @Transactional(readOnly = true)
     public FamilyResponseDTO getFamilyById(Long id, String name) {

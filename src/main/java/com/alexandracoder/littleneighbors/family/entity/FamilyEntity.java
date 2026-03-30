@@ -1,6 +1,7 @@
 package com.alexandracoder.littleneighbors.family.entity;
 
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
+import com.alexandracoder.littleneighbors.enums.FamilyStatus;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
 import com.alexandracoder.littleneighbors.shared.BaseEntity;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
@@ -15,7 +16,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "families")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @lombok.experimental.SuperBuilder
@@ -45,6 +47,17 @@ public class FamilyEntity extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "neighborhood_id" , nullable = false)
     private NeighborhoodEntity neighborhood;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private FamilyStatus status = FamilyStatus.SURPRISE;
+
+    @Builder.Default
+    @ElementCollection
+    @CollectionTable(name = "family_interests", joinColumns = @JoinColumn(name = "family_id"))
+    @Column(name = "interest")
+    @BatchSize(size = 20)
+    private List<String> familyInterests = new ArrayList<>();
 
     @ToString.Exclude
     @Builder.Default
