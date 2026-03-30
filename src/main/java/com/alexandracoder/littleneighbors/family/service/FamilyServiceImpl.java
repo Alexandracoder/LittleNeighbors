@@ -7,6 +7,9 @@ import com.alexandracoder.littleneighbors.family.dto.FamilyRequestDTO;
 import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
+import com.alexandracoder.littleneighbors.match.dto.MatchResponseDetailDTO;
+import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
+import com.alexandracoder.littleneighbors.match.repository.MatchRepository;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
 import com.alexandracoder.littleneighbors.neighborhood.repository.NeighborhoodRepository;
 import com.alexandracoder.littleneighbors.specifications.FamilySpecifications;
@@ -26,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.springdoc.core.service.GenericResponseService.setDescription;
 import static org.springframework.http.ResponseEntity.status;
@@ -38,6 +42,7 @@ public class FamilyServiceImpl implements FamilyService {
     private final UserRepository userRepository;
     private final NeighborhoodRepository neighborhoodRepository;
     private final FamilyMapper familyMapper;
+    private final MatchRepository matchRepository;
 
     @Override
     @Transactional
@@ -161,4 +166,5 @@ public class FamilyServiceImpl implements FamilyService {
                 .map(familyMapper::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Family not found"));
     }
+
 }
