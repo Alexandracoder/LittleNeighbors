@@ -16,7 +16,7 @@ DELETE FROM families
 WHERE neighborhood_id IS NULL;
 
 -- 2. Eliminamos la Foreign Key actual que permite el SET NULL
-ALTER TABLE families DROP FOREIGN KEY fk_families_neighborhood;
+ALTER TABLE families DROP CONSTRAINT fk_families_neighborhood;
 
 -- 3. Modificamos la columna a NOT NULL
 ALTER TABLE families MODIFY neighborhood_id BIGINT NOT NULL;

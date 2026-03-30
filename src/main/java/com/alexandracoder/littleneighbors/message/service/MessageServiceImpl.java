@@ -7,6 +7,8 @@ import com.alexandracoder.littleneighbors.message.dto.SendMessageDTO;
 import com.alexandracoder.littleneighbors.message.entity.MessageEntity;
 import com.alexandracoder.littleneighbors.message.dto.MessageMapper;
 import com.alexandracoder.littleneighbors.message.repository.MessageRepository;
+import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
+import com.alexandracoder.littleneighbors.shared.exceptions.UnauthorizedAccessException;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,12 +29,19 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional
-    public MessageResponseDTO sendMessage(SendMessageDTO dto) {
-        MatchEntity match = matchRepository.findById(dto.matchId())
-                .orElseThrow(() -> new RuntimeException("Match no encontrado"));
+    public MessageResponseDTO sendMessage(SendMessageDTO dto, String senderEmail) {
+        UserEntity sender = userRepository.findByEmail(senderEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        UserEntity sender = userRepository.findById(dto.senderId())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        MatchEntity match = matchRepository.findById(dto.matchId())
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
+
+        boolean isParticipant = match.getChildA().getFamily().getUser().getId().equals(sender.getId()) ||
+                match.getChildB().getFamily().getUser().getId().equals(sender.getId());
+
+        if (!isParticipant) {
+            throw new UnauthorizedAccessException("You are not a participant in this conversation.");
+        }
 
         MessageEntity message = MessageEntity.builder()
                 .match(match)
@@ -46,7 +55,12 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<MessageResponseDTO> getChatHistory(Long matchId) {
+        if (!matchRepository.existsById(matchId)) {
+            throw new ResourceNotFoundException("Match not found with ID: " + matchId);
+        }
+
         List<MessageEntity> messages = messageRepository.findByMatchIdOrderBySentAtAsc(matchId);
 
         return messages.stream()

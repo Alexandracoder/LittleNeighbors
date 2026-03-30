@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@lombok.experimental.SuperBuilder
 @EqualsAndHashCode(callSuper = false)
 public class UserEntity extends BaseEntity implements UserDetails {
 

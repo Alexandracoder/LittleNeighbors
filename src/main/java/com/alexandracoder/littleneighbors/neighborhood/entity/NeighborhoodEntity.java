@@ -14,7 +14,7 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@lombok.experimental.SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class NeighborhoodEntity extends BaseEntity {
     @Id

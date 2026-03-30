@@ -4,8 +4,11 @@ import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
 import com.alexandracoder.littleneighbors.shared.BaseEntity;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +18,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@lombok.experimental.SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class FamilyEntity extends BaseEntity {
     @Id
@@ -24,6 +27,7 @@ public class FamilyEntity extends BaseEntity {
 
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JsonBackReference
     private UserEntity user;
 
     @Column(name = "representative_name", length = 255)
@@ -46,5 +50,8 @@ public class FamilyEntity extends BaseEntity {
     @Builder.Default
     @OneToMany(mappedBy = "family", cascade = CascadeType.ALL, orphanRemoval = true)
     @EqualsAndHashCode.Exclude
+    @JsonManagedReference
+    @BatchSize(size = 10)
+
     private List<ChildEntity> children = new ArrayList<>();
 }

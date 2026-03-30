@@ -1,11 +1,9 @@
 package com.alexandracoder.littleneighbors.family.dto;
 
-import com.alexandracoder.littleneighbors.auth.service.AuthService;
 import com.alexandracoder.littleneighbors.child.dto.ChildSummaryDTO;
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -14,26 +12,26 @@ import java.util.List;
 @Component
 public class FamilyMapper {
 
-    private final AuthService authService;
-
-    public FamilyMapper(@Lazy AuthService authService) {
-        this.authService = authService;
-    }
-
-    // Este es tu método principal de mapeo
     public FamilyResponseDTO toResponse(FamilyEntity entity) {
         if (entity == null) return null;
 
         NeighborhoodEntity neighborhood = entity.getNeighborhood();
 
-        String neighborhoodName = neighborhood != null ? neighborhood.getName() : null;
-        String streetName = neighborhood != null ? neighborhood.getStreetName() : null;
-        String postalCode = neighborhood != null ? neighborhood.getPostalCode() : null;
-        String cityName = (neighborhood != null && neighborhood.getCity() != null)
-                ? neighborhood.getCity().getName()
-                : null;
+        Long neighborhoodId = null;
+        String streetName = null;
+        String postalCode = null;
+        String cityName = "No asignado";
 
-        List<ChildSummaryDTO> children = entity.getChildren() == null
+        if (neighborhood != null) {
+            neighborhoodId = neighborhood.getId();
+            streetName = neighborhood.getStreetName();
+            postalCode = neighborhood.getPostalCode();
+            if (neighborhood.getCity() != null) {
+                cityName = neighborhood.getCity().getName();
+            }
+        }
+
+        List<ChildSummaryDTO> children = (entity.getChildren() == null)
                 ? Collections.emptyList()
                 : entity.getChildren().stream()
                 .map(this::toChildSummary)
@@ -45,7 +43,7 @@ public class FamilyMapper {
                 entity.getFamilyName(),
                 entity.getDescription(),
                 entity.getProfilePictureUrl(),
-                neighborhood.getId(),
+                neighborhoodId,
                 streetName,
                 postalCode,
                 cityName,
@@ -73,24 +71,33 @@ public class FamilyMapper {
     }
 
     public FamilyExplorerDTO toExplorerDTO(FamilyEntity family, boolean isLocked) {
-        // 1. Intereses (Child -> Interest -> Name)
-        List<String> interests = family.getChildren().stream()
-                .flatMap(child -> child.getInterests().stream())
-                .map(interest -> interest.getName())
+        if (family == null) return null;
+
+        List<ChildSummaryDTO> childrenSummaries = family.getChildren() == null
+                ? Collections.emptyList()
+                : family.getChildren().stream()
+                .map(this::toChildSummary)
+                .toList();
+
+        List<String> allInterests = family.getChildren() == null
+                ? Collections.emptyList()
+                : family.getChildren().stream()
+                .filter(c -> c.getInterests() != null)
+                .flatMap(c -> c.getInterests().stream())
+                .map(i -> i.getName())
                 .distinct()
                 .toList();
 
-        // 2. Etapas vitales (Child -> LifeStage)
-        List<String> childStages = family.getChildren().stream()
-                .map(child -> child.getLifeStage().name())
-                .toList();
+        String neighborhoodName = (family.getNeighborhood() != null)
+                ? family.getNeighborhood().getName()
+                : "No neighborhood";
 
         return new FamilyExplorerDTO(
                 family.getId(),
                 family.getFamilyName(),
-                family.getNeighborhood().getName(),
-                childStages,
-                interests,
+                neighborhoodName,
+                childrenSummaries,
+                allInterests,
                 family.getDescription(),
                 isLocked
         );

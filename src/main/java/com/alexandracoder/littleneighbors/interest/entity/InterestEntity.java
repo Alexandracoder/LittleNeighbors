@@ -16,7 +16,7 @@ import java.util.Set;
 @ToString(exclude = "children")
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@lombok.experimental.SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class InterestEntity extends BaseEntity {
     @Id

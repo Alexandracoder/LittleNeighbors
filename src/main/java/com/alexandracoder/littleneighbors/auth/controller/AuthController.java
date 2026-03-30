@@ -1,17 +1,13 @@
 package com.alexandracoder.littleneighbors.auth.controller;
 
-import com.alexandracoder.littleneighbors.auth.dto.AuthRequest;
-import com.alexandracoder.littleneighbors.auth.dto.AuthResponse;
-import com.alexandracoder.littleneighbors.auth.dto.RefreshRequest;
-import com.alexandracoder.littleneighbors.auth.dto.RegisterRequest;
+import com.alexandracoder.littleneighbors.auth.dto.*;
 import com.alexandracoder.littleneighbors.auth.service.AuthService;
-import com.alexandracoder.littleneighbors.family.dto.FamilyAuthResponseDTO;
-import com.alexandracoder.littleneighbors.user.dto.UserProfileDTO;
-import org.springframework.web.bind.annotation.*;
+import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 
@@ -20,13 +16,12 @@ import java.security.Principal;
 @RequiredArgsConstructor
 public class AuthController {
 
-
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<FamilyAuthResponseDTO> login(@RequestBody AuthRequest request) {
-        FamilyAuthResponseDTO response = authService.login(request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
+
+        return ResponseEntity.ok(authService.login(request));
     }
 
     @PostMapping("/register")
@@ -36,13 +31,17 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@RequestBody RefreshRequest request) {
+    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
         AuthResponse response = authService.reloadUserTokenFromRefresh(request.refreshToken());
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/profile")
     public ResponseEntity<UserProfileDTO> getProfile(Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         UserProfileDTO profile = authService.getCurrentProfile(principal.getName());
         return ResponseEntity.ok(profile);
     }

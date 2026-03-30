@@ -10,6 +10,9 @@ import com.alexandracoder.littleneighbors.neighborhood.repository.NeighborhoodRe
 import com.alexandracoder.littleneighbors.specifications.FamilySpecifications;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
+import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
+import com.alexandracoder.littleneighbors.shared.exceptions.BusinessLogicException;
+import com.alexandracoder.littleneighbors.shared.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,11 +20,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.stream.Collectors;
-
-
 
 @Service
 @RequiredArgsConstructor
@@ -33,21 +33,14 @@ public class FamilyServiceImpl implements FamilyService {
     private final FamilyMapper familyMapper;
 
     @Override
-    @Transactional(readOnly = true)
-    public FamilyResponseDTO getFamilyById(Long id, String name) {
-        FamilyEntity entity = familyRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Family not found with id: " + id));
-        return this.familyMapper.toResponse(entity);
-    }
-
-    @Override
     @Transactional
     public FamilyResponseDTO createFamily(FamilyRequestDTO dto, String userEmail) {
+
         UserEntity user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (familyRepository.existsByUser(user)) {
-            throw new IllegalStateException("User already has a family");
+            throw new BusinessLogicException("User already has a family profile");
         }
 
         FamilyEntity familyEntity = new FamilyEntity();
@@ -59,25 +52,34 @@ public class FamilyServiceImpl implements FamilyService {
 
         if (dto.neighborhoodId() != null) {
             familyEntity.setNeighborhood(neighborhoodRepository.findById(dto.neighborhoodId())
-                    .orElseThrow(() -> new EntityNotFoundException("Neighborhood not found with ID: " + dto.neighborhoodId())));
+                    .orElseThrow(() -> new ResourceNotFoundException("Neighborhood not found")));
         }
+
         FamilyEntity saved = familyRepository.save(familyEntity);
 
         user.getRoles().remove(Role.USER);
         user.getRoles().add(Role.FAMILY);
-        userRepository.saveAndFlush(user);
+        userRepository.save(user);
 
         return this.familyMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FamilyResponseDTO getFamilyById(Long id, String name) {
+        FamilyEntity entity = familyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Family not found with id: " + id));
+        return this.familyMapper.toResponse(entity);
     }
 
     @Override
     @Transactional
     public FamilyResponseDTO updateFamily(Long id, FamilyRequestDTO dto, String userEmail) {
         FamilyEntity family = familyRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Family not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Family not found with id: " + id));
 
         if (!family.getUser().getEmail().equals(userEmail)) {
-            throw new SecurityException("You do not have permission to update this family");
+            throw new UnauthorizedAccessException("You do not have permission to update this family");
         }
 
         family.setRepresentativeName(dto.representativeName());
@@ -87,7 +89,7 @@ public class FamilyServiceImpl implements FamilyService {
 
         if (dto.neighborhoodId() != null) {
             family.setNeighborhood(neighborhoodRepository.findById(dto.neighborhoodId())
-                    .orElseThrow(() -> new EntityNotFoundException("Neighborhood not found with id: " + dto.neighborhoodId())));
+                    .orElseThrow(() -> new ResourceNotFoundException("Neighborhood not found with id: " + dto.neighborhoodId())));
         }
 
         FamilyEntity updated = familyRepository.save(family);
@@ -98,34 +100,22 @@ public class FamilyServiceImpl implements FamilyService {
     @Transactional
     public void deleteFamily(Long id, String loggedUserEmail) {
         FamilyEntity family = familyRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Family not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Family not found with id: " + id));
 
         UserEntity loggedUser = userRepository.findByEmail(loggedUserEmail)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with email: " + loggedUserEmail));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + loggedUserEmail));
 
-        if (loggedUser.getRoles().contains(Role.ADMIN)) {
-            familyRepository.delete(family);
-            UserEntity owner = family.getUser();
-            if (owner != null) {
-                owner.getRoles().remove(Role.FAMILY);
-                owner.getRoles().add(Role.USER);
-                userRepository.save(owner);
+        if (loggedUser.getRoles().contains(Role.ADMIN) || family.getUser().getEmail().equals(loggedUserEmail)) {
+            if (!family.getChildren().isEmpty()) {
+                throw new BusinessLogicException("Cannot delete family with children profiles");
             }
-            return;
+            familyRepository.delete(family);
+            loggedUser.getRoles().remove(Role.FAMILY);
+            loggedUser.getRoles().add(Role.USER);
+            userRepository.save(loggedUser);
+        } else {
+            throw new UnauthorizedAccessException("Not authorized");
         }
-
-        if (!family.getUser().getEmail().equals(loggedUserEmail)) {
-            throw new SecurityException("You do not have permission to delete this family");
-        }
-
-        if (!family.getChildren().isEmpty()) {
-            throw new IllegalStateException("Cannot delete family with children");
-        }
-
-        familyRepository.delete(family);
-        loggedUser.getRoles().remove(Role.FAMILY);
-        loggedUser.getRoles().add(Role.USER);
-        userRepository.save(loggedUser);
     }
 
     @Override
@@ -135,38 +125,29 @@ public class FamilyServiceImpl implements FamilyService {
     }
 
     @Transactional(readOnly = true)
-    @Override
-    public List<FamilyResponseDTO> explorePlaymateFamilies(String userEmail, List<Long> interestIds, Integer minAge, Integer maxAge) {
+    public List<FamilyResponseDTO> explorePlaymateFamilies(String userEmail, Long currentChildId, List<Long> interestIds, Integer minAge, Integer maxAge) {
         FamilyEntity myFamily = familyRepository.findByUserEmail(userEmail)
-                .orElseThrow(() -> new EntityNotFoundException("Family profile not found for: " + userEmail));
+                .orElseThrow(() -> new EntityNotFoundException("Family not found for: " + userEmail));
 
-        // Iniciamos la especificación directamente con el barrio
-        Specification<FamilyEntity> spec = FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId());
+        int min = minAge != null ? minAge : 0;
+        int max = maxAge != null ? maxAge : 18;
 
-        // Excluimos la familia del usuario logueado
-        spec = spec.and((root, query, cb) -> cb.notEqual(root.get("id"), myFamily.getId()));
+        Specification<FamilyEntity> spec = Specification
+                .where(FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId()))
+                .and(FamilySpecifications.isNotMyFamily(myFamily.getId()))
+                .and(FamilySpecifications.hasChildWithCriteria(min, max, interestIds));
 
-        // Filtro por intereses (ahora acepta List<Long>)
-        if (interestIds != null && !interestIds.isEmpty()) {
-            spec = spec.and(FamilySpecifications.hasChildWithInterest(interestIds));
-        }
 
-        // Filtro por edad
-        if (minAge != null && maxAge != null) {
-            spec = spec.and(FamilySpecifications.hasChildAgeBetween(minAge, maxAge));
-        }
-
-        // El repositorio con @EntityGraph hará el resto
-        return familyRepository.findAll(spec).stream()
-                .map(this.familyMapper::toResponse)
-                .collect(Collectors.toList());
-    }
+    return familyRepository.findAll(spec).stream()
+            .map(this.familyMapper::toResponse)
+             .collect(Collectors.toList());
+  }
     @Override
     @Transactional(readOnly = true)
     public FamilyResponseDTO getFamilyByEmail(String email) {
-        FamilyEntity entity = familyRepository.findByUserEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("No se encontró la familia para el usuario: " + email));
-        return this.familyMapper.toResponse(entity);
-    }
 
+        return familyRepository.findByUserEmail(email)
+                .map(familyMapper::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Family not found"));
+    }
 }

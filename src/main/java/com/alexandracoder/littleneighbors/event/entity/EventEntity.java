@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@lombok.experimental.SuperBuilder
 public class EventEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

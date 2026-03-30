@@ -11,60 +11,57 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-    @RequestMapping("/api/matches")
-    @RequiredArgsConstructor
-    public class MatchController {
+@RequestMapping("/api/matches")
+@RequiredArgsConstructor
+public class MatchController {
 
-        private final MatchService matchService;
-        private final MatchMapper matchMapper;
-        private final FamilyMapper familyMapper;
+    private final MatchService matchService;
+    private final MatchMapper matchMapper;
+    private final FamilyMapper familyMapper;
 
-        // 1. ENDPOINT PARA EL EXPLORER (Ver las cards como "The Fayes")
-        @GetMapping("/explorer")
-        public ResponseEntity<List<FamilyExplorerDTO>> getExplorer(
-                @RequestParam Long neighborhoodId,
-                @RequestParam int minAge,
-                @RequestParam int maxAge,
-                @RequestParam(required = false) List<Long> interestIds,
-                @RequestParam Long currentChildId) {
+    @GetMapping("/explorer")
+    public ResponseEntity<List<FamilyExplorerDTO>> getExplorer(
 
-            // Filtramos familias compatibles
-            List<FamilyEntity> families = matchService.findCompatibleFamilies(
-                    neighborhoodId, minAge, maxAge, interestIds
-            );
+            @RequestParam(required = false) Long neighborhoodId,
+            @RequestParam(defaultValue = "0") int minAge,
+            @RequestParam(defaultValue = "18") int maxAge,
+            @RequestParam(required = false) List<Long> interestIds,
+            @RequestParam(required = false) Long currentChildId) {
 
-            // Verificamos si el usuario ya gastó su "bala" semanal
-            boolean isUserLocked = matchService.hasActiveMatchThisWeek(currentChildId);
-
-            // Convertimos a DTOs anónimos (sin nombres de niños)
-            List<FamilyExplorerDTO> response = families.stream()
-                    .map(f -> familyMapper.toExplorerDTO(f, isUserLocked))
-                    .toList();
-
-            return ResponseEntity.ok(response);
+        if (neighborhoodId == null) {
+            return ResponseEntity.ok(new ArrayList<>());
         }
 
-        // 2. ENDPOINT PARA SOLICITAR EL MATCH (Botón "Match to Chat")
-        @PostMapping("/request")
-        public ResponseEntity<?> requestMatch(@RequestBody MatchRequestDTO request) {
-            try {
-                // Ejecutamos la lógica de negocio
-                MatchEntity match = matchService.requestMatch(
-                        request.initiatorChildId(),
-                        request.targetChildId()
-                );
+        List<Long> filterInterests = (interestIds == null) ? new ArrayList<>() : interestIds;
 
-                // Devolvemos el DTO de respuesta limpio
-                return ResponseEntity.ok(matchMapper.toResponseDTO(match));
+        List<FamilyEntity> families = matchService.findCompatibleFamilies(
+                neighborhoodId, minAge, maxAge, filterInterests, currentChildId  // ← added currentChildId
+        );
 
-            } catch (IllegalStateException e) {
-                // Aquí capturamos: "Solo un match por semana" o "Diferente barrio"
-                return ResponseEntity.badRequest().body(e.getMessage());
-            } catch (Exception e) {
-                return ResponseEntity.internalServerError().body("Error inesperado: " + e.getMessage());
-            }
+        boolean isUserLocked = currentChildId != null && matchService.hasActiveMatchThisWeek(currentChildId);
+
+        List<FamilyExplorerDTO> response = families.stream()
+                .map(f -> familyMapper.toExplorerDTO(f, isUserLocked))
+                .toList();  // ← removed .distinct()
+
+        return ResponseEntity.ok(response);
+    }
+    @PostMapping("/request")
+    public ResponseEntity<?> requestMatch(@RequestBody MatchRequestDTO request) {
+        try {
+            MatchEntity match = matchService.requestMatch(
+                    request.initiatorChildId(),
+                    request.targetChildId()
+            );
+            return ResponseEntity.ok(matchMapper.toResponseDTO(match));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
         }
     }
+}

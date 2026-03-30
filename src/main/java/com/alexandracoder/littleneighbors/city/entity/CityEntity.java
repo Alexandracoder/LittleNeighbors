@@ -13,7 +13,7 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@lombok.experimental.SuperBuilder
 public class CityEntity extends BaseEntity {
 
     @Id

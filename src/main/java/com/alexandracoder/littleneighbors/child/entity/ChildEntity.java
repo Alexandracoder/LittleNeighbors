@@ -8,6 +8,7 @@ import com.alexandracoder.littleneighbors.shared.BaseEntity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDate;
 import java.time.Period;
@@ -20,7 +21,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@lombok.experimental.SuperBuilder
 public class ChildEntity extends BaseEntity {
 
     @Id
@@ -28,22 +29,26 @@ public class ChildEntity extends BaseEntity {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "life_stage")
+    @Column(name = "life_stage", nullable = false)
     private LifeStage lifeStage;
 
-    @Column(name = "birth_date", nullable = true)
+    @Column(name = "birth_date")
     private LocalDate birthDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = true, length = 10)
+    @Column(length = 20)
     private Gender gender;
 
-    @Column(name = "due_date", nullable = true)
+    @Column(name = "due_date")
     private LocalDate dueDate;
 
     @Column(name = "is_prenatal", nullable = false)
     @Builder.Default
     private boolean isPrenatal = false;
+
+    @Column(name = "is_pregnancy_support", nullable = false)
+    @Builder.Default
+    private boolean pregnancySupport = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "family_id", nullable = false)
@@ -52,8 +57,9 @@ public class ChildEntity extends BaseEntity {
     @JsonBackReference
     private FamilyEntity family;
 
+    @BatchSize(size = 20)
     @Builder.Default
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "child_interests",
             joinColumns = @JoinColumn(name = "child_id"),
@@ -67,5 +73,13 @@ public class ChildEntity extends BaseEntity {
             return 0;
         }
         return Period.between(this.birthDate, LocalDate.now()).getYears();
+    }
+
+    public void addInterest(InterestEntity interest) {
+        this.interests.add(interest);
+    }
+
+    public void removeInterest(InterestEntity interest) {
+        this.interests.remove(interest);
     }
 }

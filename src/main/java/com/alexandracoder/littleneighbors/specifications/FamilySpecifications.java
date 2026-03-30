@@ -4,10 +4,7 @@ import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.interest.entity.InterestEntity;
 import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
+import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
@@ -21,53 +18,66 @@ public class FamilySpecifications {
         return (root, query, cb) -> cb.equal(root.get("neighborhood").get("id"), neighborhoodId);
     }
 
-    public static Specification<FamilyEntity> hasChildWithInterest(List<Long> interestIds) {
-        if (interestIds == null || interestIds.isEmpty()) return null;
+    public static Specification<FamilyEntity> hasChildWithCriteria(int minAge, int maxAge, List<Long> interestIds) {
         return (root, query, cb) -> {
-            query.distinct(true);
-            Join<FamilyEntity, ChildEntity> children = root.join("children", JoinType.INNER);
-            Join<ChildEntity, InterestEntity> interests = children.join("interests", JoinType.INNER);
-
-            return interests.get("id").in(interestIds);
-        };
-    }
-
-    public static Specification<FamilyEntity> hasChildAgeBetween(int minAge, int maxAge) {
-        return (root, query, cb) -> {
-            query.distinct(true);
-            Join<FamilyEntity, ChildEntity> children = root.join("children", JoinType.INNER);
+            Subquery<Long> sub = query.subquery(Long.class);
+            Root<ChildEntity> child = sub.from(ChildEntity.class);
+            sub.select(child.get("id"));
 
             LocalDate today = LocalDate.now();
-            // Si tiene 2 años, nació hace máximo 2 años. Si tiene 5, nació hace mínimo 5.
             LocalDate maxBirthDate = today.minusYears(minAge);
-            LocalDate minBirthDate = today.minusYears(maxAge);
+            LocalDate minBirthDate = today.minusYears(maxAge).minusYears(1).plusDays(1);
 
-            return cb.between(children.get("birthDate"), minBirthDate, maxBirthDate);
+            Predicate belongsToFamily = cb.equal(child.get("family"), root);
+            Predicate agePredicate = cb.between(child.get("birthDate"), minBirthDate, maxBirthDate);
+
+            if (interestIds != null && !interestIds.isEmpty()) {
+                Join<ChildEntity, InterestEntity> interests = child.join("interests", JoinType.INNER);
+                sub.where(cb.and(belongsToFamily, agePredicate, interests.get("id").in(interestIds)));
+            } else {
+                sub.where(cb.and(belongsToFamily, agePredicate));
+            }
+
+            return cb.exists(sub);
         };
+
     }
 
-    /**
-     * Filtra familias que NO han tenido un match reciente (última semana).
-     * Esto limpia el Explorer de familias "ocupadas".
-     */
     public static Specification<FamilyEntity> hasNoRecentMatch(LocalDateTime since) {
         return (root, query, cb) -> {
-            // Subquery para buscar matches existentes
-            Subquery<Integer> subquery = query.subquery(Integer.class);
+            if (since == null) return null;
+
+            Subquery<Long> subquery = query.subquery(Long.class);
             Root<MatchEntity> matchRoot = subquery.from(MatchEntity.class);
 
-            subquery.select(cb.literal(1))
+            subquery.select(matchRoot.get("id"))
                     .where(cb.and(
                             cb.or(
-                                    // Comparamos IDs para evitar problemas de persistencia
                                     cb.equal(matchRoot.get("childA").get("family").get("id"), root.get("id")),
                                     cb.equal(matchRoot.get("childB").get("family").get("id"), root.get("id"))
                             ),
                             cb.greaterThan(matchRoot.get("createdAt"), since)
                     ));
 
-            // Solo devolvemos familias donde NO existe (cb.not) ese registro reciente
             return cb.not(cb.exists(subquery));
+        };
+    }
+        public static Specification<FamilyEntity> isNotMyFamily(Long myFamilyId) {
+        if (myFamilyId == null) return null;
+        return (root, query, cb) -> cb.notEqual(root.get("id"), myFamilyId);
+    }
+
+    public static Specification<FamilyEntity> isNotChild(Long currentChildId) {
+        if (currentChildId == null) return null;
+        return (root, query, cb) -> {
+            Subquery<Long> sub = query.subquery(Long.class);
+            Root<ChildEntity> child = sub.from(ChildEntity.class);
+            sub.select(child.get("id"))
+                    .where(cb.and(
+                            cb.equal(child.get("family"), root),
+                            cb.equal(child.get("id"), currentChildId)
+                    ));
+            return cb.not(cb.exists(sub));
         };
     }
 }
