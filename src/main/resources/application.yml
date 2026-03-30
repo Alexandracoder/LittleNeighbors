@@ -67,7 +67,7 @@ spring:
   flyway:
     enabled: false
 
-# 🎯 CORRECCIÓN: 'jwt' debe estar al mismo nivel que 'spring'
+
 jwt:
   secret: ${JWT_SECRET:8f42a6b2d1c5e9f8a3b7c4d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1}
   expiration: 3600000
