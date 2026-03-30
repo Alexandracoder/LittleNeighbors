@@ -8,7 +8,6 @@ import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@TestPropertySource
 class LittleneighborsApplicationTests {
 
 	@Test

@@ -52,13 +52,11 @@ spring:
     activate:
       on-profile: test
   datasource:
-
-    url: jdbc:h2:mem:littleneighbors-test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+    url: jdbc:h2:mem:littleneighborstest;DB_CLOSE_DELAY=-1;MODE=MySQL
     driver-class-name: org.h2.Driver
     username: sa
     password: ""
   jpa:
-
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
@@ -68,9 +66,11 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
   flyway:
     enabled: false
-    jwt:
-      secret: ${JWT_SECRET:8f42a6b2d1c5e9f8a3b7c4d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1}
-      expiration: 3600000
+
+# 🎯 CORRECCIÓN: 'jwt' debe estar al mismo nivel que 'spring'
+jwt:
+  secret: ${JWT_SECRET:8f42a6b2d1c5e9f8a3b7c4d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1}
+  expiration: 3600000
 # ===============================
 # PERFIL PROD (MySQL real)
 # ===============================
