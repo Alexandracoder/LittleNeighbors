@@ -54,8 +54,10 @@ spring:
   datasource:
     url: jdbc:h2:mem:littleneighbors_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE_MySQL
   jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
+      dialect: org.hibernate.dialect.H2Dialect
     show-sql: true
   flyway:
     enabled: false
