@@ -6,6 +6,6 @@ public record MessageResponseDTO(
         Long id,
         String content,
         Long senderId,
-        String senderFirstName, // Para poner "Ana: ¡Hola!" en el chat
+        String senderFirstName,
         LocalDateTime sentAt
 ) {}
