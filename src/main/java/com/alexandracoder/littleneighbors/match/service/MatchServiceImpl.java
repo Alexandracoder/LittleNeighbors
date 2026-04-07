@@ -41,8 +41,6 @@ public class MatchServiceImpl implements MatchService {
         ChildEntity childB = childRepository.findById(childBId)
                 .orElseThrow(() -> new ResourceNotFoundException("Target child not found: " + childBId));
 
-        validateWeeklyConstraint(childAId);
-
         if (childA.getFamily().getNeighborhood() == null || childB.getFamily().getNeighborhood() == null) {
             throw new BusinessLogicException("Both families must have a neighborhood assigned to connect.");
         }
@@ -51,13 +49,19 @@ public class MatchServiceImpl implements MatchService {
             throw new BusinessLogicException("Connections are only allowed within the same neighborhood.");
         }
 
-        MatchEntity newMatch = MatchEntity.builder()
-                .childA(childA)
-                .childB(childB)
-                .status(MatchStatus.PENDING)
-                .build();
-
-        return matchRepository.save(newMatch);
+        LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
+        return matchRepository.findAll(MatchSpecifications.hasMatchForChildInLastWeek(childAId, oneWeekAgo))
+                .stream()
+                .filter(m -> m.getChildA().getId().equals(childBId) || m.getChildB().getId().equals(childBId))
+                .findFirst()
+                .orElseGet(() -> {
+                    MatchEntity newMatch = MatchEntity.builder()
+                            .childA(childA)
+                            .childB(childB)
+                            .status(MatchStatus.PENDING)
+                            .build();
+                    return matchRepository.save(newMatch);
+                });
     }
 
     @Override
@@ -65,7 +69,6 @@ public class MatchServiceImpl implements MatchService {
     public List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int maxAge, List<Long> interestIds, Long currentChildId) {
         if (neighborhoodId == null) return List.of();
 
-        LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
 
         Long myFamilyId = null;
         if (currentChildId != null) {
@@ -77,36 +80,10 @@ public class MatchServiceImpl implements MatchService {
         Specification<FamilyEntity> spec = Specification
                 .where(FamilySpecifications.hasNeighborhood(neighborhoodId))
                 .and(FamilySpecifications.hasChildWithCriteria(minAge, maxAge, interestIds))
-                .and(FamilySpecifications.hasNoRecentMatch(oneWeekAgo))
                 .and(FamilySpecifications.isNotChild(currentChildId))
                 .and(FamilySpecifications.isNotMyFamily(myFamilyId));
 
         return familyRepository.findAll(spec);
-    }
-
-    @Override
-    public void validateWeeklyConstraint(Long childId) {
-        if (hasActiveMatchThisWeek(childId)) {
-            throw new BusinessLogicException("Only one match request is allowed per week.");
-        }
-    }
-
-    @Override
-    public boolean hasActiveMatchThisWeek(Long childId) {
-        if (childId == null) return false;
-        LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
-        return matchRepository.exists(MatchSpecifications.hasMatchForChildInLastWeek(childId, oneWeekAgo));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<MatchResponseDetailDTO> getMatchesForUser(String email) {
-        List<MatchEntity> matchesAsA = matchRepository.findByChildAFamilyUserEmail(email);
-        List<MatchEntity> matchesAsB = matchRepository.findByChildBFamilyUserEmail(email);
-
-        return Stream.concat(matchesAsA.stream(), matchesAsB.stream())
-                .map(match -> convertToDetailDTO(match, email))
-                .toList();
     }
 
     @Override
@@ -118,15 +95,54 @@ public class MatchServiceImpl implements MatchService {
         boolean isTarget = match.getChildB().getFamily().getUser().getEmail().equals(currentUserEmail);
 
         if (!isTarget) {
-            throw new BusinessLogicException("You do not have permission to respond to this request; you are not the recipient.");
+            throw new BusinessLogicException("You do not have permission to respond to this request.");
         }
 
         if (match.getStatus() != MatchStatus.PENDING) {
             throw new BusinessLogicException("This match has already been processed.");
         }
 
+        if (status == MatchStatus.ACCEPTED) {
+            validateWeeklyConstraint(match.getChildB().getId());
+            validateWeeklyConstraint(match.getChildA().getId());
+        }
+
         match.setStatus(status);
         matchRepository.save(match);
+    }
+
+    @Override
+    public void validateWeeklyConstraint(Long childId) {
+
+        if (countAcceptedMatchesThisWeek(childId) >= 2) {
+            throw new BusinessLogicException("Limit reached: Only 2 official connections are allowed per week.");
+        }
+    }
+
+    @Override
+    public boolean hasActiveMatchThisWeek(Long childId) {
+        return countAcceptedMatchesThisWeek(childId) > 0;
+    }
+
+    private long countAcceptedMatchesThisWeek(Long childId) {
+        if (childId == null) return 0;
+        LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
+
+        Specification<MatchEntity> spec = MatchSpecifications.hasMatchForChildInLastWeek(childId, oneWeekAgo)
+                .and((root, query, cb) -> cb.equal(root.get("status"), MatchStatus.ACCEPTED));
+
+        return matchRepository.count(spec);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MatchResponseDetailDTO> getMatchesForUser(String email) {
+        List<MatchEntity> matchesAsA = matchRepository.findByChildAFamilyUserEmail(email);
+        List<MatchEntity> matchesAsB = matchRepository.findByChildBFamilyUserEmail(email);
+
+        return Stream.concat(matchesAsA.stream(), matchesAsB.stream())
+                .map(match -> convertToDetailDTO(match, email))
+                .toList();
     }
 
     private MatchResponseDetailDTO convertToDetailDTO(MatchEntity match, String currentUserEmail) {
