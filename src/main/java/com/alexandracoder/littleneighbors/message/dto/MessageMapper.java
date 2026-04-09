@@ -9,9 +9,11 @@ public class MessageMapper {
     public MessageResponseDTO toResponseDTO(MessageEntity entity) {
         return new MessageResponseDTO(
                 entity.getId(),
-                entity.getContent(),
                 entity.getSender().getId(),
-                entity.getSender().getFirstName(),
+                entity.getSender().getEmail(),
+                entity.getReceiver().getId(),
+                entity.getMatch() != null ? entity.getMatch().getId() : null,
+                entity.getContent(),
                 entity.getSentAt()
         );
     }

@@ -39,7 +39,7 @@ public class UserEntity extends BaseEntity implements UserDetails {
     @Column(nullable = false)
     private String password;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private FamilyEntity family;

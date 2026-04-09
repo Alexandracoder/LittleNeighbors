@@ -30,6 +30,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 @EnableSpringDataWebSupport(pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
@@ -51,19 +52,6 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     @Profile("dev")
-    public SecurityFilterChain authFilterChain(HttpSecurity http) throws Exception {
-        http
-                .securityMatcher("/api/auth/**")
-                .cors(Customizer.withDefaults())
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
-        return http.build();
-    }
-
-
-    @Bean
-    @Order(2)
-    @Profile("dev")
     public SecurityFilterChain devSecurityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(Customizer.withDefaults())
@@ -71,7 +59,13 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/h2-console/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+
+                        .requestMatchers("/api/auth/**", "/h2-console/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+
+
+                        .requestMatchers("/api/messages/**", "/api/families/**", "/api/neighborhoods/**", "/api/children/**", "/api/status/**").authenticated()
+
+
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -122,8 +116,15 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        SecretKeySpec secretKey = new SecretKeySpec(jwtSecret.getBytes(), "HmacSHA256");
-        return NimbusJwtDecoder.withSecretKey(secretKey).build();
+
+        SecretKeySpec secretKey = new SecretKeySpec(
+                jwtSecret.getBytes(StandardCharsets.UTF_8),
+                "HmacSHA256"
+        );
+
+        return NimbusJwtDecoder.withSecretKey(secretKey)
+                .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS256)
+                .build();
     }
 
     @Bean

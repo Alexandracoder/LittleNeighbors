@@ -15,5 +15,6 @@ public record ChildResponseDTO(
         List<InterestResponseDTO> interests,
         boolean isPrenatal,
         boolean pregnancySupport,
-        Long familyId
+        Long familyId,
+        Long familyUserId
 ) {}

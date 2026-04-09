@@ -26,8 +26,10 @@ public class ChildMapper {
                 : List.of();
 
         Long familyId = (entity.getFamily() != null) ? entity.getFamily().getId() : null;
+        Long familyUserId = (entity.getFamily() != null && entity.getFamily().getUser() != null)
+                ? entity.getFamily().getUser().getId()
+                : null;
 
-        // IMPORTANTE: El orden de estos campos debe ser IDÉNTICO al de tu ChildResponseDTO record
         return new ChildResponseDTO(
                 entity.getId(),
                 entity.getBirthDate(),
@@ -37,7 +39,8 @@ public class ChildMapper {
                 interestDTOs,
                 entity.isPrenatal(),
                 entity.isPregnancySupport(),
-                familyId
+                familyId,
+                familyUserId
         );
     }
 

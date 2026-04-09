@@ -6,6 +6,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.Map;
@@ -15,10 +16,8 @@ public class JwtService {
 
     private final Key key;
 
-    public JwtService(
-            @Value("${jwt.secret}") String secret
-    ) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+    public JwtService(@Value("${jwt.secret}") String secret) {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateAccessToken(String email, Map<String, Object> claims) {
