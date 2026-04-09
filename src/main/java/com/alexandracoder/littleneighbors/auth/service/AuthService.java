@@ -4,6 +4,7 @@ import com.alexandracoder.littleneighbors.auth.dto.*;
 import com.alexandracoder.littleneighbors.enums.Role;
 import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
+import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
 import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO;
 import com.alexandracoder.littleneighbors.security.JwtService;
 import com.alexandracoder.littleneighbors.shared.exceptions.UnauthorizedAccessException;
@@ -33,8 +34,8 @@ public class AuthService {
 
         UserEntity user = UserEntity.builder()
                 .email(request.email())
-                .firstName("Nuevo")
-                .lastName("Vecino")
+                .firstName("New")
+                .lastName("Neighbor")
                 .password(passwordEncoder.encode(request.password()))
                 .roles(new HashSet<>(Set.of(Role.USER)))
                 .build();
@@ -53,6 +54,7 @@ public class AuthService {
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", user.getRoles().stream().map(Enum::name).toList());
+        claims.put("id", user.getId());
 
         return new AuthResponse(
                 jwtService.generateAccessToken(user.getEmail(), claims),
@@ -73,7 +75,7 @@ public class AuthService {
     }
 
     private FamilyResponseDTO mapToFamilyDTO(FamilyEntity family) {
-        var neighborhood = family.getNeighborhood();
+        NeighborhoodEntity neighborhood = family.getNeighborhood();
         Long neighborhoodId = (neighborhood != null) ? neighborhood.getId() : null;
         String street = (neighborhood != null) ? neighborhood.getStreetName() : "";
         String zip = (neighborhood != null) ? neighborhood.getPostalCode() : "";
@@ -106,6 +108,7 @@ public class AuthService {
         claims.put("roles", user.getRoles().stream()
                 .map(Enum::name)
                 .toList());
+        claims.put("id" , user.getId());
 
         return new AuthResponse(
                 jwtService.generateAccessToken(email, claims),

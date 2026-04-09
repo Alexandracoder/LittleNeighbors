@@ -7,8 +7,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -21,13 +23,22 @@ public class MessageController {
     @PostMapping("/send")
     public ResponseEntity<MessageResponseDTO> sendMessage(
             @RequestBody SendMessageDTO dto,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal Jwt jwt) {
 
-        return ResponseEntity.ok(messageService.sendMessage(dto, userDetails.getUsername()));
+        if (jwt == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+
+        String email = jwt.getSubject();
+
+        return ResponseEntity.ok(messageService.sendMessage(dto, email));
     }
 
-    @GetMapping("/history/{matchId}")
-    public ResponseEntity<List<MessageResponseDTO>> getChatHistory(@PathVariable Long matchId) {
-        return ResponseEntity.ok(messageService.getChatHistory(matchId));
+    @GetMapping("/history")
+    public ResponseEntity<List<MessageResponseDTO>> getChatHistory(
+            @RequestParam Long user1Id,
+            @RequestParam Long user2Id) {
+        return ResponseEntity.ok(messageService.getChatHistory(user1Id, user2Id));
     }
 }

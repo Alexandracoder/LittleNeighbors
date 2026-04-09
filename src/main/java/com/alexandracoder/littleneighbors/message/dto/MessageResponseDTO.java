@@ -4,8 +4,10 @@ import java.time.LocalDateTime;
 
 public record MessageResponseDTO(
         Long id,
-        String content,
         Long senderId,
-        String senderFirstName,
+        String senderEmail,
+        Long receiverId,
+        Long matchId,
+        String content,
         LocalDateTime sentAt
 ) {}

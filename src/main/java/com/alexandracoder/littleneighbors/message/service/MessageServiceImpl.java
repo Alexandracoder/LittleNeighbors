@@ -7,11 +7,13 @@ import com.alexandracoder.littleneighbors.message.dto.SendMessageDTO;
 import com.alexandracoder.littleneighbors.message.entity.MessageEntity;
 import com.alexandracoder.littleneighbors.message.dto.MessageMapper;
 import com.alexandracoder.littleneighbors.message.repository.MessageRepository;
+import com.alexandracoder.littleneighbors.specifications.MessageSpecifications;
 import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
-import com.alexandracoder.littleneighbors.shared.exceptions.UnauthorizedAccessException;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,19 +35,19 @@ public class MessageServiceImpl implements MessageService {
         UserEntity sender = userRepository.findByEmail(senderEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        MatchEntity match = matchRepository.findById(dto.matchId())
-                .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
+        UserEntity receiver = userRepository.findById(dto.receiverId())
+                .orElseThrow(() -> new ResourceNotFoundException("Receiver not found"));
 
-        boolean isParticipant = match.getChildA().getFamily().getUser().getId().equals(sender.getId()) ||
-                match.getChildB().getFamily().getUser().getId().equals(sender.getId());
-
-        if (!isParticipant) {
-            throw new UnauthorizedAccessException("You are not a participant in this conversation.");
+        MatchEntity match = null;
+        if (dto.matchId() != null) {
+            match = matchRepository.findById(dto.matchId())
+                    .orElse(null);
         }
 
         MessageEntity message = MessageEntity.builder()
-                .match(match)
                 .sender(sender)
+                .receiver(receiver)
+                .match(match)
                 .content(dto.content())
                 .sentAt(LocalDateTime.now())
                 .build();
@@ -56,12 +58,10 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<MessageResponseDTO> getChatHistory(Long matchId) {
-        if (!matchRepository.existsById(matchId)) {
-            throw new ResourceNotFoundException("Match not found with ID: " + matchId);
-        }
+    public List<MessageResponseDTO> getChatHistory(Long user1Id, Long user2Id) {
+        Specification<MessageEntity> spec = MessageSpecifications.isConversationBetween(user1Id, user2Id);
 
-        List<MessageEntity> messages = messageRepository.findByMatchIdOrderBySentAtAsc(matchId);
+        List<MessageEntity> messages = messageRepository.findAll(spec, Sort.by(Sort.Direction.ASC, "sentAt"));
 
         return messages.stream()
                 .map(messageMapper::toResponseDTO)
