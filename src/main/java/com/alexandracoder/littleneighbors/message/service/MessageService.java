@@ -8,5 +8,5 @@ public interface MessageService {
 
     MessageResponseDTO sendMessage(SendMessageDTO dto, String senderEmail);
 
-    List<MessageResponseDTO> getChatHistory(Long user1Id, Long user2Id);
+    List<MessageResponseDTO> getChatHistory(Long myFamilyId, Long matchFamilyId);
 }

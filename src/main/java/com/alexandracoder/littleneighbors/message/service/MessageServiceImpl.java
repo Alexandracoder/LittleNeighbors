@@ -41,7 +41,7 @@ public class MessageServiceImpl implements MessageService {
         MatchEntity match = null;
         if (dto.matchId() != null) {
             match = matchRepository.findById(dto.matchId())
-                    .orElse(null);
+                    .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
         }
 
         MessageEntity message = MessageEntity.builder()
@@ -58,10 +58,12 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<MessageResponseDTO> getChatHistory(Long user1Id, Long user2Id) {
-        Specification<MessageEntity> spec = MessageSpecifications.isConversationBetween(user1Id, user2Id);
+    public List<MessageResponseDTO> getChatHistory(Long myFamilyId, Long matchFamilyId) {
+        Specification<MessageEntity> spec =
+                MessageSpecifications.isConversationBetween(myFamilyId, matchFamilyId);
 
-        List<MessageEntity> messages = messageRepository.findAll(spec, Sort.by(Sort.Direction.ASC, "sentAt"));
+        List<MessageEntity> messages = messageRepository.findAll(spec);
+
 
         return messages.stream()
                 .map(messageMapper::toResponseDTO)
