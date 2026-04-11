@@ -8,10 +8,14 @@ import org.springframework.stereotype.Component;
 public class MatchMapper {
 
     public MatchResponseDTO toResponseDTO(MatchEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+
         return new MatchResponseDTO(
                 entity.getId(),
-                entity.getChildA().getFamily().getUser().getId(), // Quien inicia (Searcher)
-                entity.getChildB().getFamily().getId(),          // La familia destino (The Fayes)
+                entity.getChildRequest().getFamily().getUser().getId(),
+                entity.getChildTarget().getFamily().getId(),
                 entity.getStatus()
         );
     }

@@ -1,5 +1,6 @@
 package com.alexandracoder.littleneighbors.message.service;
 
+import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
 import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
 import com.alexandracoder.littleneighbors.match.repository.MatchRepository;
 import com.alexandracoder.littleneighbors.message.dto.MessageResponseDTO;
@@ -7,12 +8,11 @@ import com.alexandracoder.littleneighbors.message.dto.SendMessageDTO;
 import com.alexandracoder.littleneighbors.message.entity.MessageEntity;
 import com.alexandracoder.littleneighbors.message.dto.MessageMapper;
 import com.alexandracoder.littleneighbors.message.repository.MessageRepository;
-import com.alexandracoder.littleneighbors.specifications.MessageSpecifications;
 import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
+import com.alexandracoder.littleneighbors.specifications.MessageSpecifications;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +27,7 @@ public class MessageServiceImpl implements MessageService {
     private final MessageRepository messageRepository;
     private final MatchRepository matchRepository;
     private final UserRepository userRepository;
+    private final FamilyRepository familyRepository;
     private final MessageMapper messageMapper;
 
     @Override
@@ -35,13 +36,14 @@ public class MessageServiceImpl implements MessageService {
         UserEntity sender = userRepository.findByEmail(senderEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        UserEntity receiver = userRepository.findById(dto.receiverId())
-                .orElseThrow(() -> new ResourceNotFoundException("Receiver not found"));
+        MatchEntity match = matchRepository.findById(dto.matchId())
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
 
-        MatchEntity match = null;
-        if (dto.matchId() != null) {
-            match = matchRepository.findById(dto.matchId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
+        UserEntity receiver;
+        if (match.getChildRequest().getFamily().getUser().getId().equals(sender.getId())) {
+            receiver = match.getChildTarget().getFamily().getUser();
+        } else {
+            receiver = match.getChildRequest().getFamily().getUser();
         }
 
         MessageEntity message = MessageEntity.builder()
@@ -52,20 +54,32 @@ public class MessageServiceImpl implements MessageService {
                 .sentAt(LocalDateTime.now())
                 .build();
 
-        MessageEntity savedMessage = messageRepository.save(message);
-        return messageMapper.toResponseDTO(savedMessage);
+        return messageMapper.toResponseDTO(messageRepository.save(message));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<MessageResponseDTO> getChatHistory(Long myFamilyId, Long matchFamilyId) {
-        Specification<MessageEntity> spec =
-                MessageSpecifications.isConversationBetween(myFamilyId, matchFamilyId);
+    public List<MessageResponseDTO> getChatHistoryByMatch(Long matchId) {
+        Specification<MessageEntity> spec = MessageSpecifications.hasMatchId(matchId);
+        return messageRepository.findAll(spec).stream()
+                .map(messageMapper::toResponseDTO)
+                .toList();
+    }
 
-        List<MessageEntity> messages = messageRepository.findAll(spec);
+    @Override
+    @Transactional(readOnly = true)
+    public List<MessageResponseDTO> getChatHistory(Long familyIdA, Long familyIdB) {
+        Long userIdA = familyRepository.findById(familyIdA)
+                .map(f -> f.getUser().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Family not found: " + familyIdA));
 
+        Long userIdB = familyRepository.findById(familyIdB)
+                .map(f -> f.getUser().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Family not found: " + familyIdB));
 
-        return messages.stream()
+        Specification<MessageEntity> spec = MessageSpecifications.isConversationBetween(userIdA, userIdB);
+
+        return messageRepository.findAll(spec).stream()
                 .map(messageMapper::toResponseDTO)
                 .toList();
     }

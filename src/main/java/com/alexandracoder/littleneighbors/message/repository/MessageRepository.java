@@ -9,5 +9,6 @@ import java.util.List;
 
 @Repository
 public interface MessageRepository extends JpaRepository<MessageEntity, Long>, JpaSpecificationExecutor<MessageEntity> {
+
     List<MessageEntity> findByMatchIdOrderBySentAtAsc(Long matchId);
 }

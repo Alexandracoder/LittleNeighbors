@@ -31,16 +31,10 @@ public class MessageController {
         return ResponseEntity.ok(messageService.sendMessage(dto, email));
     }
 
-    @GetMapping("/history/{myFamilyId}/{matchFamilyId}")
-    public ResponseEntity<List<MessageResponseDTO>> getHistory(
-            @PathVariable Long myFamilyId,
-            @PathVariable Long matchFamilyId,
-            @AuthenticationPrincipal Jwt jwt) {
-
-        if (jwt == null) {
-            return ResponseEntity.status(401).build();
-        }
-
-        return ResponseEntity.ok(messageService.getChatHistory(myFamilyId, matchFamilyId));
+    @GetMapping("/history/{familyIdA}/{familyIdB}")
+    public ResponseEntity<List<MessageResponseDTO>> getChatHistory(
+            @PathVariable Long familyIdA,
+            @PathVariable Long familyIdB) {
+        return ResponseEntity.ok(messageService.getChatHistory(familyIdA, familyIdB));
     }
 }

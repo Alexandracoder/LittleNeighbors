@@ -21,12 +21,12 @@ public class MatchEntity extends BaseEntity {
     private Long id;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "child_a_id")
-    private ChildEntity childA;
+    @JoinColumn(name = "child_request_id")
+    private ChildEntity childRequest;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "child_b_id")
-    private ChildEntity childB;
+    @JoinColumn(name = "child_target_id")
+    private ChildEntity childTarget;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -6,29 +6,36 @@ import jakarta.persistence.criteria.Predicate;
 
 public class MessageSpecifications {
 
-    public static Specification<MessageEntity> isConversationBetween(Long fam1Id, Long fam2Id) {
+    public static Specification<MessageEntity> isConversationBetween(Long userId1, Long userId2) {
         return (root, query, cb) -> {
-            if (fam1Id == null || fam2Id == null) return null;
+            if (userId1 == null || userId2 == null) return null;
 
-            Predicate f1ToF2 = cb.and(
-                    cb.equal(root.get("sender").get("family").get("id"), fam1Id),
-                    cb.equal(root.get("receiver").get("family").get("id"), fam2Id)
+            if (query.getResultType() != Long.class && query.getResultType() != long.class) {
+                query.orderBy(cb.asc(root.get("sentAt")));
+            }
+
+            Predicate caseA = cb.and(
+                    cb.equal(root.get("sender").get("id"), userId1),
+                    cb.equal(root.get("receiver").get("id"), userId2)
             );
 
-
-            Predicate f2ToF1 = cb.and(
-                    cb.equal(root.get("sender").get("family").get("id"), fam2Id),
-                    cb.equal(root.get("receiver").get("family").get("id"), fam1Id)
+            Predicate caseB = cb.and(
+                    cb.equal(root.get("sender").get("id"), userId2),
+                    cb.equal(root.get("receiver").get("id"), userId1)
             );
 
-            query.orderBy(cb.asc(root.get("sentAt")));
-            return cb.or(f1ToF2, f2ToF1);
+            return cb.or(caseA, caseB);
         };
     }
 
     public static Specification<MessageEntity> hasMatchId(Long matchId) {
         return (root, query, cb) -> {
             if (matchId == null) return null;
+
+            if (query.getResultType() != Long.class && query.getResultType() != long.class) {
+                query.orderBy(cb.asc(root.get("sentAt")));
+            }
+
             return cb.equal(root.get("match").get("id"), matchId);
         };
     }
