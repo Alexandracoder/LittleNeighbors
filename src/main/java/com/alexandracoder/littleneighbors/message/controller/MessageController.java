@@ -31,6 +31,12 @@ public class MessageController {
         return ResponseEntity.ok(messageService.sendMessage(dto, email));
     }
 
+    @GetMapping("/history/match/{matchId}")
+    public ResponseEntity<List<MessageResponseDTO>> getChatHistoryByMatch(
+            @PathVariable Long matchId) {
+        return ResponseEntity.ok(messageService.getChatHistoryByMatch(matchId));
+    }
+
     @GetMapping("/history/{familyIdA}/{familyIdB}")
     public ResponseEntity<List<MessageResponseDTO>> getChatHistory(
             @PathVariable Long familyIdA,
