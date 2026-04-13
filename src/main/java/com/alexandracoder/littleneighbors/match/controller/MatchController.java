@@ -27,7 +27,6 @@ public class MatchController {
 
     @GetMapping("/explorer")
     public ResponseEntity<List<FamilyExplorerDTO>> getExplorer(
-
             @RequestParam(required = false) Long neighborhoodId,
             @RequestParam(defaultValue = "0") int minAge,
             @RequestParam(defaultValue = "18") int maxAge,
@@ -39,19 +38,19 @@ public class MatchController {
         }
 
         List<Long> filterInterests = (interestIds == null) ? new ArrayList<>() : interestIds;
-
         List<FamilyEntity> families = matchService.findCompatibleFamilies(
-                neighborhoodId, minAge, maxAge, filterInterests, currentChildId  // ← added currentChildId
+                neighborhoodId, minAge, maxAge, filterInterests, currentChildId
         );
 
         boolean isUserLocked = currentChildId != null && matchService.hasActiveMatchThisWeek(currentChildId);
 
         List<FamilyExplorerDTO> response = families.stream()
                 .map(f -> familyMapper.toExplorerDTO(f, isUserLocked))
-                .toList();  // ← removed .distinct()
+                .toList();
 
         return ResponseEntity.ok(response);
     }
+
     @PostMapping("/request")
     public ResponseEntity<?> requestMatch(@RequestBody MatchRequestDTO request) {
         try {
@@ -73,11 +72,9 @@ public class MatchController {
         if (principal == null) {
             return ResponseEntity.status(401).build();
         }
-
         List<MatchResponseDetailDTO> matches = matchService.getMatchesForUser(principal.getName());
         return ResponseEntity.ok(matches);
     }
-
 
     @PatchMapping("/{id}/respond")
     public ResponseEntity<Void> respondToMatch(
@@ -87,5 +84,20 @@ public class MatchController {
 
         matchService.respondToMatch(id, status, principal.getName());
         return ResponseEntity.noContent().build();
+    }
+
+    // ESTE ES EL MÉTODO QUE EL FRONTEND ESTÁ BUSCANDO
+    @PostMapping("/{id}/confirm")
+    @PreAuthorize("hasRole('FAMILY')")
+    public ResponseEntity<Void> confirmMatch(
+            @PathVariable Long id,
+            java.security.Principal principal) {
+
+        if (principal == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        matchService.confirmMatch(id, principal.getName());
+        return ResponseEntity.ok().build();
     }
 }

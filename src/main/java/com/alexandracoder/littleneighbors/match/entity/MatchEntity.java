@@ -31,4 +31,12 @@ public class MatchEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MatchStatus status;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean userAccepted = false; // Aceptación de la familia que inició (Request)
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean neighborAccepted = false; // Aceptación de la familia receptora (Target)
 }

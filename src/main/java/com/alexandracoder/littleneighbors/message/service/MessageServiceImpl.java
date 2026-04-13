@@ -3,6 +3,7 @@ package com.alexandracoder.littleneighbors.message.service;
 import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
 import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
 import com.alexandracoder.littleneighbors.match.repository.MatchRepository;
+import com.alexandracoder.littleneighbors.message.dto.ChatHistoryResponseDTO;
 import com.alexandracoder.littleneighbors.message.dto.MessageResponseDTO;
 import com.alexandracoder.littleneighbors.message.dto.SendMessageDTO;
 import com.alexandracoder.littleneighbors.message.entity.MessageEntity;
@@ -40,6 +41,7 @@ public class MessageServiceImpl implements MessageService {
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
 
         UserEntity receiver;
+
         if (match.getChildRequest().getFamily().getUser().getId().equals(sender.getId())) {
             receiver = match.getChildTarget().getFamily().getUser();
         } else {
@@ -59,11 +61,30 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<MessageResponseDTO> getChatHistoryByMatch(Long matchId) {
+    public ChatHistoryResponseDTO getChatHistoryByMatch(Long matchId, String currentUserEmail) {
+
+        MatchEntity match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
+
+
         Specification<MessageEntity> spec = MessageSpecifications.hasMatchId(matchId);
-        return messageRepository.findAll(spec).stream()
+        List<MessageResponseDTO> messages = messageRepository.findAll(spec).stream()
                 .map(messageMapper::toResponseDTO)
                 .toList();
+
+        boolean userAccepted;
+        boolean neighborAccepted;
+
+        if (match.getChildRequest().getFamily().getUser().getEmail().equals(currentUserEmail)) {
+            userAccepted = match.isUserAccepted();
+            neighborAccepted = match.isNeighborAccepted();
+        } else {
+
+            userAccepted = match.isNeighborAccepted();
+            neighborAccepted = match.isUserAccepted();
+        }
+
+        return new ChatHistoryResponseDTO(messages, userAccepted, neighborAccepted);
     }
 
     @Override
