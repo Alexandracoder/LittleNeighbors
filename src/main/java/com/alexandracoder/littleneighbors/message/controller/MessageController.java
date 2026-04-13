@@ -1,5 +1,6 @@
 package com.alexandracoder.littleneighbors.message.controller;
 
+import com.alexandracoder.littleneighbors.message.dto.ChatHistoryResponseDTO;
 import com.alexandracoder.littleneighbors.message.dto.MessageResponseDTO;
 import com.alexandracoder.littleneighbors.message.dto.SendMessageDTO;
 import com.alexandracoder.littleneighbors.message.service.MessageService;
@@ -9,6 +10,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -32,9 +34,10 @@ public class MessageController {
     }
 
     @GetMapping("/history/match/{matchId}")
-    public ResponseEntity<List<MessageResponseDTO>> getChatHistoryByMatch(
-            @PathVariable Long matchId) {
-        return ResponseEntity.ok(messageService.getChatHistoryByMatch(matchId));
+    public ResponseEntity<ChatHistoryResponseDTO> getChatHistoryByMatch(
+            @PathVariable Long matchId,
+            Principal principal) {
+        return ResponseEntity.ok(messageService.getChatHistoryByMatch(matchId, principal.getName()));
     }
 
     @GetMapping("/history/{familyIdA}/{familyIdB}")

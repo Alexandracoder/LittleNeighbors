@@ -29,6 +29,7 @@ public class MatchServiceImpl implements MatchService {
     private final ChildRepository childRepository;
     private final FamilyRepository familyRepository;
 
+
     @Override
     @Transactional
     public MatchEntity requestMatch(Long childRequestId, Long childTargetId) {
@@ -165,5 +166,28 @@ public class MatchServiceImpl implements MatchService {
                 .theirNeighborhoodName(theirChild.getFamily().getNeighborhood() != null ?
                         theirChild.getFamily().getNeighborhood().getName() : "N/A")
                 .build();
+    }
+
+    @Transactional
+    @Override
+    public void confirmMatch(Long matchId, String userEmail) {
+        MatchEntity match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
+
+
+        if (match.getChildRequest().getFamily().getUser().getEmail().equals(userEmail)) {
+            match.setUserAccepted(true);
+        } else if (match.getChildTarget().getFamily().getUser().getEmail().equals(userEmail)) {
+            match.setNeighborAccepted(true);
+        } else {
+            throw new BusinessLogicException("User not authorized for this match");
+        }
+
+
+        if (match.isUserAccepted() && match.isNeighborAccepted()) {
+
+        }
+
+        matchRepository.save(match);
     }
 }
