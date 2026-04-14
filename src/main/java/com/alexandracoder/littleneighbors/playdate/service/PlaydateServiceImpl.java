@@ -1,11 +1,14 @@
 package com.alexandracoder.littleneighbors.playdate.service;
 
+import com.alexandracoder.littleneighbors.enums.PlaydateStatus;
 import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
 import com.alexandracoder.littleneighbors.match.repository.MatchRepository;
 import com.alexandracoder.littleneighbors.playdate.dto.PlaydateRequestDTO;
 import com.alexandracoder.littleneighbors.playdate.entity.PlaydateEntity;
 import com.alexandracoder.littleneighbors.playdate.repository.PlaydateRepository;
+import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,19 +23,34 @@ public class PlaydateServiceImpl implements PlaydateService {
 
     @Override
     @Transactional
-    public PlaydateEntity createPlaydate(PlaydateRequestDTO dto) {
+    public PlaydateEntity createPlaydate(PlaydateRequestDTO dto, String currentUserEmail) {
         MatchEntity match = matchRepository.findById(dto.matchId())
-                .orElseThrow(() -> new RuntimeException("Match not found with ID: " + dto.matchId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found with ID: " + dto.matchId()));
+
+
+        String initiatorEmail = match.getChildRequest().getFamily().getUser().getEmail();
+        String targetEmail = match.getChildTarget().getFamily().getUser().getEmail();
+
+        if (!currentUserEmail.equals(initiatorEmail) && !currentUserEmail.equals(targetEmail)) {
+            throw new AccessDeniedException("You are not part of this match");
+        }
 
         PlaydateEntity playdate = PlaydateEntity.builder()
                 .title(dto.title())
                 .startTime(dto.startTime())
                 .description(dto.description())
                 .match(match)
-                .status("PENDING")
+                .status(PlaydateStatus.PENDING)
                 .build();
 
         return playdateRepository.save(playdate);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PlaydateEntity> findByMatchId(Long matchId) {
+
+        return playdateRepository.findByMatchId(matchId);
     }
 
     @Override

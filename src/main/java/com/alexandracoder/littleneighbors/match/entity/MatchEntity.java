@@ -3,6 +3,7 @@ package com.alexandracoder.littleneighbors.match.entity;
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.enums.MatchStatus;
 import com.alexandracoder.littleneighbors.shared.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,6 +15,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class MatchEntity extends BaseEntity {
 
     @Id
@@ -22,10 +24,12 @@ public class MatchEntity extends BaseEntity {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "child_request_id")
+    @JsonIgnoreProperties({"matches", "interests", "family"})
     private ChildEntity childRequest;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "child_target_id")
+    @JsonIgnoreProperties({"matches", "interests", "family"})
     private ChildEntity childTarget;
 
     @Enumerated(EnumType.STRING)
@@ -34,9 +38,9 @@ public class MatchEntity extends BaseEntity {
 
     @Column(nullable = false)
     @Builder.Default
-    private boolean userAccepted = false; // Aceptación de la familia que inició (Request)
+    private boolean userAccepted = false;
 
     @Column(nullable = false)
     @Builder.Default
-    private boolean neighborAccepted = false; // Aceptación de la familia receptora (Target)
+    private boolean neighborAccepted = false;
 }

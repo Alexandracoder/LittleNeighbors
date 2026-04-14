@@ -5,25 +5,41 @@ import com.alexandracoder.littleneighbors.playdate.entity.PlaydateEntity;
 import com.alexandracoder.littleneighbors.playdate.service.PlaydateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/playdates")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 public class PlaydateController {
 
-    private final PlaydateService playdateService; // Inyectamos la interfaz
+    private final PlaydateService playdateService;
+
 
     @PostMapping
-    public ResponseEntity<PlaydateEntity> create(@RequestBody PlaydateRequestDTO dto) {
-        return ResponseEntity.ok(playdateService.createPlaydate(dto));
+    @PreAuthorize("hasRole('FAMILY')")
+    public ResponseEntity<PlaydateEntity> createPlaydate(
+            @RequestBody PlaydateRequestDTO dto,
+            Principal principal) {
+
+        PlaydateEntity playdate = playdateService.createPlaydate(dto, principal.getName());
+        return ResponseEntity.ok(playdate);
+    }
+
+    @GetMapping("/match/{matchId}")
+    @PreAuthorize("hasRole('FAMILY')")
+    public ResponseEntity<List<PlaydateEntity>> getPlaydatesByMatch(@PathVariable Long matchId) {
+        List<PlaydateEntity> playdates = playdateService.findByMatchId(matchId);
+        return ResponseEntity.ok(playdates);
     }
 
     @GetMapping("/family/{familyId}")
-    public ResponseEntity<List<PlaydateEntity>> getFamilyPlaydates(@PathVariable Long familyId) {
-        return ResponseEntity.ok(playdateService.findAllByFamily(familyId));
+    @PreAuthorize("hasRole('FAMILY')")
+    public ResponseEntity<List<PlaydateEntity>> getPlaydatesByFamily(@PathVariable Long familyId) {
+        List<PlaydateEntity> playdates = playdateService.findAllByFamily(familyId);
+        return ResponseEntity.ok(playdates);
     }
 }
