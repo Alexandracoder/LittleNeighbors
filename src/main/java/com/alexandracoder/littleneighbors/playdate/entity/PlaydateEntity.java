@@ -1,7 +1,9 @@
 package com.alexandracoder.littleneighbors.playdate.entity;
 
+import com.alexandracoder.littleneighbors.enums.PlaydateStatus;
 import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
 import com.alexandracoder.littleneighbors.shared.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -14,6 +16,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @lombok.experimental.SuperBuilder
 @EqualsAndHashCode(callSuper = false)
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class PlaydateEntity extends BaseEntity {
 
     @Id
@@ -33,7 +36,8 @@ public class PlaydateEntity extends BaseEntity {
     @JoinColumn(name = "match_id")
     private MatchEntity match;
 
-    @Builder.Default
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status = "PENDING";
+    @Builder.Default
+    private PlaydateStatus status = PlaydateStatus.PENDING;
 }

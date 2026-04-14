@@ -3,6 +3,7 @@ package com.alexandracoder.littleneighbors.interest.entity;
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.enums.InterestType;
 import com.alexandracoder.littleneighbors.shared.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -32,6 +33,7 @@ public class InterestEntity extends BaseEntity {
 
     @Builder.Default
     @ManyToMany(mappedBy = "interests")
+    @JsonIgnore
     private Set<ChildEntity> children = new HashSet<>();
 
     @Column(nullable = false, length = 500)

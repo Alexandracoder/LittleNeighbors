@@ -1,10 +1,17 @@
 package com.alexandracoder.littleneighbors.playdate.service;
 
 import com.alexandracoder.littleneighbors.playdate.dto.PlaydateRequestDTO;
+import com.alexandracoder.littleneighbors.playdate.dto.PlaydateResponseDTO;
 import com.alexandracoder.littleneighbors.playdate.entity.PlaydateEntity;
+
 import java.util.List;
 
 public interface PlaydateService {
-    PlaydateEntity createPlaydate(PlaydateRequestDTO dto);
-    List<PlaydateEntity> findAllByFamily(Long familyId);
+    PlaydateEntity createPlaydate(PlaydateRequestDTO dto, String currentUserEmail);
+
+    List<PlaydateEntity> findByMatchId(Long matchId);
+
+    List<PlaydateResponseDTO> findAllByUser(Long userId);
+
+    PlaydateResponseDTO confirm(Long playdateId);
 }
