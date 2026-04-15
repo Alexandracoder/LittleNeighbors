@@ -34,6 +34,7 @@ public class PlaydateEntity extends BaseEntity {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "match_id")
+    @JsonIgnoreProperties("playdates")
     private MatchEntity match;
 
     @Enumerated(EnumType.STRING)
