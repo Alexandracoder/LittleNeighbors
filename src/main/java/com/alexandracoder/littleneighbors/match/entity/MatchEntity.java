@@ -3,6 +3,7 @@ package com.alexandracoder.littleneighbors.match.entity;
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.enums.MatchStatus;
 import com.alexandracoder.littleneighbors.shared.BaseEntity;
+import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
@@ -43,4 +44,18 @@ public class MatchEntity extends BaseEntity {
     @Column(nullable = false)
     @Builder.Default
     private boolean neighborAccepted = false;
+
+    public UserEntity getTargetUser() {
+        if (childTarget != null && childTarget.getFamily() != null) {
+            return childTarget.getFamily().getUser();
+        }
+        return null;
+    }
+
+    public UserEntity getRequestUser() {
+        if (childRequest != null && childRequest.getFamily() != null) {
+            return childRequest.getFamily().getUser();
+        }
+        return null;
+    }
 }

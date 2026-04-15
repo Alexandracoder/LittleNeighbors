@@ -66,6 +66,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/auth/**", "/h2-console/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/messages/**", "/api/families/**", "/api/neighborhoods/**", "/api/children/**", "/api/status/**").authenticated()
+                        .requestMatchers("/ws-little-neighbors/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

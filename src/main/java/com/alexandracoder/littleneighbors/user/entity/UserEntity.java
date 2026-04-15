@@ -93,4 +93,9 @@ public class UserEntity extends BaseEntity implements UserDetails {
     public boolean hasRole(Role role) {
         return roles.contains(role);
     }
+
+    public String getFullName() {
+        return (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "").trim();
+    }
 }
+

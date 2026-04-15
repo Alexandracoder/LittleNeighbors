@@ -97,7 +97,7 @@ public class PlaydateServiceImpl implements PlaydateService {
                 reqName = reqChild.getFamily().getFamilyName();
             }
 
-            // Accedemos al niño objetivo
+
             ChildEntity resChild = entity.getMatch().getChildTarget();
             if (resChild != null && resChild.getFamily() != null) {
                 resName = resChild.getFamily().getFamilyName();
