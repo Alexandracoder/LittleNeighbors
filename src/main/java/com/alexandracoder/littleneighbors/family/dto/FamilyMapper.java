@@ -18,24 +18,28 @@ public class FamilyMapper {
         NeighborhoodEntity neighborhood = entity.getNeighborhood();
 
         Long neighborhoodId = null;
-        String streetName = null;
-        String postalCode = null;
-        String cityName = "No asignado";
+        String neighborhoodName = "Not assigned";
+        String streetName = "Not assigned";
+        String postalCode = "N/A";
+        String cityName = "Not assigned";
 
         if (neighborhood != null) {
             neighborhoodId = neighborhood.getId();
-            streetName = neighborhood.getStreetName();
-            postalCode = neighborhood.getPostalCode();
-            if (neighborhood.getCity() != null) {
+            neighborhoodName = (neighborhood.getName() != null) ? neighborhood.getName() : "Not assigned";
+            streetName = (neighborhood.getStreetName() != null) ? neighborhood.getStreetName() : "Not assigned";
+            postalCode = (neighborhood.getPostalCode() != null) ? neighborhood.getPostalCode() : "N/A";
+
+            if (neighborhood.getCity() != null && neighborhood.getCity().getName() != null) {
                 cityName = neighborhood.getCity().getName();
             }
         }
 
-        List<ChildSummaryDTO> children = (entity.getChildren() == null)
-                ? Collections.emptyList()
-                : entity.getChildren().stream()
+        List<ChildSummaryDTO> children = (entity.getChildren() != null)
+                ? entity.getChildren().stream()
+                .filter(c -> c != null)
                 .map(this::toChildSummary)
-                .toList();
+                .toList()
+                : Collections.emptyList();
 
         return new FamilyResponseDTO(
                 entity.getId(),
@@ -44,6 +48,7 @@ public class FamilyMapper {
                 entity.getDescription(),
                 entity.getProfilePictureUrl(),
                 neighborhoodId,
+                neighborhoodName,
                 streetName,
                 postalCode,
                 cityName,
@@ -51,20 +56,13 @@ public class FamilyMapper {
         );
     }
 
-    public FamilyResponseDTO toResponseDTO(FamilyEntity entity) {
-        return toResponse(entity);
-    }
 
     private ChildSummaryDTO toChildSummary(ChildEntity child) {
         if (child == null) return null;
 
-        String genderName = (child.getGender() != null)
-                ? child.getGender().name()
-                : "PRENATAL";
-
         return new ChildSummaryDTO(
                 child.getId(),
-                genderName,
+                child.getGender() != null ? child.getGender().name() : "PRENATAL",
                 child.getAge(),
                 child.getLifeStage()
         );
@@ -73,22 +71,21 @@ public class FamilyMapper {
     public FamilyExplorerDTO toExplorerDTO(FamilyEntity family, boolean isLocked) {
         if (family == null) return null;
 
-        List<ChildSummaryDTO> childrenSummaries = family.getChildren() == null
-                ? Collections.emptyList()
-                : family.getChildren().stream()
-                .map(this::toChildSummary)
-                .toList();
+        List<ChildSummaryDTO> childrenSummaries = (family.getChildren() != null)
+                ? family.getChildren().stream().map(this::toChildSummary).toList()
+                : Collections.emptyList();
 
-        List<String> allInterests = family.getChildren() == null
-                ? Collections.emptyList()
-                : family.getChildren().stream()
-                .filter(c -> c.getInterests() != null)
+        List<String> allInterests = (family.getChildren() != null)
+                ? family.getChildren().stream()
+                .filter(c -> c != null && c.getInterests() != null)
                 .flatMap(c -> c.getInterests().stream())
+                .filter(i -> i != null && i.getName() != null)
                 .map(i -> i.getName())
                 .distinct()
-                .toList();
+                .toList()
+                : Collections.emptyList();
 
-        String neighborhoodName = (family.getNeighborhood() != null)
+        String neighborhoodName = (family.getNeighborhood() != null && family.getNeighborhood().getName() != null)
                 ? family.getNeighborhood().getName()
                 : "No neighborhood";
 

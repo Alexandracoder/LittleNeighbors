@@ -76,12 +76,14 @@ public class AuthService {
 
     private FamilyResponseDTO mapToFamilyDTO(FamilyEntity family) {
         NeighborhoodEntity neighborhood = family.getNeighborhood();
+
         Long neighborhoodId = (neighborhood != null) ? neighborhood.getId() : null;
-        String street = (neighborhood != null) ? neighborhood.getStreetName() : "";
-        String zip = (neighborhood != null) ? neighborhood.getPostalCode() : "";
+        String neighborhoodName = (neighborhood != null && neighborhood.getName() != null) ? neighborhood.getName() : "Not assigned";
+        String street = (neighborhood != null) ? neighborhood.getStreetName() : "Not assigned";
+        String zip = (neighborhood != null) ? neighborhood.getPostalCode() : "N/A";
         String city = (neighborhood != null && neighborhood.getCity() != null)
                 ? neighborhood.getCity().getName()
-                : "Unknown";
+                : "Not assigned";
 
         return new FamilyResponseDTO(
                 family.getId(),
@@ -90,6 +92,7 @@ public class AuthService {
                 family.getDescription(),
                 family.getProfilePictureUrl(),
                 neighborhoodId,
+                neighborhoodName,
                 street,
                 zip,
                 city,
