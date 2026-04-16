@@ -3,7 +3,6 @@ package com.alexandracoder.littleneighbors.family.dto;
 import com.alexandracoder.littleneighbors.child.dto.ChildSummaryDTO;
 
 import java.util.List;
-
 public record FamilyResponseDTO(
         Long id,
         String representativeName,
@@ -11,10 +10,9 @@ public record FamilyResponseDTO(
         String description,
         String profilePictureUrl,
         Long neighborhoodId,
+        String neighborhoodName,
         String streetName,
         String postalCode,
         String cityName,
         List<ChildSummaryDTO> children
-) {
-
-}
+) {}
