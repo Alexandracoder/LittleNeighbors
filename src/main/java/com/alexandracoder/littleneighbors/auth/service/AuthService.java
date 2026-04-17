@@ -8,6 +8,8 @@ import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity
 import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO;
 import com.alexandracoder.littleneighbors.security.JwtService;
 import com.alexandracoder.littleneighbors.shared.exceptions.UnauthorizedAccessException;
+import com.alexandracoder.littleneighbors.shared.exceptions.UserAlreadyExistsException; // Ejemplo
+import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException; // Ejemplo
 import com.alexandracoder.littleneighbors.specifications.UserSpecifications;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
@@ -27,9 +29,9 @@ public class AuthService {
     private final JwtService jwtService;
 
     @Transactional
-    public void register(RegisterRequest request) {
+    public void register(RegisterRequest request) throws UserAlreadyExistsException {
         if (userRepository.existsByEmail(request.email())) {
-            throw new RuntimeException("Email already taken");
+            throw new UserAlreadyExistsException("Email already taken: " + request.email());
         }
 
         UserEntity user = UserEntity.builder()
@@ -65,7 +67,7 @@ public class AuthService {
     @Transactional(readOnly = true)
     public UserProfileDTO getCurrentProfile(String email) {
         UserEntity user = userRepository.findOne(UserSpecifications.hasEmailWithFullProfile(email))
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
         return new UserProfileDTO(
                 user.getEmail(),

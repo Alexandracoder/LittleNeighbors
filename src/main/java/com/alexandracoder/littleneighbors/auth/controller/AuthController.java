@@ -3,6 +3,7 @@ package com.alexandracoder.littleneighbors.auth.controller;
 import com.alexandracoder.littleneighbors.auth.dto.*;
 import com.alexandracoder.littleneighbors.auth.service.AuthService;
 import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO;
+import com.alexandracoder.littleneighbors.shared.exceptions.UserAlreadyExistsException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,7 +26,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest request) throws UserAlreadyExistsException {
         authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
     }
