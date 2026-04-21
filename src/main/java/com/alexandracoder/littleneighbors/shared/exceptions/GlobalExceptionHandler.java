@@ -70,4 +70,9 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Object> handleIllegalArgument(IllegalArgumentException ex) {
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
 }

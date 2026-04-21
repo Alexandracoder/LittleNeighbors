@@ -8,6 +8,7 @@ import com.alexandracoder.littleneighbors.shared.BaseEntity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
 
@@ -40,6 +41,10 @@ public class ChildEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private Gender gender;
+
+    @Column(name = "description", length = 500)
+    @Size(max = 500, message = "La descripción no puede superar los 500 caracteres")
+    private String description;
 
     @Column(name = "due_date")
     private LocalDate dueDate;
