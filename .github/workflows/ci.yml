@@ -1,41 +1,184 @@
-name: CI Build & Test
+name: CI — Full Stack Build & Test
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Triggers
+# ─────────────────────────────────────────────────────────────────────────────
 on:
   push:
     branches:
-      - dev
-      - feature/*
       - main
+      - dev
+      - "feature/**"
   pull_request:
     branches:
       - main
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Global env — shared across all jobs
+# ─────────────────────────────────────────────────────────────────────────────
+env:
+  JAVA_VERSION: "21"
+  NODE_VERSION: "20"
+
 jobs:
-  build-and-test:
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 1: Backend — Spring Boot + JUnit 5
+  # ───────────────────────────────────────────────────────────────────────────
+  backend-tests:
+    name: "Backend — Java ${{ env.JAVA_VERSION }} / Maven"
     runs-on: ubuntu-latest
+
+    # ── MySQL 8 service container ──────────────────────────────────────────
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: littleneighbors_test
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpassword
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent -u root --password=rootpassword"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v3
+      - name: Set up Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: "temurin"
 
-      - name: Cache Maven packages
-        uses: actions/cache@v3
+      - name: Cache Maven local repository
+        uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Build with Maven
+      - name: Wait for MySQL to be healthy
+        # Extra safety-net: confirm the port is accepting connections before
+        # Maven tries to connect. The service health-check above usually
+        # handles this, but network propagation can lag on slower runners.
+        run: |
+          echo "Waiting for MySQL on 127.0.0.1:3306..."
+          for i in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 -u root --password=rootpassword --silent 2>/dev/null; then
+              echo "MySQL is ready."
+              break
+            fi
+            echo "Attempt $i — not ready yet, sleeping 2s..."
+            sleep 2
+          done
+
+      - name: Run backend tests (Maven)
+        # The 'test' profile activates H2 in-memory DB for unit + @WebMvcTest tests.
+        # Integration tests that require a real MySQL connection use the 'integration'
+        # profile (defined in application.yml under spring.config.activate.on-profile).
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        run: mvn -e -X clean test -Dspring.profiles.active=test
+          # These env vars are picked up by application-integration.yml
+          DB_URL: jdbc:mysql://127.0.0.1:3306/littleneighbors_test?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+          DB_USER: testuser
+          DB_PASSWORD: testpassword
+        run: |
+          ./mvnw -e clean test \
+            -Dspring.profiles.active=test \
+            --no-transfer-progress
+        # --no-transfer-progress keeps CI logs readable
+
+      - name: Publish Test Report (JUnit XML)
+        if: always()   # run even when tests fail so the report is always uploaded
+        uses: dorny/test-reporter@v1
+        with:
+          name: "Backend JUnit Results"
+          path: "**/target/surefire-reports/*.xml"
+          reporter: java-junit
+          fail-on-error: true
+
+      - name: Upload Surefire reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-surefire-reports
+          path: target/surefire-reports/
+          retention-days: 7
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 2: Frontend — Vite / Vitest / TypeScript check
+  # ───────────────────────────────────────────────────────────────────────────
+  frontend-tests:
+    name: "Frontend — Node ${{ env.NODE_VERSION }} / Vitest"
+    runs-on: ubuntu-latest
+    # No service containers needed — frontend tests are fully in-memory.
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+        # `npm ci` is preferred over `npm install` in CI: it is faster,
+        # deterministic, and fails loudly on lock-file mismatches.
+
+      - name: TypeScript type-check
+        run: npx tsc --noEmit
+        # A type error is a build error — this step must pass before tests run.
+
+      - name: Run frontend tests (Vitest)
+        run: npm run test -- --reporter=verbose --reporter=junit --outputFile=test-results.xml
+        # The JUnit reporter enables the dorny/test-reporter step below.
+        # `--reporter=verbose` also prints human-readable output to the CI log.
+
+      - name: Publish Test Report (Vitest JUnit XML)
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: "Frontend Vitest Results"
+          path: "test-results.xml"
+          reporter: java-junit
+          fail-on-error: true
+
+      - name: Build project (Vite)
+        run: npm run build
+        # Catches any issues that tests might miss (e.g., missing asset imports,
+        # Rollup bundling errors, or tree-shaking side-effects).
+
+      - name: Upload coverage report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-results
+          path: test-results.xml
+          retention-days: 7
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 3: Gate — both jobs must pass before merging
+  # ───────────────────────────────────────────────────────────────────────────
+  all-checks-pass:
+    name: "All checks passed"
+    runs-on: ubuntu-latest
+    needs:
+      - backend-tests
+      - frontend-tests
+    steps:
+      - name: All CI jobs completed successfully
+        run: echo "Backend and frontend tests passed. Ready to merge."
 
 
         

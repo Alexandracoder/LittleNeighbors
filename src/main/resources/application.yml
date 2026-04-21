@@ -1,14 +1,22 @@
+# ===============================================================
+# CONFIGURACIÓN GLOBAL (Común a todos los perfiles)
+# ===============================================================
 spring:
   profiles:
-    active: dev
+    active: dev # Perfil por defecto
   jackson:
     mapper:
       default-view-inclusion: true
+    deserialization:
+      read-unknown-enum-values-as-null: true
 
-# ===============================
-# PERFIL DEV (MySQL local)
-# ===============================
+jwt:
+  expiration: 3600000
+
 ---
+# ===============================================================
+# PERFIL DEV (MySQL local)
+# ===============================================================
 spring:
   config:
     activate:
@@ -32,50 +40,38 @@ spring:
     repair-on-migrate: true
     baseline-on-migrate: true
 
-  jackson:
-    deserialization:
-      read-unknown-enum-values-as-null: true
-    mapper:
-      accept-case-insensitive-enums: true
-
 jwt:
   secret: ${JWT_SECRET:8f42a6b2d1c5e9f8a3b7c4d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1}
-  expiration: 3600000
 
-
-
-# ===============================
-# PERFIL TEST (H2)
-# ===============================
 ---
+# ===============================================================
+# PERFIL TEST (MySQL para GitHub Actions / CI)
+# ===============================================================
 spring:
   config:
     activate:
       on-profile: test
   datasource:
-    url: jdbc:h2:mem:littleneighborstest;DB_CLOSE_DELAY=-1;MODE=MySQL
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: ""
+    url: jdbc:mysql://localhost:3306/littleneighbors_test
+    username: testuser
+    password: testpassword
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.MySQL8Dialect
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
   flyway:
-    enabled: false
-
+    enabled: true
+    clean-on-validation-error: true
 
 jwt:
-  secret: ${JWT_SECRET:8f42a6b2d1c5e9f8a3b7c4d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1}
-  expiration: 3600000
-# ===============================
-# PERFIL PROD (MySQL real)
-# ===============================
+  secret: ${JWT_SECRET:test_secret_for_ci_only_1234567890}
+
 ---
+# ===============================================================
+# PERFIL PROD (MySQL Real / Producción)
+# ===============================================================
 spring:
   config:
     activate:
@@ -94,5 +90,3 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:3600000}
-
