@@ -48,6 +48,7 @@ jobs:
 
       - name: Build and run Backend tests
         env:
+
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: mvn -B clean test -Dspring.profiles.active=test
 
@@ -67,14 +68,20 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          # CAMBIO: Busca el lockfile en la subcarpeta
+          cache-dependency-path: './frontend/package-lock.json'
 
       - name: Install dependencies
+
+        working-directory: ./frontend
         run: npm ci
 
       - name: Run frontend tests
+        working-directory: ./frontend
         run: npm run test -- --run
 
       - name: Build project
+        working-directory: ./frontend
         run: npm run build
 
   # ───────────────────────────────────────────────────────────────────────────
