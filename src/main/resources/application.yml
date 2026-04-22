@@ -52,19 +52,23 @@ spring:
     activate:
       on-profile: test
   datasource:
-
-    url: jdbc:mysql://localhost:3306/littleneighbors_test?allowPublicKeyRetrieval=true&useSSL=false
+    # Usamos 127.0.0.1 para evitar problemas de resolución de 'localhost' en entornos Docker/CI
+    url: jdbc:mysql://127.0.0.1:3306/littleneighbors_test?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
     username: testuser
     password: testpassword
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
     hibernate:
-      ddl-auto: update # <--- CAMBIO: 'update' es más seguro que 'validate' en CI
+      ddl-auto: update
     show-sql: true
   flyway:
     enabled: true
-    clean-on-validation-error: true
+
+# CORRECCIÓN: 'jwt' debe estar fuera de 'spring' y 'flyway'
+jwt:
+  secret: "esta_es_una_clave_de_prueba_muy_larga_para_que_el_test_no_falle_12345"
+  expiration: 3600000
 
 ---
 # ===============================================================
