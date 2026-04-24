@@ -4,15 +4,12 @@ import com.alexandracoder.littleneighbors.child.dto.ChildRequestDTO;
 import com.alexandracoder.littleneighbors.child.dto.ChildResponseDTO;
 import com.alexandracoder.littleneighbors.child.dto.ChildSummaryDTO;
 import com.alexandracoder.littleneighbors.child.service.ChildService;
-import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -34,10 +31,8 @@ public class ChildController {
     @GetMapping("/my-children")
     @PreAuthorize("hasRole('FAMILY')")
     public ResponseEntity<List<ChildResponseDTO>> getMyChildren(Principal principal) {
-
         return ResponseEntity.ok(childService.findAllByFamilyEmail(principal.getName()));
     }
-
 
     @Operation(summary = "List all children (admin only)",
             description = "Returns a summarized list of all children.",
@@ -49,30 +44,32 @@ public class ChildController {
     }
 
     @Operation(summary = "Create a child",
-            description = "Creates a new child for the logged-in user's family.",
+            description = "Creates a new child for the logged-in family or via admin support.",
             security = @SecurityRequirement(name = "bearerAuth"))
     @PostMapping
-    @PreAuthorize("hasRole('FAMILY')")
+    // CORRECCIÓN: Permitimos ADMIN para que pueda dar soporte a las familias
+    @PreAuthorize("hasAnyRole('FAMILY', 'ADMIN')")
     public ResponseEntity<ChildResponseDTO> createChild(
-                                                         Principal principal,
-                                                         @Valid @RequestBody ChildRequestDTO dto) {
+            Principal principal,
+            @Valid @RequestBody ChildRequestDTO dto) {
 
-
-        return ResponseEntity.ok(childService.create(dto, principal.getName()));
+        // CORRECCIÓN: Devolvemos 201 Created (estándar de POST y lo que el test espera)
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(childService.create(dto, principal.getName()));
     }
 
     @Operation(summary = "Delete a child", security = @SecurityRequirement(name = "bearerAuth"))
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('FAMILY')")
+    // CORRECCIÓN: El Admin también debería poder borrar si hay contenido inapropiado
+    @PreAuthorize("hasAnyRole('FAMILY', 'ADMIN')")
     public ResponseEntity<Void> deleteChild(@PathVariable Long id, Principal principal) {
-
         childService.deleteByIdAndFamilyEmail(id, principal.getName());
         return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Update a child", security = @SecurityRequirement(name = "bearerAuth"))
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('FAMILY')")
+    @PreAuthorize("hasAnyRole('FAMILY', 'ADMIN')")
     public ResponseEntity<ChildResponseDTO> updateChild(
             @PathVariable Long id,
             @Valid @RequestBody ChildRequestDTO dto,
