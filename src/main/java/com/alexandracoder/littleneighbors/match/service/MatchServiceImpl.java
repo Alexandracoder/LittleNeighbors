@@ -8,6 +8,7 @@ import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
 import com.alexandracoder.littleneighbors.match.dto.MatchResponseDetailDTO;
 import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
 import com.alexandracoder.littleneighbors.match.repository.MatchRepository;
+import com.alexandracoder.littleneighbors.notification.service.NotificationService;
 import com.alexandracoder.littleneighbors.specifications.MatchSpecifications;
 import com.alexandracoder.littleneighbors.specifications.FamilySpecifications;
 import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
@@ -28,6 +29,7 @@ public class MatchServiceImpl implements MatchService {
     private final MatchRepository matchRepository;
     private final ChildRepository childRepository;
     private final FamilyRepository familyRepository;
+    private final NotificationService notificationService;
 
 
     @Override
@@ -186,6 +188,9 @@ public class MatchServiceImpl implements MatchService {
 
         if (match.isUserAccepted() && match.isNeighborAccepted()) {
 
+            match.setStatus(MatchStatus.ACCEPTED);
+
+            notificationService.sendMatchSuccessNotification(match);
         }
 
         matchRepository.save(match);
