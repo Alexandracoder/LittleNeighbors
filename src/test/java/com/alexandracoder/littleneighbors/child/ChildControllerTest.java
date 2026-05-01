@@ -51,7 +51,8 @@ class ChildControllerTest {
 
         stubResponse = new ChildResponseDTO(
                 42L,
-                entity.getNickname(), LocalDate.of(2020, 6, 15),
+                "Pepito",
+                LocalDate.of(2020, 6, 15),
                 null,
                 LifeStage.BORN,
                 Gender.BOY,
