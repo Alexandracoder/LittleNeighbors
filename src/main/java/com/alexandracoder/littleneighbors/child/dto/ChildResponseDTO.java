@@ -8,7 +8,7 @@ import java.util.List;
 
 public record ChildResponseDTO(
         Long id,
-        LocalDate birthDate,
+        String nickname, LocalDate birthDate,
         LocalDate dueDate,
         LifeStage lifeStage,
         Gender gender,

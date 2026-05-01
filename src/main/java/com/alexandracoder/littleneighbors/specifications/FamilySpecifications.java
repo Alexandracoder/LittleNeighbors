@@ -15,11 +15,17 @@ public class FamilySpecifications {
 
     public static Specification<FamilyEntity> hasNeighborhood(Long neighborhoodId) {
         if (neighborhoodId == null) return null;
-        return (root, query, cb) -> cb.equal(root.get("neighborhood").get("id"), neighborhoodId);
+        return (root, query, cb) -> {
+
+            query.distinct(true);
+            return cb.equal(root.get("neighborhood").get("id"), neighborhoodId);
+        };
     }
 
     public static Specification<FamilyEntity> hasChildWithCriteria(int minAge, int maxAge, List<Long> interestIds) {
         return (root, query, cb) -> {
+            query.distinct(true);
+
             Subquery<Long> sub = query.subquery(Long.class);
             Root<ChildEntity> child = sub.from(ChildEntity.class);
             sub.select(child.get("id"));
@@ -32,6 +38,7 @@ public class FamilySpecifications {
             Predicate agePredicate = cb.between(child.get("birthDate"), minBirthDate, maxBirthDate);
 
             if (interestIds != null && !interestIds.isEmpty()) {
+                // Usamos un Join en la subquery para filtrar, evitando contaminar la query principal
                 Join<ChildEntity, InterestEntity> interests = child.join("interests", JoinType.INNER);
                 sub.where(cb.and(belongsToFamily, agePredicate, interests.get("id").in(interestIds)));
             } else {
@@ -40,12 +47,12 @@ public class FamilySpecifications {
 
             return cb.exists(sub);
         };
-
     }
 
     public static Specification<FamilyEntity> hasNoRecentMatch(LocalDateTime since) {
         return (root, query, cb) -> {
             if (since == null) return null;
+            query.distinct(true);
 
             Subquery<Long> subquery = query.subquery(Long.class);
             Root<MatchEntity> matchRoot = subquery.from(MatchEntity.class);
@@ -62,14 +69,19 @@ public class FamilySpecifications {
             return cb.not(cb.exists(subquery));
         };
     }
-        public static Specification<FamilyEntity> isNotMyFamily(Long myFamilyId) {
+
+    public static Specification<FamilyEntity> isNotMyFamily(Long myFamilyId) {
         if (myFamilyId == null) return null;
-        return (root, query, cb) -> cb.notEqual(root.get("id"), myFamilyId);
+        return (root, query, cb) -> {
+            query.distinct(true);
+            return cb.notEqual(root.get("id"), myFamilyId);
+        };
     }
 
     public static Specification<FamilyEntity> isNotChild(Long currentChildId) {
         if (currentChildId == null) return null;
         return (root, query, cb) -> {
+            query.distinct(true);
             Subquery<Long> sub = query.subquery(Long.class);
             Root<ChildEntity> child = sub.from(ChildEntity.class);
             sub.select(child.get("id"))

@@ -62,6 +62,7 @@ public class FamilyMapper {
 
         return new ChildSummaryDTO(
                 child.getId(),
+                child.getNickname(),
                 child.getGender() != null ? child.getGender().name() : "PRENATAL",
                 child.getAge(),
                 child.getLifeStage()
