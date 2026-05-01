@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -24,7 +23,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -53,6 +51,7 @@ class ChildControllerTest {
 
         stubResponse = new ChildResponseDTO(
                 42L,
+                "Pepito",
                 LocalDate.of(2020, 6, 15),
                 null,
                 LifeStage.BORN,

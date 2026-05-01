@@ -25,11 +25,16 @@ import java.util.Set;
 @AllArgsConstructor
 @lombok.experimental.SuperBuilder
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 public class ChildEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
+
+    @Column(name = "nickname", length = 50)
+    private String nickname;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "life_stage", nullable = false)

@@ -32,6 +32,7 @@ public class ChildMapper {
 
         return new ChildResponseDTO(
                 entity.getId(),
+                entity.getNickname(),
                 entity.getBirthDate(),
                 entity.getDueDate(),
                 entity.getLifeStage(),
@@ -49,6 +50,7 @@ public class ChildMapper {
 
         return new ChildSummaryDTO(
                 entity.getId(),
+                entity.getNickname(),
                 entity.getGender() != null ? entity.getGender().name() : null,
                 entity.getAge(),
                 entity.getLifeStage()

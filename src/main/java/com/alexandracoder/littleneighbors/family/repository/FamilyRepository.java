@@ -21,8 +21,15 @@ public interface FamilyRepository extends JpaRepository<FamilyEntity, Long>,
     })
     Optional<FamilyEntity> findWithDetailsById(Long id);
 
-    List<FamilyEntity> findAll(Specification<FamilyEntity> spec);
+    @EntityGraph(attributePaths = {
+            "neighborhood",
+            "neighborhood.city",
+            "children",
+            "children.interests"
+    })
     Optional<FamilyEntity> findByUserEmail(String email);
+
+    List<FamilyEntity> findAll(Specification<FamilyEntity> spec);
 
     boolean existsByUser(UserEntity user);
 }
