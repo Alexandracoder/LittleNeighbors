@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.util.Set;
 
 public record ChildRequestDTO(
+        @JsonProperty String nickname,
         @JsonProperty("birthDate") LocalDate birthDate,
         @JsonProperty("dueDate") LocalDate dueDate,
 
@@ -40,4 +41,5 @@ public record ChildRequestDTO(
             }
         }
     }
+
 }
