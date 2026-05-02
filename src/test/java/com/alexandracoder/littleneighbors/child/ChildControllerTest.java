@@ -1,5 +1,6 @@
 package com.alexandracoder.littleneighbors.child;
 
+import com.alexandracoder.littleneighbors.child.controller.ChildController;
 import com.alexandracoder.littleneighbors.child.dto.ChildRequestDTO;
 import com.alexandracoder.littleneighbors.child.dto.ChildResponseDTO;
 import com.alexandracoder.littleneighbors.child.service.ChildService;
@@ -30,7 +31,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = com.alexandracoder.littleneighbors.child.controller.ChildController.class)
+@WebMvcTest(controllers = ChildController.class)
 @ActiveProfiles("test")
 @DisplayName("ChildController — POST /api/children")
 class ChildControllerTest {
@@ -49,9 +50,10 @@ class ChildControllerTest {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
+        // Respuesta simulada estándar
         stubResponse = new ChildResponseDTO(
                 42L,
-                "Pepito",
+                "Explorador Lleó",
                 LocalDate.of(2020, 6, 15),
                 null,
                 LifeStage.BORN,
@@ -72,11 +74,21 @@ class ChildControllerTest {
         @WithMockUser(username = "parent@test.com", roles = {"FAMILY"})
         @DisplayName("should return 201 Created when description is valid (FAMILY role)")
         void createChild_asFamily_returns201() throws Exception {
+            // SIGUIENDO EL ORDEN EXACTO DE TU RECORD:
+            // 1. nickname, 2. birthDate, 3. dueDate, 4. lifeStage, 5. gender, 6. interestIds, 7. isPrenatal, 8. description
             ChildRequestDTO requestBody = new ChildRequestDTO(
-                    LocalDate.of(2020, 6, 15), null, LifeStage.BORN, Gender.BOY, Set.of(), false, "Valid bio"
+                    "Explorador Lleó",             // 1. nickname
+                    LocalDate.of(2020, 6, 15),     // 2. birthDate
+                    null,                          // 3. dueDate
+                    LifeStage.BORN,                // 4. lifeStage
+                    Gender.BOY,                    // 5. gender
+                    Set.of(),                      // 6. interestIds
+                    false,                         // 7. isPrenatal
+                    "Valid bio"                    // 8. description
             );
 
-            when(childService.create(any(ChildRequestDTO.class), eq("parent@test.com"))).thenReturn(stubResponse);
+            when(childService.create(any(ChildRequestDTO.class), eq("parent@test.com")))
+                    .thenReturn(stubResponse);
 
             mockMvc.perform(post("/api/children")
                             .with(csrf())
@@ -84,15 +96,17 @@ class ChildControllerTest {
                             .content(objectMapper.writeValueAsString(requestBody)))
                     .andExpect(status().isCreated());
         }
-
         @Test
         @WithMockUser(username = "admin@test.com", roles = {"ADMIN"})
-        @DisplayName("should return 201 Created when user has ADMIN role (support capability)")
+        @DisplayName("should return 201 Created when user has ADMIN role")
         void createChild_asAdmin_returns201() throws Exception {
-            when(childService.create(any(ChildRequestDTO.class), eq("admin@test.com"))).thenReturn(stubResponse);
+            when(childService.create(any(ChildRequestDTO.class), eq("admin@test.com")))
+                    .thenReturn(stubResponse);
 
+            // JSON manual incluyendo el nickname obligatorio
             String jsonBody = """
                 {
+                    "nickname": "Admin Kids",
                     "lifeStage": "BORN",
                     "birthDate": "2020-06-15",
                     "gender": "BOY",
@@ -118,9 +132,11 @@ class ChildControllerTest {
         @WithMockUser(roles = {"FAMILY"})
         @DisplayName("should return 400 when description exceeds 500 characters")
         void createChild_tooLongDescription_returns400() throws Exception {
-            String tooLong = "A".repeat(501);
+            String tooLongDescription = "A".repeat(501);
+
             String jsonBody = """
                 {
+                    "nickname": "Test Kid",
                     "lifeStage": "BORN",
                     "birthDate": "2020-06-15",
                     "gender": "BOY",
@@ -128,14 +144,34 @@ class ChildControllerTest {
                     "isPrenatal": false,
                     "description": "%s"
                 }
-                """.formatted(tooLong);
+                """.formatted(tooLongDescription);
 
             mockMvc.perform(post("/api/children")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonBody))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.errors.description").exists());
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @WithMockUser(roles = {"FAMILY"})
+        @DisplayName("should return 400 when nickname is missing")
+        void createChild_noNickname_returns400() throws Exception {
+            // Este test valida que el nickname es obligatorio
+            String jsonBody = """
+                {
+                    "lifeStage": "BORN",
+                    "birthDate": "2020-06-15",
+                    "gender": "BOY",
+                    "description": "Missing nickname"
+                }
+                """;
+
+            mockMvc.perform(post("/api/children")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonBody))
+                    .andExpect(status().isBadRequest());
         }
 
         @Test

@@ -57,16 +57,19 @@ public class ChildServiceImpl implements ChildService {
         FamilyEntity family = getFamilyByUserEmail(username);
 
         ChildEntity child = new ChildEntity();
+
+        child.setNickname(dto.nickname());
         child.setLifeStage(dto.lifeStage());
+        child.setGender(dto.gender());
+        child.setFamily(family);
+
         child.setBirthDate(dto.birthDate());
         child.setDueDate(dto.dueDate());
-        child.setGender(dto.gender());
+        child.setDescription(dto.description());
+
         child.setPrenatal(dto.isPrenatal() != null && dto.isPrenatal());
+        child.setPregnancySupport(dto.lifeStage() == com.alexandracoder.littleneighbors.enums.LifeStage.PREGNANCY);
 
-
-        child.setPregnancySupport(false);
-
-        child.setFamily(family);
         updateChildInterests(child, dto.interestIds());
 
         ChildEntity saved = childRepository.save(child);
@@ -78,16 +81,17 @@ public class ChildServiceImpl implements ChildService {
     public ChildResponseDTO update(Long id, ChildRequestDTO dto, String username) {
         ChildEntity child = checkOwnership(id, username);
 
+        child.setNickname(dto.nickname());
         child.setLifeStage(dto.lifeStage());
         child.setBirthDate(dto.birthDate());
         child.setGender(dto.gender());
+        child.setDescription(dto.description());
 
         updateChildInterests(child, dto.interestIds());
 
         ChildEntity updated = childRepository.save(child);
         return childMapper.toResponseDTO(updated);
     }
-
     @Override
     @Transactional
     public void deleteByIdAndFamilyEmail(Long id, String email) {

@@ -104,20 +104,20 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthResponse reloadUserTokenFromRefresh(String refreshToken) {
+
         String email = jwtService.extractEmail(refreshToken);
 
         UserEntity user = userRepository.findOne(UserSpecifications.hasEmailWithFullProfile(email))
-                .orElseThrow(() -> new UnauthorizedAccessException("Invalid session or user not found"));
+                .orElseThrow(() -> new UnauthorizedAccessException("Invalid session or User not found"));
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", user.getRoles().stream()
                 .map(Enum::name)
                 .toList());
-        claims.put("id" , user.getId());
+        claims.put("id", user.getId());
 
-        return new AuthResponse(
-                jwtService.generateAccessToken(email, claims),
-                refreshToken
-        );
+        String newAccessToken = jwtService.generateAccessToken(email, claims);
+
+        return new AuthResponse(newAccessToken, refreshToken);
     }
 }

@@ -47,20 +47,18 @@ public class ChildController {
             description = "Creates a new child for the logged-in family or via admin support.",
             security = @SecurityRequirement(name = "bearerAuth"))
     @PostMapping
-    // CORRECCIÓN: Permitimos ADMIN para que pueda dar soporte a las familias
+
     @PreAuthorize("hasAnyRole('FAMILY', 'ADMIN')")
     public ResponseEntity<ChildResponseDTO> createChild(
             Principal principal,
             @Valid @RequestBody ChildRequestDTO dto) {
 
-        // CORRECCIÓN: Devolvemos 201 Created (estándar de POST y lo que el test espera)
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(childService.create(dto, principal.getName()));
     }
 
     @Operation(summary = "Delete a child", security = @SecurityRequirement(name = "bearerAuth"))
     @DeleteMapping("/{id}")
-    // CORRECCIÓN: El Admin también debería poder borrar si hay contenido inapropiado
     @PreAuthorize("hasAnyRole('FAMILY', 'ADMIN')")
     public ResponseEntity<Void> deleteChild(@PathVariable Long id, Principal principal) {
         childService.deleteByIdAndFamilyEmail(id, principal.getName());
