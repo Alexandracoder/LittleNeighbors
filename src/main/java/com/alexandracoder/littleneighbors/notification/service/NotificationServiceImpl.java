@@ -1,5 +1,6 @@
 package com.alexandracoder.littleneighbors.notification.service;
 
+import com.alexandracoder.littleneighbors.enums.NotificationType;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
 import com.alexandracoder.littleneighbors.notification.entity.NotificationEntity;
@@ -12,6 +13,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -37,10 +39,11 @@ public class NotificationServiceImpl implements NotificationService {
                 .recipientFamily(recipient)
                 .title("Match Established!")
                 .message("You can now contact the " + otherFamilyName + " family to organize a playdate.")
-                .relatedMatchId(match.getId())
+                .relatedId(match.getId())
                 .build();
 
         notificationRepository.save(notification);
+
 
         messagingTemplate.convertAndSend("/topic/playdates/" + match.getId(), "NOTIFICATION_RECEIVED");
     }
@@ -64,5 +67,37 @@ public class NotificationServiceImpl implements NotificationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
         notification.setRead(true);
         notificationRepository.save(notification);
+    }
+
+    @Transactional
+    public void createInternalNotification(FamilyEntity neighbor, String title, String message, NotificationType type, Long relatedId) {
+        NotificationEntity notification = NotificationEntity.builder()
+                .recipientFamily(neighbor)
+                .title(title)
+                .message(message)
+                .type(type)
+                .relatedId(relatedId)
+                .isRead(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        NotificationEntity savedNotification = notificationRepository.save(notification);
+
+        try {
+
+            String userEmail = neighbor.getUser().getEmail();
+
+            messagingTemplate.convertAndSendToUser(
+                    userEmail,
+                    "/queue/notifications",
+                    savedNotification
+            );
+        } catch (Exception e) {
+            System.err.println("Error enviando WebSocket: " + e.getMessage());
+        }
+    }
+
+    public List<NotificationEntity> getNotificationsByUserEmail(String email) {
+        return notificationRepository.findByRecipientFamily_User_EmailOrderByCreatedAtDesc(email);
     }
 }

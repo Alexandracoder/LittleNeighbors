@@ -5,12 +5,17 @@ import com.alexandracoder.littleneighbors.event.dto.EventRequestDTO;
 import com.alexandracoder.littleneighbors.event.dto.EventResponseDTO;
 import com.alexandracoder.littleneighbors.event.entity.EventEntity;
 import com.alexandracoder.littleneighbors.event.repository.EventRepository;
+import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
+import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
+import com.alexandracoder.littleneighbors.enums.NotificationType;
+import com.alexandracoder.littleneighbors.notification.service.NotificationService;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
 import com.alexandracoder.littleneighbors.neighborhood.repository.NeighborhoodRepository;
 import com.alexandracoder.littleneighbors.specifications.EventSpecifications;
 import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,18 +27,43 @@ public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
     private final NeighborhoodRepository neighborhoodRepository;
+    private final FamilyRepository familyRepository;
+    private final NotificationService notificationService;
     private final EventMapper eventMapper;
 
     @Override
     @Transactional
     public EventResponseDTO createEvent(EventRequestDTO requestDTO) {
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        FamilyEntity creator = familyRepository.findByUserEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Family profile not found for creator"));
+
+
         NeighborhoodEntity neighborhood = neighborhoodRepository.findById(requestDTO.neighborhoodId())
                 .orElseThrow(() -> new ResourceNotFoundException("Neighborhood not found with ID: " + requestDTO.neighborhoodId()));
 
+
         EventEntity event = eventMapper.toEntity(requestDTO);
         event.setNeighborhood(neighborhood);
-
         EventEntity savedEvent = eventRepository.save(event);
+
+
+        List<FamilyEntity> neighbors = familyRepository.findByNeighborhood_NameAndIdNot(
+                neighborhood.getName(),
+                creator.getId()
+        );
+
+        neighbors.forEach(neighbor -> {
+            notificationService.createInternalNotification(
+                    neighbor,
+                    "¡Nuevo plan en tu barrio!",
+                    creator.getFamilyName() + " ha organizado: " + savedEvent.getTitle(),
+                    NotificationType.EVENT_CREATED,
+                    savedEvent.getId()
+            );
+        });
+
         return eventMapper.toResponse(savedEvent);
     }
 
