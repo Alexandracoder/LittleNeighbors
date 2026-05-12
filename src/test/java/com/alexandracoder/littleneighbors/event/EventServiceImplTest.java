@@ -60,16 +60,16 @@ public class EventServiceImplTest {
                 .title("Test Event")
                 .neighborhood(neighborhood)
                 .build();
+    }
 
+    @Test
+    void CreateEvent_Succes() {
         Authentication authentication = mock(Authentication.class);
         SecurityContext securityContext = mock(SecurityContext.class);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getName()).thenReturn("test@example.com");
         SecurityContextHolder.setContext(securityContext);
-    }
 
-    @Test
-    void CreateEvent_Succes() {
         EventRequestDTO request = new EventRequestDTO("Title", "Description", LocalDateTime.now(), 0.0, 0.0, 1L);
 
         when(familyRepository.findByUserEmail(anyString())).thenReturn(Optional.of(family));
