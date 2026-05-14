@@ -37,6 +37,7 @@ public class ChildMapper {
                 entity.getDueDate(),
                 entity.getLifeStage(),
                 entity.getGender(),
+                entity.getDescription(),
                 interestDTOs,
                 entity.isPrenatal(),
                 entity.isPregnancySupport(),

@@ -8,6 +8,7 @@ import com.alexandracoder.littleneighbors.match.dto.MatchResponseDetailDTO;
 import com.alexandracoder.littleneighbors.match.dto.mapper.MatchMapper;
 import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
 import com.alexandracoder.littleneighbors.match.service.MatchService;
+import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -86,10 +87,9 @@ public class MatchController {
         return ResponseEntity.noContent().build();
     }
 
-    // ESTE ES EL MÉTODO QUE EL FRONTEND ESTÁ BUSCANDO
     @PostMapping("/{id}/confirm")
     @PreAuthorize("hasRole('FAMILY')")
-    public ResponseEntity<Void> confirmMatch(
+    public ResponseEntity<MatchResponseDetailDTO> confirmMatch(
             @PathVariable Long id,
             java.security.Principal principal) {
 
@@ -97,7 +97,17 @@ public class MatchController {
             return ResponseEntity.status(401).build();
         }
 
+
         matchService.confirmMatch(id, principal.getName());
-        return ResponseEntity.ok().build();
+
+
+        List<MatchResponseDetailDTO> myMatches = matchService.getMatchesForUser(principal.getName());
+
+        MatchResponseDetailDTO updatedMatch = myMatches.stream()
+                .filter(m -> m.matchId().equals(id))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found after confirm"));
+
+        return ResponseEntity.ok(updatedMatch);
     }
 }

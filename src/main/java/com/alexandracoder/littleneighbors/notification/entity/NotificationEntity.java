@@ -31,7 +31,7 @@ public class NotificationEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private NotificationType type;
+    private NotificationType type = NotificationType.SYSTEM;
 
     private Long relatedId;
 

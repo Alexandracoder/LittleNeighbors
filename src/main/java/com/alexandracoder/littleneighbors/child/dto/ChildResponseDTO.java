@@ -13,6 +13,7 @@ public record ChildResponseDTO(
         LocalDate dueDate,
         LifeStage lifeStage,
         Gender gender,
+        String description,
         List<InterestResponseDTO> interests,
         boolean isPrenatal,
         boolean pregnancySupport,

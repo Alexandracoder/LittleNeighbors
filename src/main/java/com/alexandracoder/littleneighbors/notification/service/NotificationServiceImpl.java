@@ -3,6 +3,7 @@ package com.alexandracoder.littleneighbors.notification.service;
 import com.alexandracoder.littleneighbors.enums.NotificationType;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
+import com.alexandracoder.littleneighbors.notification.dto.NotificationResponseDTO;
 import com.alexandracoder.littleneighbors.notification.entity.NotificationEntity;
 import com.alexandracoder.littleneighbors.notification.repository.NotificationRepository;
 import com.alexandracoder.littleneighbors.specifications.NotificationSpecifications;
@@ -31,6 +32,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private void createAndSave(FamilyEntity recipient, MatchEntity match) {
+        String email = recipient.getUser().getEmail();
         String otherFamilyName = recipient.getId().equals(match.getChildRequest().getFamily().getId())
                 ? match.getChildTarget().getFamily().getFamilyName()
                 : match.getChildRequest().getFamily().getFamilyName();
@@ -38,26 +40,29 @@ public class NotificationServiceImpl implements NotificationService {
         NotificationEntity notification = NotificationEntity.builder()
                 .recipientFamily(recipient)
                 .title("Match Established!")
-                .message("You can now contact the " + otherFamilyName + " family to organize a playdate.")
+                .message("You can now contact the " + otherFamilyName + " family.")
+                .type(NotificationType.MATCH_SUCCESS)
                 .relatedId(match.getId())
+                .isRead(false)
+                .createdAt(LocalDateTime.now())
                 .build();
 
-        notificationRepository.save(notification);
-
-
-        messagingTemplate.convertAndSend("/topic/playdates/" + match.getId(), "NOTIFICATION_RECEIVED");
+        NotificationEntity saved = notificationRepository.save(notification);
+        messagingTemplate.convertAndSendToUser(email, "/queue/notifications", mapToResponseDTO(saved));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<NotificationEntity> getNotificationsForFamily(Long familyId, Boolean onlyUnread) {
+    public List<NotificationResponseDTO> getNotificationsForFamily(Long familyId, Boolean onlyUnread) {
         Specification<NotificationEntity> spec = Specification.where(NotificationSpecifications.hasRecipientFamily(familyId));
 
         if (Boolean.TRUE.equals(onlyUnread)) {
             spec = spec.and(NotificationSpecifications.isUnread());
         }
 
-        return notificationRepository.findAll(spec);
+        return notificationRepository.findAll(spec).stream()
+                .map(this::mapToResponseDTO)
+                .toList();
     }
 
     @Override
@@ -69,6 +74,7 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.save(notification);
     }
 
+    @Override
     @Transactional
     public void createInternalNotification(FamilyEntity neighbor, String title, String message, NotificationType type, Long relatedId) {
         NotificationEntity notification = NotificationEntity.builder()
@@ -82,22 +88,34 @@ public class NotificationServiceImpl implements NotificationService {
                 .build();
 
         NotificationEntity savedNotification = notificationRepository.save(notification);
+        NotificationResponseDTO dto = mapToResponseDTO(savedNotification);
 
         try {
-
             String userEmail = neighbor.getUser().getEmail();
-
-            messagingTemplate.convertAndSendToUser(
-                    userEmail,
-                    "/queue/notifications",
-                    savedNotification
-            );
+            messagingTemplate.convertAndSendToUser(userEmail, "/queue/notifications", dto);
         } catch (Exception e) {
             System.err.println("Error enviando WebSocket: " + e.getMessage());
         }
     }
 
-    public List<NotificationEntity> getNotificationsByUserEmail(String email) {
-        return notificationRepository.findByRecipientFamily_User_EmailOrderByCreatedAtDesc(email);
+    @Override
+    @Transactional(readOnly = true)
+    public List<NotificationResponseDTO> getNotificationsByUserEmail(String email) {
+        return notificationRepository.findByRecipientFamily_User_EmailOrderByCreatedAtDesc(email)
+                .stream()
+                .map(this::mapToResponseDTO)
+                .toList();
+    }
+
+    private NotificationResponseDTO mapToResponseDTO(NotificationEntity entity) {
+        return new NotificationResponseDTO(
+                entity.getId(),
+                entity.getTitle(),
+                entity.getMessage(),
+                entity.getType(),
+                entity.getRelatedId(),
+                entity.isRead(),
+                entity.getCreatedAt()
+        );
     }
 }

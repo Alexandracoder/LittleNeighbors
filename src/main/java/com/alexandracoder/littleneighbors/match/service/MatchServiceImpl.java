@@ -3,6 +3,7 @@ package com.alexandracoder.littleneighbors.match.service;
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.child.repository.ChildRepository;
 import com.alexandracoder.littleneighbors.enums.MatchStatus;
+import com.alexandracoder.littleneighbors.enums.VerificationStatus;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
 import com.alexandracoder.littleneighbors.match.dto.MatchResponseDetailDTO;
@@ -13,6 +14,7 @@ import com.alexandracoder.littleneighbors.specifications.MatchSpecifications;
 import com.alexandracoder.littleneighbors.specifications.FamilySpecifications;
 import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
 import com.alexandracoder.littleneighbors.shared.exceptions.BusinessLogicException;
+import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -31,7 +33,6 @@ public class MatchServiceImpl implements MatchService {
     private final FamilyRepository familyRepository;
     private final NotificationService notificationService;
 
-
     @Override
     @Transactional
     public MatchEntity requestMatch(Long childRequestId, Long childTargetId) {
@@ -43,6 +44,11 @@ public class MatchServiceImpl implements MatchService {
                 .orElseThrow(() -> new ResourceNotFoundException("Initiator child not found: " + childRequestId));
         ChildEntity childTarget = childRepository.findById(childTargetId)
                 .orElseThrow(() -> new ResourceNotFoundException("Target child not found: " + childTargetId));
+
+        UserEntity currentUser = childRequest.getFamily().getUser();
+        if (currentUser.getVerificationStatus() != VerificationStatus.VERIFIED) {
+            throw new BusinessLogicException("Your account must be VERIFIED to request a match.");
+        }
 
         if (childRequest.getFamily().getNeighborhood() == null || childTarget.getFamily().getNeighborhood() == null) {
             throw new BusinessLogicException("Both families must have a neighborhood assigned to connect.");
@@ -95,10 +101,13 @@ public class MatchServiceImpl implements MatchService {
         MatchEntity match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
 
-        boolean isTarget = match.getChildTarget().getFamily().getUser().getEmail().equals(currentUserEmail);
-
-        if (!isTarget) {
+        UserEntity currentUser = match.getChildTarget().getFamily().getUser();
+        if (!currentUser.getEmail().equals(currentUserEmail)) {
             throw new BusinessLogicException("You do not have permission to respond to this request.");
+        }
+
+        if (currentUser.getVerificationStatus() != VerificationStatus.VERIFIED) {
+            throw new BusinessLogicException("You must be VERIFIED to respond to matches.");
         }
 
         if (match.getStatus() != MatchStatus.PENDING) {
@@ -176,20 +185,28 @@ public class MatchServiceImpl implements MatchService {
         MatchEntity match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
 
+        UserEntity requester = match.getChildRequest().getFamily().getUser();
+        UserEntity target = match.getChildTarget().getFamily().getUser();
 
-        if (match.getChildRequest().getFamily().getUser().getEmail().equals(userEmail)) {
+        if (userEmail.equals(requester.getEmail())) {
+            if (requester.getVerificationStatus() != VerificationStatus.VERIFIED) {
+                throw new BusinessLogicException("You must be VERIFIED to confirm a match.");
+            }
             match.setUserAccepted(true);
-        } else if (match.getChildTarget().getFamily().getUser().getEmail().equals(userEmail)) {
+        } else if (userEmail.equals(target.getEmail())) {
+            if (target.getVerificationStatus() != VerificationStatus.VERIFIED) {
+                throw new BusinessLogicException("You must be VERIFIED to confirm a match.");
+            }
             match.setNeighborAccepted(true);
         } else {
-            throw new BusinessLogicException("User not authorized for this match");
+            throw new BusinessLogicException("Not authorized to confirm this match.");
         }
 
-
         if (match.isUserAccepted() && match.isNeighborAccepted()) {
+            validateWeeklyConstraint(match.getChildRequest().getId());
+            validateWeeklyConstraint(match.getChildTarget().getId());
 
             match.setStatus(MatchStatus.ACCEPTED);
-
             notificationService.sendMatchSuccessNotification(match);
         }
 
