@@ -1,6 +1,7 @@
 package com.alexandracoder.littleneighbors.user.entity;
 
 import com.alexandracoder.littleneighbors.enums.Role;
+import com.alexandracoder.littleneighbors.enums.VerificationStatus;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.shared.BaseEntity;
 import jakarta.persistence.*;
@@ -39,6 +40,13 @@ public class UserEntity extends BaseEntity implements UserDetails {
     @Column(nullable = false)
     private String password;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private VerificationStatus verificationStatus = VerificationStatus.VERIFIED;
+
+    private String idDocumentUrl;
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -50,7 +58,6 @@ public class UserEntity extends BaseEntity implements UserDetails {
     @Column(name = "role")
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
-
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -89,13 +96,12 @@ public class UserEntity extends BaseEntity implements UserDetails {
         return true;
     }
 
-
     public boolean hasRole(Role role) {
         return roles.contains(role);
     }
 
     public String getFullName() {
-        return (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "").trim();
+        return ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
     }
 }
 

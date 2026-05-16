@@ -29,6 +29,8 @@ public interface FamilyRepository extends JpaRepository<FamilyEntity, Long>,
     })
     Optional<FamilyEntity> findByUserEmail(String email);
 
+    List<FamilyEntity> findByNeighborhood_NameAndIdNot(String neighborhoodName, Long id);
+
     List<FamilyEntity> findAll(Specification<FamilyEntity> spec);
 
     boolean existsByUser(UserEntity user);

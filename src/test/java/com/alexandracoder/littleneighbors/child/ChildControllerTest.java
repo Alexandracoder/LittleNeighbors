@@ -50,7 +50,6 @@ class ChildControllerTest {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
-        // Respuesta simulada estándar
         stubResponse = new ChildResponseDTO(
                 42L,
                 "Explorador Lleó",
@@ -58,6 +57,7 @@ class ChildControllerTest {
                 null,
                 LifeStage.BORN,
                 Gender.BOY,
+                "Un niño muy activo y creativo.",
                 List.of(),
                 false,
                 false,
@@ -74,17 +74,15 @@ class ChildControllerTest {
         @WithMockUser(username = "parent@test.com", roles = {"FAMILY"})
         @DisplayName("should return 201 Created when description is valid (FAMILY role)")
         void createChild_asFamily_returns201() throws Exception {
-            // SIGUIENDO EL ORDEN EXACTO DE TU RECORD:
-            // 1. nickname, 2. birthDate, 3. dueDate, 4. lifeStage, 5. gender, 6. interestIds, 7. isPrenatal, 8. description
             ChildRequestDTO requestBody = new ChildRequestDTO(
-                    "Explorador Lleó",             // 1. nickname
-                    LocalDate.of(2020, 6, 15),     // 2. birthDate
-                    null,                          // 3. dueDate
-                    LifeStage.BORN,                // 4. lifeStage
-                    Gender.BOY,                    // 5. gender
-                    Set.of(),                      // 6. interestIds
-                    false,                         // 7. isPrenatal
-                    "Valid bio"                    // 8. description
+                    "Explorador Lleó",
+                    LocalDate.of(2020, 6, 15),
+                    null,
+                    LifeStage.BORN,
+                    Gender.BOY,
+                    Set.of(),
+                    false,
+                    "Valid bio"
             );
 
             when(childService.create(any(ChildRequestDTO.class), eq("parent@test.com")))
@@ -103,7 +101,6 @@ class ChildControllerTest {
             when(childService.create(any(ChildRequestDTO.class), eq("admin@test.com")))
                     .thenReturn(stubResponse);
 
-            // JSON manual incluyendo el nickname obligatorio
             String jsonBody = """
                 {
                     "nickname": "Admin Kids",

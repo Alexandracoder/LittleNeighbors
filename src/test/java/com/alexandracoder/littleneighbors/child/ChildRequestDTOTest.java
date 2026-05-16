@@ -17,8 +17,6 @@ import static org.assertj.core.api.Assertions.*;
 @DisplayName("ChildRequestDTO — compact constructor validation")
 class ChildRequestDTOTest {
 
-    // ORDEN DEL RECORD: nickname, birthDate, dueDate, lifeStage, gender, interestIds, isPrenatal, description
-
     @Nested
     @DisplayName("When lifeStage is BORN")
     class BornLifeStage {
@@ -28,14 +26,14 @@ class ChildRequestDTOTest {
         void constructor_bornWithNullBirthDate_throwsWithCorrectMessage() {
             IllegalArgumentException ex = catchThrowableOfType(
                     () -> new ChildRequestDTO(
-                            "Leo",              // 1. nickname
-                            null,               // 2. birthDate — ¡Faltante!
-                            null,               // 3. dueDate
-                            LifeStage.BORN,     // 4. lifeStage
-                            Gender.BOY,         // 5. gender
-                            Set.of(),           // 6. interestIds
-                            false,              // 7. isPrenatal
-                            "Loves painting"    // 8. description
+                            "Leo",
+                            null,
+                            null,
+                            LifeStage.BORN,
+                            Gender.BOY,
+                            Set.of(),
+                            false,
+                            "Loves painting"
                     ),
                     IllegalArgumentException.class
             );
@@ -54,7 +52,7 @@ class ChildRequestDTOTest {
                             LocalDate.of(2021, 3, 10),
                             null,
                             LifeStage.BORN,
-                            null,               // 5. gender — ¡Faltante!
+                            null,
                             Set.of(),
                             false,
                             "Loves football"
@@ -95,10 +93,10 @@ class ChildRequestDTOTest {
             assertThatNoException().isThrownBy(() ->
                     new ChildRequestDTO(
                             "Future Baby",
-                            null,           // birthDate permitido null en PREGNANCY
+                            null,
                             LocalDate.now().plusMonths(3),
                             LifeStage.PREGNANCY,
-                            null,           // gender permitido null en PREGNANCY
+                            null,
                             Set.of(),
                             true,
                             "Expecting soon!"
@@ -120,7 +118,7 @@ class ChildRequestDTOTest {
                     null,
                     LifeStage.BORN,
                     Gender.BOY,
-                    null,   // 6. interestIds -> se normaliza a Set.of()
+                    null,
                     false,
                     "Active child"
             );
@@ -138,7 +136,7 @@ class ChildRequestDTOTest {
                     LifeStage.BORN,
                     Gender.GIRL,
                     Set.of(),
-                    null,   // 7. isPrenatal -> se normaliza a false
+                    null,
                     "Loves music"
             );
 
