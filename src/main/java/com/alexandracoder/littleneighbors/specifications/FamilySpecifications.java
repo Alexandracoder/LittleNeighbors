@@ -92,4 +92,11 @@ public class FamilySpecifications {
             return cb.not(cb.exists(sub));
         };
     }
+
+    public static Specification<FamilyEntity> hasNeighborhoodId(Long neighborhoodId) {
+        return (root, query, cb) -> {
+            if (neighborhoodId == null) return cb.conjunction();
+            return cb.equal(root.get("neighborhood").get("id"), neighborhoodId);
+        };
+    }
 }

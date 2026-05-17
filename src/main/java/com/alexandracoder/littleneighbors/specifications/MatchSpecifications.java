@@ -1,5 +1,6 @@
 package com.alexandracoder.littleneighbors.specifications;
 
+import com.alexandracoder.littleneighbors.enums.MatchStatus;
 import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
@@ -18,6 +19,21 @@ public class MatchSpecifications {
             Predicate isRecent = cb.greaterThan(root.get("createdAt"), after);
 
             return cb.and(participatingInMatch, isRecent);
+        };
+    }
+
+    public static Specification<MatchEntity> isAccepted() {
+        return (root, query, cb) -> cb.equal(root.get("status"), MatchStatus.ACCEPTED);
+    }
+
+    public static Specification<MatchEntity> belongsToNeighborhood(Long neighborhoodId) {
+        return (root, query, cb) -> {
+            if (neighborhoodId == null) return cb.conjunction();
+
+            return cb.or(
+                    cb.equal(root.get("initiatorFamily").get("neighborhood").get("id"), neighborhoodId),
+                    cb.equal(root.get("targetFamily").get("neighborhood").get("id"), neighborhoodId)
+            );
         };
     }
 }
