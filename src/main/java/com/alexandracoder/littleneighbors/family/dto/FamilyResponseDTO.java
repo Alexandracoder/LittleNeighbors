@@ -14,5 +14,7 @@ public record FamilyResponseDTO(
         String streetName,
         String postalCode,
         String cityName,
-        List<ChildSummaryDTO> children
+        List<ChildSummaryDTO> children,
+        Double latitude,
+        Double longitude
 ) {}
