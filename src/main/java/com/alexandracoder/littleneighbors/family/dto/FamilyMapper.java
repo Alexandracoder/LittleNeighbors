@@ -52,7 +52,11 @@ public class FamilyMapper {
                 streetName,
                 postalCode,
                 cityName,
-                children
+                children,
+                entity.getLongitude(),
+                entity.getLatitude()
+
+
         );
     }
 

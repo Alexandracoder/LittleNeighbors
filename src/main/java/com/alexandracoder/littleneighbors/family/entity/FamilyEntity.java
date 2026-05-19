@@ -69,4 +69,10 @@ public class FamilyEntity extends BaseEntity {
     @BatchSize(size = 10)
 
     private Set<ChildEntity> children =  new HashSet<>();
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
 }

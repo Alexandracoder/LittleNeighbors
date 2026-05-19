@@ -98,7 +98,9 @@ public class AuthService {
                 street,
                 zip,
                 city,
-                new ArrayList<>()
+                new ArrayList<>(),
+                family.getLatitude(),
+                family.getLongitude()
         );
     }
 
