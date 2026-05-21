@@ -1,6 +1,6 @@
 package com.alexandracoder.littleneighbors.security.config;
 
-import com.alexandracoder.littleneighbors.security.JwtService;
+import com.alexandracoder.littleneighbors.security.service.JwtService;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
