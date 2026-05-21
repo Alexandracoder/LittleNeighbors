@@ -6,7 +6,7 @@ import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
 import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO;
-import com.alexandracoder.littleneighbors.security.JwtService;
+import com.alexandracoder.littleneighbors.security.service.JwtService;
 import com.alexandracoder.littleneighbors.shared.exceptions.UnauthorizedAccessException;
 import com.alexandracoder.littleneighbors.shared.exceptions.UserAlreadyExistsException; // Ejemplo
 import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException; // Ejemplo

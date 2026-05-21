@@ -1,6 +1,6 @@
 package com.alexandracoder.littleneighbors.security.config;
 
-import com.alexandracoder.littleneighbors.security.JwtService;
+import com.alexandracoder.littleneighbors.security.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;

@@ -15,7 +15,7 @@ import com.alexandracoder.littleneighbors.specifications.FamilySpecifications;
 import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
 import com.alexandracoder.littleneighbors.shared.exceptions.BusinessLogicException;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,13 +25,27 @@ import java.util.List;
 import java.util.stream.Stream;
 
 @Service
-@RequiredArgsConstructor
 public class MatchServiceImpl implements MatchService {
 
     private final MatchRepository matchRepository;
     private final ChildRepository childRepository;
     private final FamilyRepository familyRepository;
     private final NotificationService notificationService;
+
+    private final boolean demoMode;
+
+    public MatchServiceImpl(
+            MatchRepository matchRepository,
+            ChildRepository childRepository,
+            FamilyRepository familyRepository,
+            NotificationService notificationService,
+            @Value("${app.demo-mode:false}") boolean demoMode) {
+        this.matchRepository = matchRepository;
+        this.childRepository = childRepository;
+        this.familyRepository = familyRepository;
+        this.notificationService = notificationService;
+        this.demoMode = demoMode;
+    }
 
     @Override
     @Transactional
@@ -45,9 +59,12 @@ public class MatchServiceImpl implements MatchService {
         ChildEntity childTarget = childRepository.findById(childTargetId)
                 .orElseThrow(() -> new ResourceNotFoundException("Target child not found: " + childTargetId));
 
-        UserEntity currentUser = childRequest.getFamily().getUser();
-        if (currentUser.getVerificationStatus() != VerificationStatus.VERIFIED) {
-            throw new BusinessLogicException("Your account must be VERIFIED to request a match.");
+
+        if (!demoMode) {
+            UserEntity currentUser = childRequest.getFamily().getUser();
+            if (currentUser.getVerificationStatus() != VerificationStatus.VERIFIED) {
+                throw new BusinessLogicException("Your account must be VERIFIED to request a match.");
+            }
         }
 
         if (childRequest.getFamily().getNeighborhood() == null || childTarget.getFamily().getNeighborhood() == null) {
@@ -106,8 +123,11 @@ public class MatchServiceImpl implements MatchService {
             throw new BusinessLogicException("You do not have permission to respond to this request.");
         }
 
-        if (currentUser.getVerificationStatus() != VerificationStatus.VERIFIED) {
-            throw new BusinessLogicException("You must be VERIFIED to respond to matches.");
+
+        if (!demoMode) {
+            if (currentUser.getVerificationStatus() != VerificationStatus.VERIFIED) {
+                throw new BusinessLogicException("You must be VERIFIED to respond to matches.");
+            }
         }
 
         if (match.getStatus() != MatchStatus.PENDING) {
@@ -189,12 +209,13 @@ public class MatchServiceImpl implements MatchService {
         UserEntity target = match.getChildTarget().getFamily().getUser();
 
         if (userEmail.equals(requester.getEmail())) {
-            if (requester.getVerificationStatus() != VerificationStatus.VERIFIED) {
+            if (!demoMode && requester.getVerificationStatus() != VerificationStatus.VERIFIED) {
                 throw new BusinessLogicException("You must be VERIFIED to confirm a match.");
             }
             match.setUserAccepted(true);
         } else if (userEmail.equals(target.getEmail())) {
-            if (target.getVerificationStatus() != VerificationStatus.VERIFIED) {
+
+            if (!demoMode && target.getVerificationStatus() != VerificationStatus.VERIFIED) {
                 throw new BusinessLogicException("You must be VERIFIED to confirm a match.");
             }
             match.setNeighborAccepted(true);

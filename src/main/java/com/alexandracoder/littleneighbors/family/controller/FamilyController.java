@@ -4,7 +4,7 @@ import com.alexandracoder.littleneighbors.family.dto.FamilyAuthResponseDTO;
 import com.alexandracoder.littleneighbors.family.dto.FamilyRequestDTO;
 import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
 import com.alexandracoder.littleneighbors.family.service.FamilyService;
-import com.alexandracoder.littleneighbors.security.JwtService;
+import com.alexandracoder.littleneighbors.security.service.JwtService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

@@ -13,6 +13,10 @@ spring:
 jwt:
   expiration: 3600000
 
+# Propiedad personalizada para controlar el flujo de la demo en vivo 🚀
+app:
+  demo-mode: ${APP_DEMO_MODE:true} # true por defecto en local, configurable por variable de entorno
+
 ---
 # ===============================================================
 # PERFIL DEV (MySQL local)
@@ -52,7 +56,6 @@ spring:
     activate:
       on-profile: test
   datasource:
-
     url: jdbc:mysql://127.0.0.1:3306/littleneighbors_test?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
     username: testuser
     password: testpassword
@@ -64,7 +67,6 @@ spring:
     show-sql: true
   flyway:
     enabled: true
-
 
 jwt:
   secret: "esta_es_una_clave_de_prueba_muy_larga_para_que_el_test_no_falle_12345"
@@ -92,3 +94,7 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET}
+
+# En producción forzamos a que por defecto sea false, blindando la app real 🔐
+app:
+  demo-mode: ${APP_DEMO_MODE:false}
