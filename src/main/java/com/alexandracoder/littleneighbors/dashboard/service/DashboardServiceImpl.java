@@ -5,18 +5,20 @@ import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
 import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
 import com.alexandracoder.littleneighbors.match.repository.MatchRepository;
-import com.alexandracoder.littleneighbors.playdate.entity.PlaydateEntity;
 import com.alexandracoder.littleneighbors.playdate.repository.PlaydateRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
+@Slf4j
 @Service
 public class DashboardServiceImpl implements DashboardService {
 
     private final FamilyRepository familyRepository;
     private final MatchRepository matchRepository;
     private final PlaydateRepository playdateRepository;
+
 
     public DashboardServiceImpl(FamilyRepository familyRepository,
                                 MatchRepository matchRepository,
@@ -29,7 +31,6 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public DashboardImpactDTO getImpactStatsForUser(Long userId) {
 
-        // Contadores seguros para el MVP usando especificaciones base vacías
         Specification<FamilyEntity> familySpec = Specification.where(null);
         long activeFamilies = familyRepository.count(familySpec);
 
@@ -37,17 +38,16 @@ public class DashboardServiceImpl implements DashboardService {
         long consolidatedPlaydates = matchRepository.count(matchSpec);
 
         long totalConciliationMinutes = 0;
-        try {
-            List<PlaydateEntity> playdates = playdateRepository.findAll();
-            if (playdates != null && !playdates.isEmpty()) {
-                long totalMeetings = playdates.stream()
-                        .filter(p -> p.getStatus() != null)
-                        .count();
 
-                totalConciliationMinutes = totalMeetings * 120L; // 2 horas por cita simulada
-            }
+        try {
+
+            long totalMeetings = playdateRepository.countByStatusNotNull();
+
+            totalConciliationMinutes = totalMeetings * 120L;
+
         } catch (Exception e) {
-            System.err.println("Error calculating playdate minutes: " + e.getMessage());
+
+            log.error("Error crítico al calcular los minutos de conciliación para el usuario con ID: {}", userId, e);
             totalConciliationMinutes = 0L;
         }
 

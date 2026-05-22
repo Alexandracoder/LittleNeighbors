@@ -14,4 +14,6 @@ public interface PlaydateRepository extends JpaRepository<PlaydateEntity, Long>,
     List<PlaydateEntity> findByMatchId(Long matchId);
 
     List<PlaydateEntity> findByMatchChildRequestFamilyIdOrMatchChildTargetFamilyId(Long familyId1, Long familyId2);
+
+    long countByStatusNotNull();
 }
