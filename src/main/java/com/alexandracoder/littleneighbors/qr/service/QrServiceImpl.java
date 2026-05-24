@@ -3,6 +3,7 @@ package com.alexandracoder.littleneighbors.qr.service;
 import com.alexandracoder.littleneighbors.qr.entity.QrEntity;
 import com.alexandracoder.littleneighbors.qr.repository.QrRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,18 +19,20 @@ public class QrServiceImpl implements QrService {
     @Override
     @Transactional
     public QrEntity saveLead(String email, String neighborhood) {
-        if (qrRepository.existsByEmailAndNeighborhood(email, neighborhood)) {
-            throw new IllegalArgumentException("This family has already voted for this neighborhood.");
+        try {
+
+            QrEntity lead = new QrEntity();
+
+            lead.setEmail(email.trim().toLowerCase());
+            lead.setNeighborhood(neighborhood.trim());
+
+
+            return qrRepository.save(lead);
+
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException("¡Esta familia ya ha votado por este barrio! Gracias por tu entusiasmo. 🏘️");
         }
-
-        QrEntity lead = QrEntity.builder()
-                .email(email.trim().toLowerCase())
-                .neighborhood(neighborhood.trim())
-                .build();
-
-        return qrRepository.save(lead);
     }
-
     @Override
     @Transactional(readOnly = true)
     public List<QrEntity> findLeadsByCriteria(Specification<QrEntity> spec) {
@@ -41,6 +44,6 @@ public class QrServiceImpl implements QrService {
         if (neighborhood == null || neighborhood.isBlank()) {
             return 0;
         }
-        return qrRepository.countByNeighborhood(neighborhood);
+        return qrRepository.countByNeighborhood(neighborhood.trim());
     }
 }
