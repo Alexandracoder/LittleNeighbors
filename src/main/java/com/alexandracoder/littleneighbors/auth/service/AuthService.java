@@ -8,8 +8,8 @@ import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity
 import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO;
 import com.alexandracoder.littleneighbors.security.service.JwtService;
 import com.alexandracoder.littleneighbors.shared.exceptions.UnauthorizedAccessException;
-import com.alexandracoder.littleneighbors.shared.exceptions.UserAlreadyExistsException; // Ejemplo
-import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException; // Ejemplo
+import com.alexandracoder.littleneighbors.shared.exceptions.UserAlreadyExistsException;
+import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
 import com.alexandracoder.littleneighbors.specifications.UserSpecifications;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
@@ -45,7 +45,7 @@ public class AuthService {
         userRepository.save(user);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(AuthRequest request) {
         UserEntity user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new UnauthorizedAccessException("Invalid credentials"));
@@ -54,13 +54,23 @@ public class AuthService {
             throw new UnauthorizedAccessException("Invalid credentials");
         }
 
+        List<String> roles = user.getRoles().stream()
+                .map(Enum::name)
+                .toList();
+
         Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", user.getRoles().stream().map(Enum::name).toList());
+        claims.put("roles", roles);
         claims.put("id", user.getId());
 
+        // Devolvemos el record AuthResponse con los 7 parámetros requeridos
         return new AuthResponse(
                 jwtService.generateAccessToken(user.getEmail(), claims),
-                jwtService.generateRefreshToken(user.getEmail())
+                jwtService.generateRefreshToken(user.getEmail()),
+                user.getId(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                roles
         );
     }
 
@@ -104,7 +114,7 @@ public class AuthService {
         );
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse reloadUserTokenFromRefresh(String refreshToken) {
 
         String email = jwtService.extractEmail(refreshToken);
@@ -112,14 +122,24 @@ public class AuthService {
         UserEntity user = userRepository.findOne(UserSpecifications.hasEmailWithFullProfile(email))
                 .orElseThrow(() -> new UnauthorizedAccessException("Invalid session or User not found"));
 
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", user.getRoles().stream()
+        List<String> roles = user.getRoles().stream()
                 .map(Enum::name)
-                .toList());
+                .toList();
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", roles);
         claims.put("id", user.getId());
 
         String newAccessToken = jwtService.generateAccessToken(email, claims);
 
-        return new AuthResponse(newAccessToken, refreshToken);
+        return new AuthResponse(
+                newAccessToken,
+                refreshToken,
+                user.getId(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                roles
+        );
     }
 }
