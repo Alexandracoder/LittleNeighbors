@@ -13,6 +13,7 @@ import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundExce
 import com.alexandracoder.littleneighbors.specifications.UserSpecifications;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,15 +30,15 @@ public class AuthService {
     private final JwtService jwtService;
 
     @Transactional
-    public void register(RegisterRequest request) throws UserAlreadyExistsException {
+    public void register(@Valid RegisterRequest request) throws UserAlreadyExistsException {
         if (userRepository.existsByEmail(request.email())) {
             throw new UserAlreadyExistsException("Email already taken: " + request.email());
         }
 
         UserEntity user = UserEntity.builder()
                 .email(request.email())
-                .firstName("New")
-                .lastName("Neighbor")
+                .firstName(request.firstName()) // Now mapping the real name!
+                .lastName(request.lastName())   // Now mapping the real last name!
                 .password(passwordEncoder.encode(request.password()))
                 .roles(new HashSet<>(Set.of(Role.USER)))
                 .build();
