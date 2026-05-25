@@ -5,6 +5,7 @@ import com.alexandracoder.littleneighbors.enums.Role;
 import com.alexandracoder.littleneighbors.family.dto.FamilyMapper;
 import com.alexandracoder.littleneighbors.family.dto.FamilyRequestDTO;
 import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
+import com.alexandracoder.littleneighbors.family.dto.OnboardingResponseDTO;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
 import com.alexandracoder.littleneighbors.match.dto.MatchResponseDetailDTO;
@@ -12,6 +13,7 @@ import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
 import com.alexandracoder.littleneighbors.match.repository.MatchRepository;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
 import com.alexandracoder.littleneighbors.neighborhood.repository.NeighborhoodRepository;
+import com.alexandracoder.littleneighbors.security.service.JwtService;
 import com.alexandracoder.littleneighbors.specifications.FamilySpecifications;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -43,10 +46,11 @@ public class FamilyServiceImpl implements FamilyService {
     private final NeighborhoodRepository neighborhoodRepository;
     private final FamilyMapper familyMapper;
     private final MatchRepository matchRepository;
+    private final JwtService jwtService;;
 
     @Override
     @Transactional
-    public FamilyResponseDTO createFamily(FamilyRequestDTO dto, String userEmail) {
+    public OnboardingResponseDTO createFamily(FamilyRequestDTO dto, String userEmail) {
 
         UserEntity user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -72,13 +76,29 @@ public class FamilyServiceImpl implements FamilyService {
                 .neighborhood(neighborhood)
                 .build();
 
-        FamilyEntity saved = familyRepository.save(familyEntity);
+        FamilyEntity saved = familyRepository.saveAndFlush(familyEntity);
 
         user.getRoles().remove(Role.USER);
         user.getRoles().add(Role.FAMILY);
-        userRepository.save(user);
+        UserEntity updatedUser = userRepository.saveAndFlush(user);
 
-        return this.familyMapper.toResponse(saved);
+
+        List<String> roles = updatedUser.getRoles().stream()
+                .map(role -> "ROLE_" + role.name())
+                .toList();
+
+        Map<String, Object> claims = Map.of("roles", roles);
+
+        String newAccessToken = jwtService.generateAccessToken(updatedUser.getEmail(), claims);
+        String newRefreshToken = jwtService.generateRefreshToken(updatedUser.getEmail());
+
+        FamilyResponseDTO familyResponse = this.familyMapper.toResponse(saved);
+
+        return new OnboardingResponseDTO(
+                familyResponse,
+                newAccessToken,
+                newRefreshToken
+        );
     }
     @Override
     @Transactional(readOnly = true)
