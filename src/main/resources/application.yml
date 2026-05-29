@@ -13,9 +13,8 @@ spring:
 jwt:
   expiration: 3600000
 
-# Propiedad personalizada para controlar el flujo de la demo en vivo 🚀
 app:
-  demo-mode: ${APP_DEMO_MODE:true} # true por defecto en local, configurable por variable de entorno
+  demo-mode: ${APP_DEMO_MODE:true}
 
 ---
 # ===============================================================
@@ -67,6 +66,11 @@ spring:
     show-sql: true
   flyway:
     enabled: true
+    clean-disabled: false
+  # ESTA LÍNEA EVITA QUE SPRING INTENTE USAR H2 EN TUS TESTS
+  test:
+    database:
+      replace: none
 
 jwt:
   secret: "esta_es_una_clave_de_prueba_muy_larga_para_que_el_test_no_falle_12345"
@@ -95,6 +99,6 @@ spring:
 jwt:
   secret: ${JWT_SECRET}
 
-# En producción forzamos a que por defecto sea false, blindando la app real 🔐
+
 app:
   demo-mode: ${APP_DEMO_MODE:false}
