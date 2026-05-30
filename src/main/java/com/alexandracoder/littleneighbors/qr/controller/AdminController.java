@@ -1,5 +1,6 @@
 package com.alexandracoder.littleneighbors.qr.controller;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.alexandracoder.littleneighbors.qr.service.QrService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,7 @@ public class AdminController {
     );
 
     @GetMapping("/stats")
+    @PreAuthorize("hasRole('ADMIN')")
     public Map<String, Long> getNeighborhoodStats() {
         return qrService.getAllNeighborhoodStats(BARRIOS_PILOTO);
     }
