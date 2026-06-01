@@ -25,10 +25,10 @@ public class QrServiceImpl implements QrService {
         try {
             QrEntity lead = new QrEntity();
             lead.setEmail(email.trim().toLowerCase());
-            lead.setNeighborhood(neighborhood.trim());
+            lead.setNeighborhood(neighborhood.trim().toLowerCase());
             return qrRepository.save(lead);
         } catch (DataIntegrityViolationException e) {
-            throw new IllegalArgumentException("¡Esta familia ya ha votado por este barrio! Gracias por tu entusiasmo. 🏘️");
+            throw new IllegalArgumentException("¡Esta familia ya ha votado por este barrio!");
         }
     }
 
@@ -44,7 +44,6 @@ public class QrServiceImpl implements QrService {
         if (neighborhood == null || neighborhood.isBlank()) {
             return 0;
         }
-        // Consistencia total: usamos las especificaciones para el conteo
         return qrRepository.count(QrSpecifications.hasNeighborhood(neighborhood));
     }
 

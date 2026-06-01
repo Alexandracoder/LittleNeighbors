@@ -11,45 +11,57 @@ import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity
 import com.alexandracoder.littleneighbors.neighborhood.repository.NeighborhoodRepository;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.jdbc.Sql;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Optional;
 import java.util.Set;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest
-@ActiveProfiles("test")
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@SpringBootTest
+@Testcontainers
 @Tag("smoke")
-@DisplayName("FamilyRepository — persistence smoke tests")
-@Sql(statements = {
-        "SET FOREIGN_KEY_CHECKS = 0;",
-        "TRUNCATE TABLE families;",
-        "TRUNCATE TABLE neighborhoods;",
-        "TRUNCATE TABLE cities;",
-        "TRUNCATE TABLE users;",
-        "SET FOREIGN_KEY_CHECKS = 1;"
-})
+@DisplayName("FamilyRepository — persistence smoke tests (Real MySQL)")
+@Transactional
 class PersistenceSmokeTest {
 
+    @Container
+    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
+            .withDatabaseName("littleneighbors_smoke_test")
+            .withUsername("test")
+            .withPassword("test");
+
+    @DynamicPropertySource
+    static void setProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", mysql::getJdbcUrl);
+        registry.add("spring.datasource.username", mysql::getUsername);
+        registry.add("spring.datasource.password", mysql::getPassword);
+        registry.add("spring.flyway.enabled", () -> "true");
+    }
+
     @Autowired
-    TestEntityManager em;
+    EntityManager em;
 
     @Autowired
     FamilyRepository familyRepository;
-    @Autowired
-    UserRepository userRepository;
-    @Autowired
-    NeighborhoodRepository neighborhoodRepository;
+
     @Autowired
     CityRepository cityRepository;
+
+    @Autowired
+    NeighborhoodRepository neighborhoodRepository;
+
+    @Autowired
+    UserRepository userRepository;
 
     private CityEntity city;
     private NeighborhoodEntity neighbourhood;
@@ -58,28 +70,37 @@ class PersistenceSmokeTest {
     @BeforeEach
     void seedFixtures() {
 
-        city = CityEntity.builder()
-                .name("Valencia")
-                .build();
-        em.persist(city);
+        city = cityRepository.findByNameIgnoreCase("Valencia")
+                .orElseGet(() -> {
+                    CityEntity newCity = CityEntity.builder().name("Valencia").build();
+                    return cityRepository.save(newCity);
+                });
 
-        neighbourhood = NeighborhoodEntity.builder()
-                .name("Benimaclet")
-                .streetName("Carrer del Barón de San Petrillo")
-                .postalCode("46020")
-                .city(city)
-                .build();
-        em.persist(neighbourhood);
 
-        user = UserEntity.builder()
-                .email("lucia@smoketest.com")
-                .firstName("Lucía")
-                .lastName("García")
-                .password("$2a$10$hashed")
-                .roles(Set.of(Role.FAMILY))
-                .verificationStatus(VerificationStatus.VERIFIED)
-                .build();
-        em.persist(user);
+        neighbourhood = neighborhoodRepository.findByNameIgnoreCase("Benimaclet")
+                .orElseGet(() -> {
+                    NeighborhoodEntity nb = NeighborhoodEntity.builder()
+                            .name("Benimaclet")
+                            .streetName("Carrer del Barón de San Petrillo")
+                            .postalCode("46020")
+                            .city(city)
+                            .build();
+                    return neighborhoodRepository.save(nb);
+                });
+
+
+        user = userRepository.findByEmail("lucia@smoketest.com")
+                .orElseGet(() -> {
+                    UserEntity newUser = UserEntity.builder()
+                            .email("lucia@smoketest.com")
+                            .firstName("Lucía")
+                            .lastName("García")
+                            .password("$2a$10$hashed")
+                            .roles(Set.of(Role.FAMILY))
+                            .verificationStatus(VerificationStatus.VERIFIED)
+                            .build();
+                    return userRepository.save(newUser);
+                });
 
         em.flush();
     }
@@ -92,7 +113,7 @@ class PersistenceSmokeTest {
         @DisplayName("should persist a Family and read it back with all fields intact")
         void persistFamily_allFieldsRoundTrip() {
             FamilyEntity family = buildFamily("Familia García", user, neighbourhood);
-            FamilyEntity saved  = familyRepository.save(family);
+            FamilyEntity saved = familyRepository.save(family);
             em.flush();
             em.clear();
 

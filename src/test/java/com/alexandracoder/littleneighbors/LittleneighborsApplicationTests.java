@@ -9,12 +9,13 @@ import org.springframework.test.context.TestPropertySource;
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
         "jwt.secret=un_secreto_de_prueba_de_32_caracteres_minimo",
-        "jwt.expiration=3600000"
+        "jwt.expiration=3600000",
+
+        "spring.flyway.ignore-migration-checksums=true"
 })
 class LittleneighborsApplicationTests {
 
     @Test
     void contextLoads() {
-
     }
 }

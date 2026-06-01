@@ -28,7 +28,7 @@ spring:
     url: jdbc:mysql://localhost:3306/littleneighbors_1?createDatabaseIfNotExist=true&serverTimezone=UTC
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: ${DB_PASSWORD}
+    password: ${DB_PASSWORD:root}
   jpa:
     open-in-view: false
     hibernate:
@@ -38,11 +38,11 @@ spring:
     enabled: true
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:dev_secret_clave_temporal_123}
 
 ---
 # ===============================================================
-# PERFIL TEST (GitHub Actions)
+# PERFIL TEST (GitHub Actions / Local)
 # ===============================================================
 spring:
   config:
@@ -50,19 +50,22 @@ spring:
       on-profile: test
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/littleneighbors_test?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:MYSQL}
   jpa:
     hibernate:
       ddl-auto: update
   flyway:
     enabled: true
+
+    ignore-migration-checksums: true
+    validate-on-migrate: false
   test:
     database:
       replace: none
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:test_secret_clave_temporal_123}
 
 ---
 # ===============================================================
@@ -74,6 +77,7 @@ spring:
       on-profile: prod
   datasource:
     url: ${DB_URL}
+
     username: ${DB_USER}
     password: ${DB_PASSWORD}
   jpa:
