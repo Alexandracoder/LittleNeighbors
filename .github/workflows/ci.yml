@@ -51,6 +51,7 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           DB_USER: ${{ secrets.MYSQL_USER }}
           DB_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-        run: mvn -B clean test -Dspring.profiles.active=test
 
+          ALLOWED_ORIGINS: http://localhost:5173,http://localhost:5174
+        run: mvn -B clean test -Dspring.profiles.active=test
 
