@@ -68,7 +68,7 @@ ALLOWED_ORIGINS: http://localhost:5173,http://localhost:5174
 
 jwt:
 
-  secret: dev_secret_para_tests_que_no_falla_1234567890
+  secret: "this-is-a-super-long-and-secure-test-secret-key-must-be-32-bytes"
 
 ---
 # ===============================================================

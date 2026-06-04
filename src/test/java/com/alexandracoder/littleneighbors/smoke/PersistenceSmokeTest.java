@@ -18,6 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -34,6 +35,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("FamilyRepository — persistence smoke tests (Real MySQL)")
 @Transactional
 @ActiveProfiles("test")
+@TestPropertySource(properties = {
+        "JWT_SECRET=test_secret_for_integration_tests_123456",
+        "ALLOWED_ORIGINS=http://localhost:5173"
+})
 class PersistenceSmokeTest {
 
     @Container

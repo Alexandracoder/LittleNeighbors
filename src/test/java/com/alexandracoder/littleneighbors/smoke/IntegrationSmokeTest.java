@@ -30,6 +30,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @TestPropertySource(properties = "jwt.secret=un_secreto_de_prueba_de_32_caracteres_minimo")
 @DisplayName("AdminController - Smoke Test")
+@TestPropertySource(properties = {
+        "JWT_SECRET=test_secret_for_integration_tests_123456",
+        "ALLOWED_ORIGINS=http://localhost:5173"
+})
 
 class IntegrationSmokeTest {
 
