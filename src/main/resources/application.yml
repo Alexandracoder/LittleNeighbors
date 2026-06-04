@@ -57,12 +57,14 @@ spring:
       ddl-auto: update
   flyway:
     enabled: true
-
     ignore-migration-checksums: true
     validate-on-migrate: false
   test:
     database:
       replace: none
+
+
+ALLOWED_ORIGINS: http://localhost:5173,http://localhost:5174
 
 jwt:
   secret: ${JWT_SECRET:test_secret_clave_temporal_123}

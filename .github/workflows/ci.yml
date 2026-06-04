@@ -55,3 +55,4 @@ jobs:
           ALLOWED_ORIGINS: http://localhost:5173,http://localhost:5174
         run: mvn -B clean test -Dspring.profiles.active=test
 
+
