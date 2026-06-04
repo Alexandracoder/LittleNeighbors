@@ -50,8 +50,9 @@ spring:
       on-profile: test
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/littleneighbors_test?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
-    username: ${DB_USER:root}
-    password: ${DB_PASSWORD:MYSQL}
+    # Cambia esto a valores fijos para el perfil de test
+    username: testuser
+    password: testpassword
   jpa:
     hibernate:
       ddl-auto: update
@@ -63,11 +64,11 @@ spring:
     database:
       replace: none
 
-
 ALLOWED_ORIGINS: http://localhost:5173,http://localhost:5174
 
 jwt:
-  secret: ${JWT_SECRET:test_secret_clave_temporal_123}
+
+  secret: dev_secret_para_tests_que_no_falla_1234567890
 
 ---
 # ===============================================================
