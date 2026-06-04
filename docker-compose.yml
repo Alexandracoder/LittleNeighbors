@@ -1,8 +1,9 @@
-version: '3.9'
+version: '3.8'
+
 services:
   db:
     image: mysql:8.0
-    platform: linux/arm64
+    platform: linux/amd64
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: littleneighbors_1
@@ -12,21 +13,23 @@ services:
       - mysql_data:/var/lib/mysql
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 10s
+      retries: 10
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-    platform: linux/arm64
-    env_file:
-      - .env
+    platform: linux/amd64
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - DB_URL=jdbc:mysql://db:3306/littleneighbors_1?useSSL=false&serverTimezone=UTC
+      - DB_URL=${DB_URL}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - APP_DEMO_MODE=${APP_DEMO_MODE}
     depends_on:
       db:
         condition: service_healthy
