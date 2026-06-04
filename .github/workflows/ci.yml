@@ -6,6 +6,7 @@ on:
       - main
       - dev
       - "feature/**"
+      - "refactor/**"
   pull_request:
     branches:
       - main
@@ -21,7 +22,6 @@ jobs:
     services:
       mysql:
         image: mysql:8.0
-
         env:
           MYSQL_ROOT_PASSWORD: rootpassword
           MYSQL_DATABASE: littleneighbors_test
@@ -50,7 +50,6 @@ jobs:
       - name: Build and run Backend tests
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-
           DB_USER: testuser
           DB_PASSWORD: testpassword
           ALLOWED_ORIGINS: http://localhost:5173,http://localhost:5174
