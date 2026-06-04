@@ -21,15 +21,16 @@ jobs:
     services:
       mysql:
         image: mysql:8.0
+
         env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: rootpassword
           MYSQL_DATABASE: littleneighbors_test
-          MYSQL_USER: ${{ secrets.MYSQL_USER }}
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpassword
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping --silent -u root --password=${{ secrets.MYSQL_ROOT_PASSWORD }}"
+          --health-cmd="mysqladmin ping --silent -u root --password=rootpassword"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
@@ -49,9 +50,9 @@ jobs:
       - name: Build and run Backend tests
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          DB_USER: ${{ secrets.MYSQL_USER }}
-          DB_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
 
+          DB_USER: testuser
+          DB_PASSWORD: testpassword
           ALLOWED_ORIGINS: http://localhost:5173,http://localhost:5174
         run: mvn -B clean test -Dspring.profiles.active=test
 
