@@ -25,7 +25,7 @@ public class AdminController {
         return qrService.getAllNeighborhoodStats(BARRIOS_PILOTO);
     }
 
-    @GetMapping("/stats")
+    @GetMapping("/stats/detailed")
     @PreAuthorize("hasRole('ADMIN')")
     public Map<String, QrService.StatsDTO> getDetailedNeighborhoodStats() {
         return qrService.getDetailedNeighborhoodStats(BARRIOS_PILOTO);
