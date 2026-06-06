@@ -25,6 +25,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private final com.alexandracoder.littleneighbors.qr.service.QrService qrService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -37,8 +38,8 @@ public class AuthService {
 
         UserEntity user = UserEntity.builder()
                 .email(request.email())
-                .firstName(request.firstName()) // Now mapping the real name!
-                .lastName(request.lastName())   // Now mapping the real last name!
+                .firstName(request.firstName())
+                .lastName(request.lastName())
                 .password(passwordEncoder.encode(request.password()))
                 .roles(new HashSet<>(Set.of(Role.USER)))
                 .build();
@@ -63,7 +64,7 @@ public class AuthService {
         claims.put("roles", roles);
         claims.put("id", user.getId());
 
-        // Devolvemos el record AuthResponse con los 7 parámetros requeridos
+
         return new AuthResponse(
                 jwtService.generateAccessToken(user.getEmail(), claims),
                 jwtService.generateRefreshToken(user.getEmail()),

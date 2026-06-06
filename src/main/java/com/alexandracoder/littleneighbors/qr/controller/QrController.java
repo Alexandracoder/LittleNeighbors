@@ -19,6 +19,7 @@ public class QrController {
 
     private final QrService qrService;
 
+
     @PostMapping("/pilot-lead")
     public ResponseEntity<?> registerQrLead(@RequestBody Map<String, String> payload) {
         String email = payload.get("email");
@@ -30,13 +31,16 @@ public class QrController {
 
         try {
             QrEntity savedLead = qrService.saveLead(email, neighborhood);
-            log.info(" QR lead successfully registered -> Neighborhood: {}, Email: {}",
-                    savedLead.getNeighborhood(), savedLead.getEmail());
+            log.info("QR lead successfully registered -> Token: {}, Neighborhood: {}, Email: {}",
+                    savedLead.getInviteToken(), savedLead.getNeighborhood(), savedLead.getEmail());
 
-            return ResponseEntity.ok(Map.of("message", "Lead registered successfully."));
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Lead registered successfully.",
+                    "inviteToken", savedLead.getInviteToken()
+            ));
 
         } catch (IllegalArgumentException e) {
-
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (Exception e) {
             log.error("Critical error processing QR registration", e);
@@ -63,5 +67,12 @@ public class QrController {
             log.error("Error retrieving lead count for neighborhood: {}", neighborhood, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error.");
         }
+    }
+
+    @GetMapping("/invite/{token}")
+    public ResponseEntity<?> getInviteDetails(@PathVariable String token) {
+        return qrService.findByInviteToken(token)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

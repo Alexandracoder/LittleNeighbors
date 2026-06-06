@@ -71,4 +71,16 @@ class IntegrationSmokeTest {
                         .with(anonymous()))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @DisplayName("Admin can access detailed stats - 200 OK")
+    @WithMockUser(roles = "ADMIN")
+    void getDetailedStats_AsAdmin_Returns200() throws Exception {
+        when(qrService.getDetailedNeighborhoodStats(anyList()))
+                .thenReturn(Map.of("Benimaclet", new QrService.StatsDTO(10L, 5L)));
+
+        mockMvc.perform(get("/api/admin/stats/detailed")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
 }
