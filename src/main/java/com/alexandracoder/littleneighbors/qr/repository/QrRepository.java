@@ -6,10 +6,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface QrRepository extends JpaRepository<QrEntity, Long>, JpaSpecificationExecutor<QrEntity> {
 
     boolean existsByEmailAndNeighborhood(String email, String neighborhood);
 
     long countByNeighborhood(String neighborhood);
+
+    Optional<QrEntity> findByInviteToken(String inviteToken);
+
+    long countByNeighborhoodAndConvertedAtIsNotNull(String neighborhood);
 }
