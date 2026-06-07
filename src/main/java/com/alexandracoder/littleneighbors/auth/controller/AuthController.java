@@ -3,6 +3,7 @@ package com.alexandracoder.littleneighbors.auth.controller;
 import com.alexandracoder.littleneighbors.auth.dto.*;
 import com.alexandracoder.littleneighbors.auth.service.AuthService;
 import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO;
+import com.alexandracoder.littleneighbors.shared.exceptions.UnauthorizedAccessException;
 import com.alexandracoder.littleneighbors.shared.exceptions.UserAlreadyExistsException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -20,9 +23,17 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody AuthRequest request) {
+        try {
+            AuthResponse response = authService.login(request);
+            return ResponseEntity.ok(response);
+        } catch (UnauthorizedAccessException e) {
 
-        return ResponseEntity.ok(authService.login(request));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Internal server error"));
+        }
     }
 
     @PostMapping("/register")

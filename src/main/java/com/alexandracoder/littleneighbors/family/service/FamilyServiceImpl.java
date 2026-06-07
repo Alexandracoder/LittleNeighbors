@@ -184,7 +184,7 @@ public class FamilyServiceImpl implements FamilyService {
 
         return familyRepository.findByUserEmail(email)
                 .map(familyMapper::toResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Family not found"));
+                .orElse(null);
     }
 
 }
