@@ -57,11 +57,16 @@ public class FamilyController {
     }
 
     @GetMapping("/my-family")
-    @PreAuthorize("hasRole('FAMILY')")
+    @PreAuthorize("hasRole('FAMILY') or hasRole('ADMIN')")
     public ResponseEntity<FamilyResponseDTO> getMyFamily(Principal principal) {
-        return ResponseEntity.ok(familyService.getFamilyByEmail(principal.getName()));
+        FamilyResponseDTO family = familyService.getFamilyByEmail(principal.getName());
+        if (family == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(family);
     }
 
+    // 2. DESPUÉS las rutas que usan PathVariables (esto evita la confusión)
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('FAMILY')")
     public ResponseEntity<FamilyResponseDTO> getFamilyById(
@@ -69,7 +74,6 @@ public class FamilyController {
             Principal principal) {
         return ResponseEntity.ok(familyService.getFamilyById(id, principal.getName()));
     }
-
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('FAMILY')")
     public ResponseEntity<FamilyResponseDTO> updateFamily(
