@@ -5,8 +5,8 @@
       branches:
         - main
         - dev
-        - feat
         - "feature/**"
+        - "feat/**"
     pull_request:
       branches:
         - main
