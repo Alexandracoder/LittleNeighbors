@@ -1,0 +1,1 @@
+ALTER TABLE pilot_leads ADD COLUMN converted_at DATETIME(6);
