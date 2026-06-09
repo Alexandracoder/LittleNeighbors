@@ -2,8 +2,6 @@
 # CONFIGURACIÓN GLOBAL
 # ===============================================================
 spring:
-  profiles:
-    active: dev
   jackson:
     mapper:
       default-view-inclusion: true
@@ -50,7 +48,6 @@ spring:
       on-profile: test
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/littleneighbors_test?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
-    # Cambia esto a valores fijos para el perfil de test
     username: testuser
     password: testpassword
   jpa:
@@ -59,7 +56,6 @@ spring:
   flyway:
     enabled: true
     clean-disabled: false
-
   test:
     database:
       replace: none
@@ -67,12 +63,11 @@ spring:
 ALLOWED_ORIGINS: http://localhost:5173,http://localhost:5174
 
 jwt:
-
   secret: "this-is-a-super-long-and-secure-test-secret-key-must-be-32-bytes"
 
 ---
 # ===============================================================
-# PERFIL PROD (Oracle Cloud)
+# PERFIL PROD (Nube / Render)
 # ===============================================================
 spring:
   config:
