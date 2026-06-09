@@ -85,9 +85,6 @@ spring:
     enabled: true
     validate-on-migrate: false
 
-    user: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
-
 jwt:
   secret: ${JWT_SECRET}
 
