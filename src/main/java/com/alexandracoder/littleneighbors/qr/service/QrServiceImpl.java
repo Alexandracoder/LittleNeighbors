@@ -4,6 +4,7 @@ import com.alexandracoder.littleneighbors.qr.entity.QrEntity;
 import com.alexandracoder.littleneighbors.qr.repository.QrRepository;
 import com.alexandracoder.littleneighbors.specifications.QrSpecifications;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,14 +24,10 @@ public class QrServiceImpl implements QrService {
     @Override
     @Transactional
     public QrEntity saveLead(String email, String neighborhood) {
-        try {
-            QrEntity lead = new QrEntity();
-            lead.setEmail(email.trim().toLowerCase());
-            lead.setNeighborhood(neighborhood.trim().toLowerCase());
-            return qrRepository.save(lead);
-        } catch (DataIntegrityViolationException e) {
-            throw new IllegalArgumentException("¡Esta familia ya ha votado por este barrio!");
-        }
+
+        String normalizedEmail = email.trim().toLowerCase();
+        String normalizedNeighborhood = neighborhood.trim().toLowerCase();
+
 
         QrEntity lead = QrEntity.builder()
                 .email(normalizedEmail)
@@ -38,7 +35,11 @@ public class QrServiceImpl implements QrService {
                 .inviteToken(UUID.randomUUID().toString())
                 .build();
 
-        return qrRepository.save(lead);
+        try {
+            return qrRepository.save(lead);
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException("¡Esta familia ya ha votado por este barrio!");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -78,7 +79,7 @@ public class QrServiceImpl implements QrService {
         Map<String, StatsDTO> stats = new HashMap<>();
         for (String n : neighborhoodList) {
             long total = qrRepository.countByNeighborhood(n);
-            long converted = qrRepository.countByNeighborhoodAndConvertedAtIsNotNull(n); // Necesitarás este método en el Repository
+            long converted = qrRepository.countByNeighborhoodAndConvertedAtIsNotNull(n);
             stats.put(n, new StatsDTO(total, converted));
         }
         return stats;

@@ -30,15 +30,10 @@ public class QrController {
             log.info("QR lead registered -> Neighborhood: {}, Email: {}",
                     savedLead.getNeighborhood(), savedLead.getEmail());
 
-
-<<<<<<< refactor/security-and-docker
-=======
             return ResponseEntity.ok(Map.of(
                     "message", "Lead registered successfully.",
                     "inviteToken", savedLead.getInviteToken()
             ));
-
->>>>>>> dev
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (Exception e) {
