@@ -18,6 +18,7 @@ USER appuser
 EXPOSE 8080
 
 ENTRYPOINT ["java", \
+            "-Dserver.port=${PORT:-10000}", \
             "-Dspring.profiles.active=prod", \
             "-DSPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}", \
             "-DSPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}", \
