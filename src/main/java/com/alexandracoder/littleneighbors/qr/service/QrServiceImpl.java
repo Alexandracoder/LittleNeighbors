@@ -23,11 +23,13 @@ public class QrServiceImpl implements QrService {
     @Override
     @Transactional
     public QrEntity saveLead(String email, String neighborhood) {
-        String normalizedEmail = email.trim().toLowerCase();
-        String normalizedNeighborhood = neighborhood.trim();
-
-        if (qrRepository.existsByEmailAndNeighborhood(normalizedEmail, normalizedNeighborhood)) {
-            throw new IllegalArgumentException("¡Esta familia ya ha votado por este barrio! Gracias por tu entusiasmo. 🏘️");
+        try {
+            QrEntity lead = new QrEntity();
+            lead.setEmail(email.trim().toLowerCase());
+            lead.setNeighborhood(neighborhood.trim().toLowerCase());
+            return qrRepository.save(lead);
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException("¡Esta familia ya ha votado por este barrio!");
         }
 
         QrEntity lead = QrEntity.builder()

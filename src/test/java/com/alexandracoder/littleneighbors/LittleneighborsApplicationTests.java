@@ -8,13 +8,14 @@ import org.springframework.test.context.TestPropertySource;
 @SpringBootTest
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
-        "jwt.secret=esta_es_una_clave_de_prueba_muy_larga_para_que_el_test_no_falle_12345",
-        "jwt.expiration=3600000"
+        "jwt.secret=un_secreto_de_prueba_de_32_caracteres_minimo",
+        "jwt.expiration=3600000",
+
+        "spring.flyway.ignore-migration-checksums=true"
 })
 class LittleneighborsApplicationTests {
 
     @Test
     void contextLoads() {
-
     }
 }
