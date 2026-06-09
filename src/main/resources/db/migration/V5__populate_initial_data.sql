@@ -8,7 +8,7 @@ FROM `cities`
 WHERE `name` = 'Valencia'
 LIMIT 1;
 
--- 2. USUARIO DE PRUEBA (Password: password123)
+-- 2. USUARIO DE PRUEBA
 INSERT IGNORE INTO `users` (`email`, `first_name`, `last_name`, `password`)
 VALUES ('lucia@example.com', 'Lucía', 'García', '$2a$10$8.UnVuG9HHgffUDAlk8q7Ou5f2LvsS.g6izLbbZ.Z6098U1Cl6N7O');
 

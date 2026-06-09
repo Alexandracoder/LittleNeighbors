@@ -6,4 +6,7 @@ import java.util.Optional;
 
 public interface NeighborhoodRepository extends JpaRepository<NeighborhoodEntity, Long> {
     Optional<NeighborhoodEntity> findById(Long id);
+
+    Optional<NeighborhoodEntity> findByNameIgnoreCase(String benimaclet);
+
 }

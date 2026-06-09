@@ -1,9 +1,9 @@
 # ===============================================================
-# CONFIGURACIÓN GLOBAL (Común a todos los perfiles)
+# CONFIGURACIÓN GLOBAL
 # ===============================================================
 spring:
   profiles:
-    active: dev # Perfil por defecto
+    active: dev
   jackson:
     mapper:
       default-view-inclusion: true
@@ -14,11 +14,11 @@ jwt:
   expiration: 3600000
 
 app:
-  demo-mode: ${APP_DEMO_MODE:true}
+  demo-mode: ${APP_DEMO_MODE:false}
 
 ---
 # ===============================================================
-# PERFIL DEV (MySQL local)
+# PERFIL DEV (Local)
 # ===============================================================
 spring:
   config:
@@ -28,27 +28,21 @@ spring:
     url: jdbc:mysql://localhost:3306/littleneighbors_1?createDatabaseIfNotExist=true&serverTimezone=UTC
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: MYSQL
+    password: ${DB_PASSWORD:root}
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: none
     show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
   flyway:
     enabled: true
-    locations: classpath:db/migration
-    repair-on-migrate: true
-    baseline-on-migrate: true
 
 jwt:
-  secret: ${JWT_SECRET:8f42a6b2d1c5e9f8a3b7c4d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1}
+  secret: ${JWT_SECRET:dev_secret_clave_temporal_123}
 
 ---
 # ===============================================================
-# PERFIL TEST (MySQL para GitHub Actions / CI)
+# PERFIL TEST (GitHub Actions / Local)
 # ===============================================================
 spring:
   config:
@@ -56,14 +50,12 @@ spring:
       on-profile: test
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/littleneighbors_test?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+    # Cambia esto a valores fijos para el perfil de test
     username: testuser
     password: testpassword
-    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
-    database-platform: org.hibernate.dialect.MySQL8Dialect
     hibernate:
       ddl-auto: update
-    show-sql: true
   flyway:
     enabled: true
     clean-disabled: false
@@ -72,33 +64,35 @@ spring:
     database:
       replace: none
 
+ALLOWED_ORIGINS: http://localhost:5173,http://localhost:5174
+
 jwt:
-  secret: "esta_es_una_clave_de_prueba_muy_larga_para_que_el_test_no_falle_12345"
-  expiration: 3600000
+
+  secret: "this-is-a-super-long-and-secure-test-secret-key-must-be-32-bytes"
 
 ---
 # ===============================================================
-# PERFIL PROD (MySQL Real / Producción)
+# PERFIL PROD (Oracle Cloud)
 # ===============================================================
 spring:
   config:
     activate:
       on-profile: prod
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/littleneighbors_1?useSSL=true&serverTimezone=UTC}
+    url: ${DB_URL}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: false
   flyway:
     enabled: true
-    locations: classpath:db/migration
+    user: ${DB_USER}
+    password: ${DB_PASSWORD}
 
 jwt:
   secret: ${JWT_SECRET}
-
-
-app:
-  demo-mode: ${APP_DEMO_MODE:false}
+  logging:
+    level:
+      org.springframework.security: DEBUG
+      org.springframework.security.web.access.intercept.FilterSecurityInterceptor: DEBUG

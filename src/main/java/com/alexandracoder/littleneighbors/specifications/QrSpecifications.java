@@ -8,7 +8,10 @@ public class QrSpecifications {
     public static Specification<QrEntity> hasNeighborhood(String neighborhood) {
         return (root, query, criteriaBuilder) -> {
             if (neighborhood == null || neighborhood.isBlank()) return criteriaBuilder.conjunction();
-            return criteriaBuilder.equal(root.get("neighborhood"), neighborhood.trim());
+            return criteriaBuilder.equal(
+                    criteriaBuilder.lower(root.get("neighborhood")),
+                    neighborhood.trim().toLowerCase()
+            );
         };
     }
 

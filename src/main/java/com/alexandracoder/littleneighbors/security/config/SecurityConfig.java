@@ -47,6 +47,10 @@ public class SecurityConfig {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
+
+    @Value("${ALLOWED_ORIGINS}")
+    private String allowedOrigins;
+
     public SecurityConfig(UserRepository userRepository, JwtService jwtService) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
