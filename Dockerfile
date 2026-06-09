@@ -17,4 +17,4 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 EXPOSE 8080
 
-ENTRYPOINT ["java", "--enable-preview", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-Dspring.datasource.url=${SPRING_DATASOURCE_URL}", "-Dspring.datasource.username=${SPRING_DATASOURCE_USERNAME}", "-Dspring.datasource.password=${SPRING_DATASOURCE_PASSWORD}", "-jar", "app.jar"]

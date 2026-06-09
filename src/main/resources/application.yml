@@ -74,16 +74,19 @@ spring:
     activate:
       on-profile: prod
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
+
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
   flyway:
     enabled: true
-    user: ${DB_USER}
-    password: ${DB_PASSWORD}
+    validate-on-migrate: false
+
+    user: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
 
 jwt:
   secret: ${JWT_SECRET}
@@ -92,4 +95,3 @@ logging:
   level:
     org.springframework.security: DEBUG
     org.springframework.security.web.access.intercept.FilterSecurityInterceptor: DEBUG
-
