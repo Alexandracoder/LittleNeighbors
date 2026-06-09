@@ -58,8 +58,8 @@ spring:
       ddl-auto: update
   flyway:
     enabled: true
-    ignore-migration-checksums: true
-    validate-on-migrate: false
+    clean-disabled: false
+
   test:
     database:
       replace: none
