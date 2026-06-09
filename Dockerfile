@@ -17,4 +17,10 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-Dspring.datasource.url=${SPRING_DATASOURCE_URL}", "-Dspring.datasource.username=${SPRING_DATASOURCE_USERNAME}", "-Dspring.datasource.password=${SPRING_DATASOURCE_PASSWORD}", "-jar", "app.jar"]
+ENTRYPOINT ["java", \
+            "-Dspring.profiles.active=prod", \
+            "-DSPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}", \
+            "-DSPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}", \
+            "-DSPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}", \
+            "-DJWT_SECRET=${JWT_SECRET}", \
+            "-jar", "app.jar"]
