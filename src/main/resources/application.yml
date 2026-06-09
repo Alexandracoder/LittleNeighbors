@@ -67,7 +67,7 @@ spring:
   flyway:
     enabled: true
     clean-disabled: false
-  # ESTA LÍNEA EVITA QUE SPRING INTENTE USAR H2 EN TUS TESTS
+
   test:
     database:
       replace: none
