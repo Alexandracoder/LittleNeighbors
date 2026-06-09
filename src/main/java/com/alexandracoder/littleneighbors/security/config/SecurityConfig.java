@@ -66,8 +66,14 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**", "/api/public/**", "/h2-console/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        .requestMatchers("/api/public/**", "/h2-console/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+
                         .requestMatchers("/api/messages/**", "/api/families/**", "/api/neighborhoods/**", "/api/children/**", "/api/status/**").authenticated()
                         .requestMatchers("/ws-little-neighbors/**").permitAll()
                         .anyRequest().authenticated()
@@ -101,10 +107,15 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::deny))
                 .authorizeHttpRequests(auth -> auth
+                
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").hasRole("ADMIN")
-                        .requestMatchers("/api/auth/**", "/api/users", "/api/public/**").permitAll()
+                
+                        .requestMatchers("/api/users", "/api/public/**").permitAll()
+               
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

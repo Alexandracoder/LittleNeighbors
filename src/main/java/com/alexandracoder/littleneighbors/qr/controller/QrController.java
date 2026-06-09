@@ -21,6 +21,7 @@ public class QrController {
 
     private final QrService qrService;
 
+
     @PostMapping("/pilot-lead")
     public ResponseEntity<?> registerQrLead(@Valid @RequestBody PilotLeadRequest request) {
 
@@ -29,8 +30,15 @@ public class QrController {
             log.info("QR lead registered -> Neighborhood: {}, Email: {}",
                     savedLead.getNeighborhood(), savedLead.getEmail());
 
-            return ResponseEntity.ok(Map.of("message", "Lead registered successfully."));
 
+<<<<<<< refactor/security-and-docker
+=======
+            return ResponseEntity.ok(Map.of(
+                    "message", "Lead registered successfully.",
+                    "inviteToken", savedLead.getInviteToken()
+            ));
+
+>>>>>>> dev
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (Exception e) {
@@ -60,5 +68,12 @@ public class QrController {
             log.error("Error retrieving lead count for neighborhood: {}", neighborhood, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error.");
         }
+    }
+
+    @GetMapping("/invite/{token}")
+    public ResponseEntity<?> getInviteDetails(@PathVariable String token) {
+        return qrService.findByInviteToken(token)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }
