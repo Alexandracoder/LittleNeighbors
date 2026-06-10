@@ -2,16 +2,17 @@ package com.alexandracoder.littleneighbors.shared.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.security.access.AccessDeniedException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -19,28 +20,40 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleNotFound(
             ResourceNotFoundException ex
     ) {
-        return buildResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
+        return buildResponse(
+                ex.getMessage(),
+                HttpStatus.NOT_FOUND
+        );
     }
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Object> handleIllegalState(
             IllegalStateException ex
     ) {
-        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        return buildResponse(
+                ex.getMessage(),
+                HttpStatus.BAD_REQUEST
+        );
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Object> handleIllegalArgument(
             IllegalArgumentException ex
     ) {
-        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        return buildResponse(
+                ex.getMessage(),
+                HttpStatus.BAD_REQUEST
+        );
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<Object> handleUserAlreadyExists(
             UserAlreadyExistsException ex
     ) {
-        return buildResponse(ex.getMessage(), HttpStatus.CONFLICT);
+        return buildResponse(
+                ex.getMessage(),
+                HttpStatus.CONFLICT
+        );
     }
 
     @ExceptionHandler({
@@ -87,10 +100,7 @@ public class GlobalExceptionHandler {
         body.put("errors", errors);
         body.put("status", HttpStatus.BAD_REQUEST.value());
 
-        return new ResponseEntity<>(
-                body,
-                HttpStatus.BAD_REQUEST
-        );
+        return ResponseEntity.badRequest().body(body);
     }
 
     @ExceptionHandler(Exception.class)
@@ -101,9 +111,7 @@ public class GlobalExceptionHandler {
         ex.printStackTrace();
 
         return buildResponse(
-                ex.getClass().getSimpleName()
-                        + ": "
-                        + ex.getMessage(),
+                "Internal server error",
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
     }
@@ -117,6 +125,8 @@ public class GlobalExceptionHandler {
         body.put("message", message);
         body.put("status", status.value());
 
-        return new ResponseEntity<>(body, status);
+        return ResponseEntity
+                .status(status)
+                .body(body);
     }
 }

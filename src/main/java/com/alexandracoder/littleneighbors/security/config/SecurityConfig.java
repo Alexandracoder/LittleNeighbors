@@ -60,58 +60,148 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     @Profile("dev")
-    public SecurityFilterChain devSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .cors(Customizer.withDefaults())
-                .csrf(csrf -> csrf.disable())
-                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
+    public SecurityFilterChain devSecurityFilterChain(
+            HttpSecurity http
+    ) throws Exception {
 
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
-                        .requestMatchers("/api/public/**", "/h2-console/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-
-                        .requestMatchers("/api/messages/**", "/api/families/**", "/api/neighborhoods/**", "/api/children/**", "/api/status/**").authenticated()
-                        .requestMatchers("/ws-little-neighbors/**").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                );
-        return http.build();
-    }
-
-    @Bean
-    @Profile("test")
-    public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .anyRequest().permitAll()
-                )
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                );
-        return http.build();
-    }
-
-    @Bean
-    @Profile("prod")
-    public SecurityFilterChain prodSecurityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .headers(headers -> headers.frameOptions(
-                        HeadersConfigurer.FrameOptionsConfig::deny
+                        HeadersConfigurer.FrameOptionsConfig::sameOrigin
                 ))
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
+                )
+
+                .exceptionHandling(ex -> ex
+
+                        .authenticationEntryPoint(
+                                (request, response, authException) -> {
+                                    response.setStatus(401);
+                                    response.setContentType("application/json");
+                                    response.getWriter().write("""
+                                    {
+                                      "message": "Unauthorized",
+                                      "status": 401
+                                    }
+                                """);
+                                }
+                        )
+
+                        .accessDeniedHandler(
+                                (request, response, accessDeniedException) -> {
+                                    response.setStatus(403);
+                                    response.setContentType("application/json");
+                                    response.getWriter().write("""
+                                    {
+                                      "message": "Access denied",
+                                      "status": 403
+                                    }
+                                """);
+                                }
+                        )
+                )
+
                 .authorizeHttpRequests(auth -> auth
 
-                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/api/auth/**")
+                        .permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.OPTIONS,
+                                "/**"
+                        ).permitAll()
+
+                        .requestMatchers("/api/admin/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers(
+                                "/api/public/**",
+                                "/h2-console/**",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                "/api/messages/**",
+                                "/api/families/**",
+                                "/api/neighborhoods/**",
+                                "/api/children/**",
+                                "/api/status/**"
+                        ).authenticated()
+
+                        .requestMatchers("/ws-little-neighbors/**")
+                        .permitAll()
+
+                        .anyRequest()
+                        .authenticated()
+                )
+
+                .oauth2ResourceServer(oauth2 ->
+                        oauth2.jwt(jwt ->
+                                jwt.jwtAuthenticationConverter(
+                                        jwtAuthenticationConverter()
+                                )
+                        )
+                );
+
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
+    @Profile("prod")
+    public SecurityFilterChain prodSecurityFilterChain(
+            HttpSecurity http
+    ) throws Exception {
+
+        http
+                .cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf.disable())
+
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
+                )
+
+                .exceptionHandling(ex -> ex
+
+                        .authenticationEntryPoint(
+                                (request, response, authException) -> {
+                                    response.setStatus(401);
+                                    response.setContentType("application/json");
+                                    response.getWriter().write("""
+                                {
+                                  "message": "Unauthorized",
+                                  "status": 401
+                                }
+                                """);
+                                }
+                        )
+
+                        .accessDeniedHandler(
+                                (request, response, accessDeniedException) -> {
+                                    response.setStatus(403);
+                                    response.setContentType("application/json");
+                                    response.getWriter().write("""
+                                {
+                                  "message": "Access denied",
+                                  "status": 403
+                                }
+                                """);
+                                }
+                        )
+                )
+
+                .authorizeHttpRequests(auth -> auth
+
+                        .requestMatchers("/actuator/health")
+                        .permitAll()
 
                         .requestMatchers(
                                 "/",
@@ -119,47 +209,48 @@ public class SecurityConfig {
                                 "/favicon.ico"
                         ).permitAll()
 
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**")
-                        .hasRole("ADMIN")
-
-                        .requestMatchers("/api/users", "/api/public/**")
+                        .requestMatchers("/api/auth/**")
                         .permitAll()
 
-                        .anyRequest().authenticated()
+                        .requestMatchers(
+                                HttpMethod.OPTIONS,
+                                "/**"
+                        ).permitAll()
+
+                        .requestMatchers("/api/admin/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        )
+                        .hasRole("ADMIN")
+
+                        .requestMatchers(
+                                "/api/messages/**",
+                                "/api/families/**",
+                                "/api/neighborhoods/**",
+                                "/api/children/**",
+                                "/api/status/**"
+                        )
+                        .authenticated()
+
+                        .requestMatchers("/ws-little-neighbors/**")
+                        .permitAll()
+
+                        .anyRequest()
+                        .authenticated()
                 )
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(
-                                jwtAuthenticationConverter()
-                        ))
+
+                .oauth2ResourceServer(oauth2 ->
+                        oauth2.jwt(jwt ->
+                                jwt.jwtAuthenticationConverter(
+                                        jwtAuthenticationConverter()
+                                )
+                        )
                 );
 
         return http.build();
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService() {
-        return email -> userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public JwtDecoder jwtDecoder() {
-        SecretKeySpec secretKey = new SecretKeySpec(
-                jwtSecret.getBytes(StandardCharsets.UTF_8),
-                "HmacSHA256"
-        );
-        return NimbusJwtDecoder.withSecretKey(secretKey)
-                .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS256)
-                .build();
     }
 
     @Bean
