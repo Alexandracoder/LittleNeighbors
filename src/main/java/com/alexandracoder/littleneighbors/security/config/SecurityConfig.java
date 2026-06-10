@@ -256,7 +256,7 @@ public class SecurityConfig {
     @Bean
     public Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter converter = new JwtGrantedAuthoritiesConverter();
-        converter.setAuthorityPrefix("ROLE_");
+        converter.setAuthorityPrefix("");
         converter.setAuthoritiesClaimName("roles");
         JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
         jwtConverter.setJwtGrantedAuthoritiesConverter(converter);
@@ -298,7 +298,6 @@ public class SecurityConfig {
                 .build();
     }
 
-    // Si tu AuthService también usa UserDetailsService, asegúrate de tener este:
     @Bean
     public UserDetailsService userDetailsService() {
         return email -> userRepository.findByEmail(email)
