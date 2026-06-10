@@ -69,6 +69,15 @@ jwt:
 # ===============================================================
 # PERFIL PROD (Nube / Render)
 # ===============================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
 spring:
   config:
     activate:
