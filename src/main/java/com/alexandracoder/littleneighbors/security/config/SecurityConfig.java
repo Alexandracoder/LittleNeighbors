@@ -48,8 +48,9 @@ public class SecurityConfig {
     private String jwtSecret;
 
 
-    @Value("${ALLOWED_ORIGINS}")
+    @Value("${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174}")
     private String allowedOrigins;
+
 
     public SecurityConfig(UserRepository userRepository, JwtService jwtService) {
         this.userRepository = userRepository;
@@ -105,23 +106,37 @@ public class SecurityConfig {
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
-                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::deny))
+                .headers(headers -> headers.frameOptions(
+                        HeadersConfigurer.FrameOptionsConfig::deny
+                ))
                 .authorizeHttpRequests(auth -> auth
 
                         .requestMatchers("/actuator/health").permitAll()
+
+                        .requestMatchers(
+                                "/",
+                                "/error",
+                                "/favicon.ico"
+                        ).permitAll()
+
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").hasRole("ADMIN")
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**")
+                        .hasRole("ADMIN")
 
-                        .requestMatchers("/api/users", "/api/public/**").permitAll()
+                        .requestMatchers("/api/users", "/api/public/**")
+                        .permitAll()
 
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(
+                                jwtAuthenticationConverter()
+                        ))
                 );
+
         return http.build();
     }
 
