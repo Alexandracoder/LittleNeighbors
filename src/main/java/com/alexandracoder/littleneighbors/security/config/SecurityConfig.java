@@ -199,47 +199,14 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/health", "/", "/error", "/favicon.ico", "/api/auth/**", "/ws-little-neighbors/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        .requestMatchers("/actuator/health")
-                        .permitAll()
+                        .requestMatchers("/api/admin/**", "/swagger-ui/**", "/v3/api-docs/**").hasRole("ADMIN")
 
-                        .requestMatchers(
-                                "/",
-                                "/error",
-                                "/favicon.ico"
-                        ).permitAll()
+                        .requestMatchers("/api/messages/**", "/api/families/**", "/api/neighborhoods/**", "/api/children/**", "/api/status/**").authenticated()
 
-                        .requestMatchers("/api/auth/**")
-                        .permitAll()
-
-                        .requestMatchers(
-                                HttpMethod.OPTIONS,
-                                "/**"
-                        ).permitAll()
-
-                        .requestMatchers("/api/admin/**")
-                        .hasRole("ADMIN")
-
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
-                        )
-                        .hasRole("ADMIN")
-
-                        .requestMatchers(
-                                "/api/messages/**",
-                                "/api/families/**",
-                                "/api/neighborhoods/**",
-                                "/api/children/**",
-                                "/api/status/**"
-                        )
-                        .authenticated()
-
-                        .requestMatchers("/ws-little-neighbors/**")
-                        .permitAll()
-
-                        .anyRequest()
-                        .authenticated()
+                        .anyRequest().authenticated()
                 )
 
                 .oauth2ResourceServer(oauth2 ->
@@ -256,7 +223,7 @@ public class SecurityConfig {
     @Bean
     public Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter converter = new JwtGrantedAuthoritiesConverter();
-        converter.setAuthorityPrefix("");
+        converter.setAuthorityPrefix("ROLE_");
         converter.setAuthoritiesClaimName("roles");
         JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
         jwtConverter.setJwtGrantedAuthoritiesConverter(converter);
