@@ -66,38 +66,24 @@ jwt:
   secret: "this-is-a-super-long-and-secure-test-secret-key-must-be-32-bytes"
 
 ---
-# ===============================================================
-# PERFIL PROD (Nube / Render)
-# ===============================================================
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health
-  endpoint:
-    health:
-      show-details: always
-
 spring:
   config:
     activate:
       on-profile: prod
-  datasource:
 
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 5
+      connection-timeout: 30000
   jpa:
     hibernate:
       ddl-auto: validate
   flyway:
-    enabled: true
-    validate-on-migrate: false
-
+    enabled: false
 jwt:
   secret: ${JWT_SECRET}
-
-logging:
-  level:
-    org.springframework.security: DEBUG
-    org.springframework.security.web.access.intercept.FilterSecurityInterceptor: DEBUG
