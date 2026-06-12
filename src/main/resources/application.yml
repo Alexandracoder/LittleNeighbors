@@ -72,9 +72,9 @@ spring:
       on-profile: prod
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASS}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 5
@@ -83,7 +83,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    database-platform: org.hibernate.dialect.MySQLDialect
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
   flyway:
     enabled: false
 
