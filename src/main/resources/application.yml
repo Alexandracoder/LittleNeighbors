@@ -22,11 +22,11 @@ spring:
   config:
     activate:
       on-profile: dev
-  datasource:
-    url: jdbc:mysql://localhost:3306/littleneighbors_1?createDatabaseIfNotExist=true&serverTimezone=UTC
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: ${DB_PASSWORD:root}
+datasource:
+  type: com.zaxxer.hikari.HikariDataSource
+  url: ${APP_DB_URL}
+  username: ${APP_DB_USERNAME}
+  password: ${APP_DB_PASSWORD}
   jpa:
     open-in-view: false
     hibernate:
