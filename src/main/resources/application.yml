@@ -70,7 +70,6 @@ spring:
   config:
     activate:
       on-profile: prod
-
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
     url: ${SPRING_DATASOURCE_URL}
@@ -80,10 +79,17 @@ spring:
     hikari:
       maximum-pool-size: 5
       connection-timeout: 30000
+      initialization-fail-timeout: -1
   jpa:
     hibernate:
       ddl-auto: validate
+    database-platform: org.hibernate.dialect.MySQLDialect
   flyway:
     enabled: false
+
 jwt:
   secret: ${JWT_SECRET}
+
+logging:
+  level:
+    org.springframework.security: DEBUG
