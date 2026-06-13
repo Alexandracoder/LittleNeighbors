@@ -22,11 +22,11 @@ spring:
   config:
     activate:
       on-profile: dev
-datasource:
-  type: com.zaxxer.hikari.HikariDataSource
-  url: ${APP_DB_URL}
-  username: ${APP_DB_USERNAME}
-  password: ${APP_DB_PASSWORD}
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    url: ${APP_DB_URL}
+    username: ${APP_DB_USERNAME}
+    password: ${APP_DB_PASSWORD}
   jpa:
     open-in-view: false
     hibernate:
@@ -60,12 +60,17 @@ spring:
     database:
       replace: none
 
+# Nota: ALLOWED_ORIGINS suele ser una propiedad personalizada,
+# se mueve fuera de 'spring' si no está vinculada a Spring Boot directamente.
 ALLOWED_ORIGINS: http://localhost:5173,http://localhost:5174
 
 jwt:
   secret: "this-is-a-super-long-and-secure-test-secret-key-must-be-32-bytes"
 
 ---
+# ===============================================================
+# PERFIL PROD (El que usa Railway/Render)
+# ===============================================================
 spring:
   config:
     activate:
