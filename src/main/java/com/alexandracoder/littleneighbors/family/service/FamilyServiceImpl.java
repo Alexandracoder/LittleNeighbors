@@ -84,7 +84,7 @@ public class FamilyServiceImpl implements FamilyService {
 
 
         List<String> roles = updatedUser.getRoles().stream()
-                .map(role -> "ROLE_" + role.name())
+                .map(Role::name)
                 .toList();
 
         Map<String, Object> claims = Map.of("roles", roles);
