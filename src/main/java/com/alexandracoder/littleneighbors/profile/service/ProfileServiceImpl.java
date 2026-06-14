@@ -23,14 +23,14 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     @Transactional(readOnly = true)
     public UserProfileDTO getCurrentUserProfile(String email) {
-        log.info("Buscando perfil para: {}", email);
+        log.info("Searching profile to: {}", email);
 
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
 
         UserProfileDTO dto = userMapper.toProfileDTO(user);
 
-        log.info("DTO generado: {}", dto);
+        log.info("DTO generate: {}", dto);
 
         return dto;
     }

@@ -47,9 +47,10 @@ public class SecurityConfig {
     @Value("${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174}")
     private String allowedOrigins;
 
-    public SecurityConfig(UserRepository userRepository, JwtService jwtService) {
+    public SecurityConfig(UserRepository userRepository, JwtService jwtService, String allowedOrigins) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
+        this.allowedOrigins = allowedOrigins;
     }
 
     @Bean

@@ -57,8 +57,8 @@ public class EventServiceImpl implements EventService {
         neighbors.forEach(neighbor -> {
             notificationService.createInternalNotification(
                     neighbor,
-                    "¡Nuevo plan en tu barrio!",
-                    creator.getFamilyName() + " ha organizado: " + savedEvent.getTitle(),
+                    "¡New plan in your neighborhood!",
+                    creator.getFamilyName() + " has organized: " + savedEvent.getTitle(),
                     NotificationType.EVENT_CREATED,
                     savedEvent.getId()
             );

@@ -38,7 +38,7 @@ public class FamilySpecifications {
             Predicate agePredicate = cb.between(child.get("birthDate"), minBirthDate, maxBirthDate);
 
             if (interestIds != null && !interestIds.isEmpty()) {
-                // Usamos un Join en la subquery para filtrar, evitando contaminar la query principal
+
                 Join<ChildEntity, InterestEntity> interests = child.join("interests", JoinType.INNER);
                 sub.where(cb.and(belongsToFamily, agePredicate, interests.get("id").in(interestIds)));
             } else {
