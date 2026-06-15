@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @jakarta.persistence.EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
-@lombok.experimental.SuperBuilder // <--- Cambio CRÍTICO
-@lombok.NoArgsConstructor // Necesario para JPA
+@lombok.experimental.SuperBuilder
+@lombok.NoArgsConstructor
 public abstract class BaseEntity implements Serializable {
 
     @CreationTimestamp

@@ -7,10 +7,10 @@ import lombok.Data;
 @Data
 public class PilotLeadRequest {
 
-    @NotBlank(message = "El email es obligatorio")
-    @Email(message = "El formato del email no es válido")
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email format is invalid")
     private String email;
 
-    @NotBlank(message = "El barrio es obligatorio")
+    @NotBlank(message = "Email is required")
     private String neighborhood;
 }

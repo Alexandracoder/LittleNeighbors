@@ -36,16 +36,16 @@ public class EventController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEvent(@PathVariable Long id) {
         eventService.deleteEvent(id);
-        return ResponseEntity.noContent().build(); // Devuelve 204 No Content
+        return ResponseEntity.noContent().build();
     }
 
-    // 2. Método para OBTENER UN EVENTO (Útil para abrir el modo edición)
+
     @GetMapping("/{id}")
     public ResponseEntity<EventResponseDTO> getEventById(@PathVariable Long id) {
         return ResponseEntity.ok(eventService.getEventById(id));
     }
 
-    // 3. Método para ACTUALIZAR (Opcional, pero necesario para el edit definitivo)
+
     @PutMapping("/{id}")
     public ResponseEntity<EventResponseDTO> updateEvent(
             @PathVariable Long id,

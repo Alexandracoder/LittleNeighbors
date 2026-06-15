@@ -21,6 +21,7 @@ import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundExce
 import com.alexandracoder.littleneighbors.shared.exceptions.BusinessLogicException;
 import com.alexandracoder.littleneighbors.shared.exceptions.UnauthorizedAccessException;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -45,6 +46,7 @@ public class FamilyServiceImpl implements FamilyService {
     private final UserRepository userRepository;
     private final NeighborhoodRepository neighborhoodRepository;
     private final FamilyMapper familyMapper;
+    @Getter
     private final MatchRepository matchRepository;
     private final JwtService jwtService;;
 

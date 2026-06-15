@@ -48,7 +48,7 @@ public class ChildEntity extends BaseEntity {
     private Gender gender;
 
     @Column(name = "description", length = 500)
-    @Size(max = 500, message = "La descripción no puede superar los 500 caracteres")
+    @Size(max = 500, message = "The description cannot exceed 500 characters.")
     private String description;
 
     @Column(name = "due_date")

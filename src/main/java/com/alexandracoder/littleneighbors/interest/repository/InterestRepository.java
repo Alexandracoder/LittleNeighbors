@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface InterestRepository extends JpaRepository<InterestEntity, Long> {
-    // No necesitas añadir nada más por ahora
+
 }

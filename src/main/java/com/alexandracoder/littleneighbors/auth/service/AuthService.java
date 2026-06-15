@@ -25,7 +25,6 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final com.alexandracoder.littleneighbors.qr.service.QrService qrService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -52,21 +51,8 @@ public class AuthService {
         UserEntity user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new UnauthorizedAccessException("Invalid credentials"));
 
-
-        if ("admin@littleneighbors.com".equalsIgnoreCase(user.getEmail())) {
-            if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-                System.out.println("DEBUG: Hash de admin inválido, ejecutando reseteo automático...");
-                resetAdminPassword();
-
-                if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-                    throw new UnauthorizedAccessException("Invalid credentials");
-                }
-            }
-        } else {
-
-            if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-                throw new UnauthorizedAccessException("Invalid credentials");
-            }
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new UnauthorizedAccessException("Invalid credentials");
         }
 
         List<String> roles = user.getRoles().stream()
@@ -153,15 +139,5 @@ public class AuthService {
                 user.getLastName(),
                 roles
         );
-    }
-
-    @Transactional
-    public void resetAdminPassword() {
-        UserEntity admin = userRepository.findByEmail("admin@littleneighbors.com")
-                .orElseThrow(() -> new ResourceNotFoundException("Admin not found"));
-
-        admin.setPassword(passwordEncoder.encode("admin1234"));
-        userRepository.save(admin);
-        System.out.println("DEBUG: Contraseña de admin reseteada con éxito.");
     }
 }

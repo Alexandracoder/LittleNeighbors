@@ -31,7 +31,6 @@ public class MatchServiceImpl implements MatchService {
     private final ChildRepository childRepository;
     private final FamilyRepository familyRepository;
     private final NotificationService notificationService;
-
     private final boolean demoMode;
 
     public MatchServiceImpl(
@@ -47,6 +46,12 @@ public class MatchServiceImpl implements MatchService {
         this.demoMode = demoMode;
     }
 
+    private boolean canBypassVerification(UserEntity user) {
+        // Se salta la verificación si es modo demo o si tiene el rol ADMIN
+        boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.name().equals("ROLE_ADMIN"));
+        return demoMode || isAdmin;
+    }
+
     @Override
     @Transactional
     public MatchEntity requestMatch(Long childRequestId, Long childTargetId) {
@@ -59,12 +64,9 @@ public class MatchServiceImpl implements MatchService {
         ChildEntity childTarget = childRepository.findById(childTargetId)
                 .orElseThrow(() -> new ResourceNotFoundException("Target child not found: " + childTargetId));
 
-
-        if (!demoMode) {
-            UserEntity currentUser = childRequest.getFamily().getUser();
-            if (currentUser.getVerificationStatus() != VerificationStatus.VERIFIED) {
-                throw new BusinessLogicException("Your account must be VERIFIED to request a match.");
-            }
+        UserEntity currentUser = childRequest.getFamily().getUser();
+        if (!canBypassVerification(currentUser) && currentUser.getVerificationStatus() != VerificationStatus.VERIFIED) {
+            throw new BusinessLogicException("Your account must be VERIFIED to request a match.");
         }
 
         if (childRequest.getFamily().getNeighborhood() == null || childTarget.getFamily().getNeighborhood() == null) {
@@ -76,19 +78,15 @@ public class MatchServiceImpl implements MatchService {
         }
 
         LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
-
         return matchRepository.findAll(MatchSpecifications.hasMatchForChildInLastWeek(childRequestId, oneWeekAgo))
                 .stream()
                 .filter(m -> m.getChildRequest().getId().equals(childTargetId) || m.getChildTarget().getId().equals(childTargetId))
                 .findFirst()
-                .orElseGet(() -> {
-                    MatchEntity newMatch = MatchEntity.builder()
-                            .childRequest(childRequest)
-                            .childTarget(childTarget)
-                            .status(MatchStatus.PENDING)
-                            .build();
-                    return matchRepository.save(newMatch);
-                });
+                .orElseGet(() -> matchRepository.save(MatchEntity.builder()
+                        .childRequest(childRequest)
+                        .childTarget(childTarget)
+                        .status(MatchStatus.PENDING)
+                        .build()));
     }
 
     @Override
@@ -96,20 +94,12 @@ public class MatchServiceImpl implements MatchService {
     public List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int maxAge, List<Long> interestIds, Long currentChildId) {
         if (neighborhoodId == null) return List.of();
 
-        Long myFamilyId = null;
-        if (currentChildId != null) {
-            myFamilyId = childRepository.findById(currentChildId)
-                    .map(child -> child.getFamily().getId())
-                    .orElse(null);
-        }
+        Long myFamilyId = currentChildId != null ? childRepository.findById(currentChildId).map(c -> c.getFamily().getId()).orElse(null) : null;
 
-        Specification<FamilyEntity> spec = Specification
-                .where(FamilySpecifications.hasNeighborhood(neighborhoodId))
+        return familyRepository.findAll(Specification.where(FamilySpecifications.hasNeighborhood(neighborhoodId))
                 .and(FamilySpecifications.hasChildWithCriteria(minAge, maxAge, interestIds))
                 .and(FamilySpecifications.isNotChild(currentChildId))
-                .and(FamilySpecifications.isNotMyFamily(myFamilyId));
-
-        return familyRepository.findAll(spec);
+                .and(FamilySpecifications.isNotMyFamily(myFamilyId)));
     }
 
     @Override
@@ -123,11 +113,8 @@ public class MatchServiceImpl implements MatchService {
             throw new BusinessLogicException("You do not have permission to respond to this request.");
         }
 
-
-        if (!demoMode) {
-            if (currentUser.getVerificationStatus() != VerificationStatus.VERIFIED) {
-                throw new BusinessLogicException("You must be VERIFIED to respond to matches.");
-            }
+        if (!canBypassVerification(currentUser) && currentUser.getVerificationStatus() != VerificationStatus.VERIFIED) {
+            throw new BusinessLogicException("You must be VERIFIED to respond to matches.");
         }
 
         if (match.getStatus() != MatchStatus.PENDING) {
@@ -158,20 +145,15 @@ public class MatchServiceImpl implements MatchService {
     private long countAcceptedMatchesThisWeek(Long childId) {
         if (childId == null) return 0;
         LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
-
-        Specification<MatchEntity> spec = Specification.where(MatchSpecifications.hasMatchForChildInLastWeek(childId, oneWeekAgo))
-                .and((root, query, cb) -> cb.equal(root.get("status"), MatchStatus.ACCEPTED));
-
-        return matchRepository.count(spec);
+        return matchRepository.count(Specification.where(MatchSpecifications.hasMatchForChildInLastWeek(childId, oneWeekAgo))
+                .and((root, query, cb) -> cb.equal(root.get("status"), MatchStatus.ACCEPTED)));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<MatchResponseDetailDTO> getMatchesForUser(String email) {
-        List<MatchEntity> matchesAsRequest = matchRepository.findByChildRequestFamilyUserEmail(email);
-        List<MatchEntity> matchesAsTarget = matchRepository.findByChildTargetFamilyUserEmail(email);
-
-        return Stream.concat(matchesAsRequest.stream(), matchesAsTarget.stream())
+        return Stream.concat(matchRepository.findByChildRequestFamilyUserEmail(email).stream(),
+                        matchRepository.findByChildTargetFamilyUserEmail(email).stream())
                 .distinct()
                 .map(match -> convertToDetailDTO(match, email))
                 .toList();
@@ -180,9 +162,7 @@ public class MatchServiceImpl implements MatchService {
     private MatchResponseDetailDTO convertToDetailDTO(MatchEntity match, String currentUserEmail) {
         ChildEntity childRequest = match.getChildRequest();
         ChildEntity childTarget = match.getChildTarget();
-
         boolean isRequester = childRequest.getFamily().getUser().getEmail().equals(currentUserEmail);
-
         ChildEntity myChild = isRequester ? childRequest : childTarget;
         ChildEntity theirChild = isRequester ? childTarget : childRequest;
 
@@ -194,8 +174,7 @@ public class MatchServiceImpl implements MatchService {
                 .theirChildId(theirChild.getId())
                 .theirChildGender(theirChild.getGender().toString())
                 .theirFamilyName(theirChild.getFamily().getFamilyName())
-                .theirNeighborhoodName(theirChild.getFamily().getNeighborhood() != null ?
-                        theirChild.getFamily().getNeighborhood().getName() : "N/A")
+                .theirNeighborhoodName(theirChild.getFamily().getNeighborhood() != null ? theirChild.getFamily().getNeighborhood().getName() : "N/A")
                 .build();
     }
 
@@ -209,13 +188,12 @@ public class MatchServiceImpl implements MatchService {
         UserEntity target = match.getChildTarget().getFamily().getUser();
 
         if (userEmail.equals(requester.getEmail())) {
-            if (!demoMode && requester.getVerificationStatus() != VerificationStatus.VERIFIED) {
+            if (!canBypassVerification(requester) && requester.getVerificationStatus() != VerificationStatus.VERIFIED) {
                 throw new BusinessLogicException("You must be VERIFIED to confirm a match.");
             }
             match.setUserAccepted(true);
         } else if (userEmail.equals(target.getEmail())) {
-
-            if (!demoMode && target.getVerificationStatus() != VerificationStatus.VERIFIED) {
+            if (!canBypassVerification(target) && target.getVerificationStatus() != VerificationStatus.VERIFIED) {
                 throw new BusinessLogicException("You must be VERIFIED to confirm a match.");
             }
             match.setNeighborAccepted(true);
@@ -226,11 +204,9 @@ public class MatchServiceImpl implements MatchService {
         if (match.isUserAccepted() && match.isNeighborAccepted()) {
             validateWeeklyConstraint(match.getChildRequest().getId());
             validateWeeklyConstraint(match.getChildTarget().getId());
-
             match.setStatus(MatchStatus.ACCEPTED);
             notificationService.sendMatchSuccessNotification(match);
         }
-
         matchRepository.save(match);
     }
 }

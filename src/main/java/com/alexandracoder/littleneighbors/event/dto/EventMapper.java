@@ -25,7 +25,6 @@ public class EventMapper {
                 .eventDate(requestDTO.eventDate())
                 .latitude(requestDTO.latitude())
                 .longitude(requestDTO.longitude())
-                // No asignamos el barrio aquí, lo hacemos en el Service
                 .build();
     }
 }
