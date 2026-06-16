@@ -4,5 +4,6 @@ public enum VerificationStatus {
     UNVERIFIED,
     PENDING_REVIEW,
     VERIFIED,
-    REJECTED
+    REJECTED,
+    BLOCKED
 }
