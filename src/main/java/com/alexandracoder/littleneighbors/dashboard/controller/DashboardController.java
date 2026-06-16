@@ -7,17 +7,14 @@ import com.alexandracoder.littleneighbors.user.repository.UserRepository;
 import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
+
 @RestController
 @RequestMapping("/api/dashboard")
-@CrossOrigin(origins = "*")
 public class DashboardController {
 
     private final DashboardService dashboardService;
@@ -32,32 +29,12 @@ public class DashboardController {
     }
 
     @GetMapping("/impact-stats")
-    public ResponseEntity<DashboardImpactDTO> getNeighborhoodImpact() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    public ResponseEntity<DashboardImpactDTO> getNeighborhoodImpact(Principal principal) {
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(401).build();
-        }
-
-        Object principal = authentication.getPrincipal();
-        String email = null;
-
-        if (principal instanceof Jwt) {
-            email = ((Jwt) principal).getSubject();
-        } else if (principal instanceof UserEntity) {
-            DashboardImpactDTO stats = dashboardService.getImpactStatsForUser(((UserEntity) principal).getId());
-            return ResponseEntity.ok(stats);
-        } else if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
-            email = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
-        } else if (principal instanceof String) {
-            email = (String) principal;
-        }
-
-        if (email != null) {
-            final String finalEmail = email;
-
-            UserEntity user = userRepository.findByEmail(finalEmail)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + finalEmail));
+        if (principal != null) {
+            UserEntity user = userRepository.findByEmail(principal.getName())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "User not found with email: " + principal.getName()));
 
             DashboardImpactDTO stats = dashboardService.getImpactStatsForUser(user.getId());
             return ResponseEntity.ok(stats);
@@ -71,6 +48,6 @@ public class DashboardController {
             return ResponseEntity.ok(dashboardService.getImpactStatsForUser(mockId));
         }
 
-        return ResponseEntity.status(403).build();
+        return ResponseEntity.status(401).build();
     }
 }

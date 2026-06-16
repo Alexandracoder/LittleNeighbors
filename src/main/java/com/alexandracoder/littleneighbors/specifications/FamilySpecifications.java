@@ -11,21 +11,29 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
 public class FamilySpecifications {
+
+
+    public static Specification<FamilyEntity> fetchAll() {
+        return (root, query, cb) -> {
+            if (Long.class != query.getResultType()) {
+
+                Fetch<FamilyEntity, ?> childrenFetch = root.fetch("children", JoinType.LEFT);
+                childrenFetch.fetch("interests", JoinType.LEFT);
+                root.fetch("neighborhood", JoinType.LEFT);
+            }
+            return cb.conjunction();
+        };
+    }
 
     public static Specification<FamilyEntity> hasNeighborhood(Long neighborhoodId) {
         if (neighborhoodId == null) return null;
-        return (root, query, cb) -> {
-
-            query.distinct(true);
-            return cb.equal(root.get("neighborhood").get("id"), neighborhoodId);
-        };
+        return (root, query, cb) -> cb.equal(root.get("neighborhood").get("id"), neighborhoodId);
     }
 
     public static Specification<FamilyEntity> hasChildWithCriteria(int minAge, int maxAge, List<Long> interestIds) {
         return (root, query, cb) -> {
-            query.distinct(true);
-
             Subquery<Long> sub = query.subquery(Long.class);
             Root<ChildEntity> child = sub.from(ChildEntity.class);
             sub.select(child.get("id"));
@@ -38,13 +46,11 @@ public class FamilySpecifications {
             Predicate agePredicate = cb.between(child.get("birthDate"), minBirthDate, maxBirthDate);
 
             if (interestIds != null && !interestIds.isEmpty()) {
-
                 Join<ChildEntity, InterestEntity> interests = child.join("interests", JoinType.INNER);
                 sub.where(cb.and(belongsToFamily, agePredicate, interests.get("id").in(interestIds)));
             } else {
                 sub.where(cb.and(belongsToFamily, agePredicate));
             }
-
             return cb.exists(sub);
         };
     }
@@ -97,6 +103,18 @@ public class FamilySpecifications {
         return (root, query, cb) -> {
             if (neighborhoodId == null) return cb.conjunction();
             return cb.equal(root.get("neighborhood").get("id"), neighborhoodId);
+        };
+    }
+    public static Specification<FamilyEntity> fetchEverything() {
+        return (root, query, cb) -> {
+
+            if (Long.class != query.getResultType()) {
+
+                root.fetch("user", JoinType.INNER);
+                root.fetch("neighborhood", JoinType.LEFT);
+                root.fetch("children", JoinType.LEFT).fetch("interests", JoinType.LEFT);
+            }
+            return cb.conjunction();
         };
     }
 }

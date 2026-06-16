@@ -162,24 +162,27 @@ public class FamilyServiceImpl implements FamilyService {
         return familyRepository.findAll(pageable).map(this.familyMapper::toResponse);
     }
 
+    @Override
     @Transactional(readOnly = true)
     public List<FamilyResponseDTO> explorePlaymateFamilies(String userEmail, Long currentChildId, List<Long> interestIds, Integer minAge, Integer maxAge) {
+
         FamilyEntity myFamily = familyRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Family not found for: " + userEmail));
 
         int min = minAge != null ? minAge : 0;
         int max = maxAge != null ? maxAge : 18;
 
+
         Specification<FamilyEntity> spec = Specification
-                .where(FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId()))
+                .where(FamilySpecifications.fetchAll())
+                .and(FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId()))
                 .and(FamilySpecifications.isNotMyFamily(myFamily.getId()))
                 .and(FamilySpecifications.hasChildWithCriteria(min, max, interestIds));
 
-
-    return familyRepository.findAll(spec).stream()
-            .map(this.familyMapper::toResponse)
-             .collect(Collectors.toList());
-  }
+        return familyRepository.findAll(spec).stream()
+                .map(this.familyMapper::toResponse)
+                .collect(Collectors.toList());
+    }
     @Override
     @Transactional(readOnly = true)
     public FamilyResponseDTO getFamilyByEmail(String email) {
