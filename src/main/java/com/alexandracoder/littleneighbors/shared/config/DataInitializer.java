@@ -38,8 +38,8 @@ public class DataInitializer implements CommandLineRunner {
         if (userRepository.findByEmail("test@littleneighbors.com").isEmpty()) {
             UserEntity testUser = UserEntity.builder()
                     .email("test@littleneighbors.com")
-                    .firstName("Usuario")
-                    .lastName("Prueba")
+                    .firstName("User")
+                    .lastName("Test")
                     .password(passwordEncoder.encode("test1234"))
                     .roles(new HashSet<>(Set.of(Role.USER)))
                     .verificationStatus(VerificationStatus.PENDING_REVIEW)

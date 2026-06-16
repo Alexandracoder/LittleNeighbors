@@ -17,7 +17,7 @@ public class ModerationServiceImpl implements ModerationService {
     @Transactional
     public void verifyUser(Long userId) {
         UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
         user.setVerificationStatus(VerificationStatus.VERIFIED);
         userRepository.save(user);
     }
@@ -26,8 +26,18 @@ public class ModerationServiceImpl implements ModerationService {
     @Transactional
     public void blockUser(Long userId) {
         UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
         user.setVerificationStatus(VerificationStatus.BLOCKED);
+        userRepository.save(user);
+    }
+    @Override
+    @Transactional
+    public void rejectUser(Long userId, String reason) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setVerificationStatus(VerificationStatus.REJECTED);
+        user.setRejectionReason(reason);
         userRepository.save(user);
     }
 }
