@@ -45,6 +45,9 @@ public class UserEntity extends BaseEntity implements UserDetails {
     @Builder.Default
     private VerificationStatus verificationStatus = VerificationStatus.VERIFIED;
 
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
+
     private String idDocumentUrl;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
