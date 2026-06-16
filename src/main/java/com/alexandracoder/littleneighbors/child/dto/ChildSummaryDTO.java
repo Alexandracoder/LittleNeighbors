@@ -1,12 +1,9 @@
 package com.alexandracoder.littleneighbors.child.dto;
 
-import com.alexandracoder.littleneighbors.enums.Gender;
-
 public record ChildSummaryDTO(
         Long id,
+        String nickname,
+        String gender,
         Integer age,
-        Gender gender
-
-
-) {
+        com.alexandracoder.littleneighbors.enums.LifeStage lifeStage) {
 }

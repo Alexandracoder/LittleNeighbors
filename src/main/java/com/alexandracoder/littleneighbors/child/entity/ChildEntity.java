@@ -1,11 +1,16 @@
 package com.alexandracoder.littleneighbors.child.entity;
 
 import com.alexandracoder.littleneighbors.enums.Gender;
+import com.alexandracoder.littleneighbors.enums.LifeStage;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.interest.entity.InterestEntity;
 import com.alexandracoder.littleneighbors.shared.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDate;
 import java.time.Period;
@@ -14,30 +19,59 @@ import java.util.Set;
 
 @Entity
 @Table(name = "children")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@EqualsAndHashCode(callSuper = true)
+@lombok.experimental.SuperBuilder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 public class ChildEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "nickname", length = 50)
+    private String nickname;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "life_stage", nullable = false)
+    private LifeStage lifeStage;
+
+    @Column(name = "birth_date")
     private LocalDate birthDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
+    @Column(length = 20)
     private Gender gender;
+
+    @Column(name = "description", length = 500)
+    @Size(max = 500, message = "The description cannot exceed 500 characters.")
+    private String description;
+
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
+    @Column(name = "is_prenatal", nullable = false)
+    @Builder.Default
+    private boolean isPrenatal = false;
+
+    @Column(name = "is_pregnancy_support", nullable = false)
+    @Builder.Default
+    private boolean pregnancySupport = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "family_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonBackReference
     private FamilyEntity family;
 
+    @BatchSize(size = 20)
     @Builder.Default
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "child_interests",
             joinColumns = @JoinColumn(name = "child_id"),
@@ -45,9 +79,19 @@ public class ChildEntity extends BaseEntity {
     )
     private Set<InterestEntity> interests = new HashSet<>();
 
-
     @Transient
     public int getAge() {
-        return birthDate != null ? Period.between(birthDate, LocalDate.now()).getYears() : 0;
+        if (this.isPrenatal || this.birthDate == null) {
+            return 0;
+        }
+        return Period.between(this.birthDate, LocalDate.now()).getYears();
+    }
+
+    public void addInterest(InterestEntity interest) {
+        this.interests.add(interest);
+    }
+
+    public void removeInterest(InterestEntity interest) {
+        this.interests.remove(interest);
     }
 }

@@ -3,28 +3,59 @@ package com.alexandracoder.littleneighbors.match.entity;
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.enums.MatchStatus;
 import com.alexandracoder.littleneighbors.shared.BaseEntity;
+import com.alexandracoder.littleneighbors.user.entity.UserEntity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
-
 @Entity
 @Table(name = "matches")
-@Data
+@Getter
+@Setter
+@lombok.experimental.SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = false)
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class MatchEntity extends BaseEntity {
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "child_a_id")
-    private ChildEntity childA;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "child_b_id")
-    private ChildEntity childB;
+    @JoinColumn(name = "child_request_id")
+    @JsonIgnoreProperties({"matches", "interests", "family"})
+    private ChildEntity childRequest;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "child_target_id")
+    @JsonIgnoreProperties({"matches", "interests", "family"})
+    private ChildEntity childTarget;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MatchStatus status;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean userAccepted = false;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean neighborAccepted = false;
+
+    public UserEntity getTargetUser() {
+        if (childTarget != null && childTarget.getFamily() != null) {
+            return childTarget.getFamily().getUser();
+        }
+        return null;
+    }
+
+    public UserEntity getRequestUser() {
+        if (childRequest != null && childRequest.getFamily() != null) {
+            return childRequest.getFamily().getUser();
+        }
+        return null;
+    }
 }

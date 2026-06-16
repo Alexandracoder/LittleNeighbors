@@ -1,6 +1,8 @@
 package com.alexandracoder.littleneighbors.enums;
 
 public enum Gender {
-    MALE,
-    FEMALE
+    BOY,
+    GIRL,
+    PREGNANT,
+    SURPRISE
 }

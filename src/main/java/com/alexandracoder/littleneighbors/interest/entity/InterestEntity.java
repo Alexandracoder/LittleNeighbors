@@ -3,6 +3,7 @@ package com.alexandracoder.littleneighbors.interest.entity;
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.enums.InterestType;
 import com.alexandracoder.littleneighbors.shared.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,10 +12,12 @@ import java.util.Set;
 
 @Entity
 @Table(name = "interests")
-@Data
+@Getter
+@Setter
+@ToString(exclude = "children")
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@lombok.experimental.SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class InterestEntity extends BaseEntity {
     @Id
@@ -30,6 +33,10 @@ public class InterestEntity extends BaseEntity {
 
     @Builder.Default
     @ManyToMany(mappedBy = "interests")
+    @JsonIgnore
     private Set<ChildEntity> children = new HashSet<>();
+
+    @Column(nullable = false, length = 500)
+    private String icon;
 }
 

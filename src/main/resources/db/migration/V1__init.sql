@@ -6,7 +6,7 @@ CREATE TABLE cities (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create neighborhoods table
@@ -64,10 +64,11 @@ CREATE TABLE children (
     birth_date DATE NOT NULL,
     gender VARCHAR(10) NOT NULL,
     family_id BIGINT NOT NULL,
+    life_stage VARCHAR(50) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_children_family FOREIGN KEY (family_id) REFERENCES families(id) ON DELETE CASCADE,
-    CONSTRAINT chk_gender CHECK (gender IN ('MALE', 'FEMALE'))
+    CONSTRAINT chk_gender CHECK (gender IN ('BOY', 'GIRL'))
 );
 
 -- Create indexes for children
@@ -120,6 +121,4 @@ CREATE TABLE matches (
 CREATE INDEX idx_matches_child_a_id ON matches(child_a_id);
 CREATE INDEX idx_matches_child_b_id ON matches(child_b_id);
 CREATE INDEX idx_matches_status ON matches(status);
--- Note: Uniqueness is enforced by the application/service layer to avoid duplicate matches
--- Alternative: add a composite unique constraint on (child_a_id, child_b_id)
 CREATE UNIQUE INDEX idx_matches_unique_pair ON matches(child_a_id, child_b_id);
