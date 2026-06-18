@@ -1,11 +1,11 @@
 package com.alexandracoder.littleneighbors.event.entity;
 
+import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -39,4 +39,9 @@ public class EventEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "neighborhood_id")
     private NeighborhoodEntity neighborhood;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "creator_family_id")
+    private FamilyEntity creatorFamily;
 }
