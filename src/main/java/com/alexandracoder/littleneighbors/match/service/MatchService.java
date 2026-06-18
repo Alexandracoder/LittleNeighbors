@@ -9,8 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 public interface MatchService {
-    MatchEntity requestMatch(Long childRequestId, Long childTargetId);
 
+    MatchEntity requestMatch(Long childRequestId, Long childTargetId, String userEmail);
+
+    @Transactional
     List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int maxAge, List<Long> interestIds, Long currentChildId);
 
     void validateWeeklyConstraint(Long childId);
