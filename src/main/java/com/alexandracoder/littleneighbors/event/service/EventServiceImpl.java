@@ -15,6 +15,7 @@ import com.alexandracoder.littleneighbors.specifications.EventSpecifications;
 import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,20 +35,18 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventResponseDTO createEvent(EventRequestDTO requestDTO) {
-
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         FamilyEntity creator = familyRepository.findByUserEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Family profile not found for creator"));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Family profile not found"));
 
         NeighborhoodEntity neighborhood = neighborhoodRepository.findById(requestDTO.neighborhoodId())
-                .orElseThrow(() -> new ResourceNotFoundException("Neighborhood not found with ID: " + requestDTO.neighborhoodId()));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Neighborhood not found"));
 
         EventEntity event = eventMapper.toEntity(requestDTO);
         event.setNeighborhood(neighborhood);
-        EventEntity savedEvent = eventRepository.save(event);
+        event.setCreatorFamily(creator);
 
+        EventEntity savedEvent = eventRepository.save(event);
 
         List<FamilyEntity> neighbors = familyRepository.findByNeighborhood_NameAndIdNot(
                 neighborhood.getName(),
@@ -57,7 +56,7 @@ public class EventServiceImpl implements EventService {
         neighbors.forEach(neighbor -> {
             notificationService.createInternalNotification(
                     neighbor,
-                    "¡New plan in your neighborhood!",
+                    "New plan in your neighborhood!",
                     creator.getFamilyName() + " has organized: " + savedEvent.getTitle(),
                     NotificationType.EVENT_CREATED,
                     savedEvent.getId()
@@ -81,10 +80,15 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public void deleteEvent(Long id) {
-        if (!eventRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Cannot delete: Event not found with ID: " + id);
+        EventEntity event = eventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!event.getCreatorFamily().getUser().getEmail().equals(email)) {
+            throw new AccessDeniedException("You do not have permission to delete this event.");
         }
-        eventRepository.deleteById(id);
+
+        eventRepository.delete(event);
     }
 
     @Override
@@ -92,17 +96,22 @@ public class EventServiceImpl implements EventService {
     public EventResponseDTO getEventById(Long id) {
         return eventRepository.findById(id)
                 .map(eventMapper::toResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Event not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
     }
 
     @Override
     @Transactional
     public EventResponseDTO updateEvent(Long id, EventRequestDTO requestDTO) {
         EventEntity existingEvent = eventRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Cannot update: Event not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!existingEvent.getCreatorFamily().getUser().getEmail().equals(email)) {
+            throw new AccessDeniedException("You do not have permission to edit this event.");
+        }
 
         NeighborhoodEntity neighborhood = neighborhoodRepository.findById(requestDTO.neighborhoodId())
-                .orElseThrow(() -> new ResourceNotFoundException("Neighborhood not found with ID: " + requestDTO.neighborhoodId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Neighborhood not found"));
 
         existingEvent.setTitle(requestDTO.title());
         existingEvent.setDescription(requestDTO.description());
@@ -111,7 +120,6 @@ public class EventServiceImpl implements EventService {
         existingEvent.setLongitude(requestDTO.longitude());
         existingEvent.setNeighborhood(neighborhood);
 
-        EventEntity savedEvent = eventRepository.save(existingEvent);
-        return eventMapper.toResponse(savedEvent);
+        return eventMapper.toResponse(eventRepository.save(existingEvent));
     }
 }
