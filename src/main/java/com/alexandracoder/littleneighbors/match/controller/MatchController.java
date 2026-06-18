@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +28,7 @@ public class MatchController {
     private final FamilyMapper familyMapper;
 
     @GetMapping("/explorer")
+    @PreAuthorize("hasRole('FAMILY')")
     public ResponseEntity<List<FamilyExplorerDTO>> getExplorer(
             @RequestParam(required = false) Long neighborhoodId,
             @RequestParam(defaultValue = "0") int minAge,
@@ -53,11 +55,16 @@ public class MatchController {
     }
 
     @PostMapping("/request")
-    public ResponseEntity<?> requestMatch(@RequestBody MatchRequestDTO request) {
+    @PreAuthorize("hasRole('FAMILY')")
+    public ResponseEntity<?> requestMatch(@RequestBody MatchRequestDTO request, Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(401).build();
+        }
         try {
             MatchEntity match = matchService.requestMatch(
                     request.initiatorChildId(),
-                    request.targetChildId()
+                    request.targetChildId(),
+                    principal.getName()
             );
             return ResponseEntity.ok(matchMapper.toResponseDTO(match));
         } catch (IllegalStateException e) {
@@ -69,7 +76,7 @@ public class MatchController {
 
     @GetMapping("/my-matches")
     @PreAuthorize("hasRole('FAMILY')")
-    public ResponseEntity<List<MatchResponseDetailDTO>> getMyMatches(java.security.Principal principal) {
+    public ResponseEntity<List<MatchResponseDetailDTO>> getMyMatches(Principal principal) {
         if (principal == null) {
             return ResponseEntity.status(401).build();
         }
@@ -78,10 +85,11 @@ public class MatchController {
     }
 
     @PatchMapping("/{id}/respond")
+    @PreAuthorize("hasRole('FAMILY')")
     public ResponseEntity<Void> respondToMatch(
             @PathVariable Long id,
             @RequestParam com.alexandracoder.littleneighbors.enums.MatchStatus status,
-            java.security.Principal principal) {
+            Principal principal) {
 
         matchService.respondToMatch(id, status, principal.getName());
         return ResponseEntity.noContent().build();
@@ -91,15 +99,13 @@ public class MatchController {
     @PreAuthorize("hasRole('FAMILY')")
     public ResponseEntity<MatchResponseDetailDTO> confirmMatch(
             @PathVariable Long id,
-            java.security.Principal principal) {
+            Principal principal) {
 
         if (principal == null) {
             return ResponseEntity.status(401).build();
         }
 
-
         matchService.confirmMatch(id, principal.getName());
-
 
         List<MatchResponseDetailDTO> myMatches = matchService.getMatchesForUser(principal.getName());
 

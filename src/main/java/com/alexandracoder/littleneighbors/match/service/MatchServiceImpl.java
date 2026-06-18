@@ -17,6 +17,7 @@ import com.alexandracoder.littleneighbors.shared.exceptions.BusinessLogicExcepti
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,20 +48,33 @@ public class MatchServiceImpl implements MatchService {
     }
 
     private boolean canBypassVerification(UserEntity user) {
-        // Se salta la verificación si es modo demo o si tiene el rol ADMIN
         boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.name().equals("ROLE_ADMIN"));
         return demoMode || isAdmin;
     }
 
-    @Override
+    private void validateUserInMatch(MatchEntity match, String email) {
+        String requesterEmail = match.getChildRequest().getFamily().getUser().getEmail();
+        String targetEmail = match.getChildTarget().getFamily().getUser().getEmail();
+
+        if (!requesterEmail.equals(email) && !targetEmail.equals(email)) {
+            throw new AccessDeniedException("You do not have permission to access this match.");
+        }
+    }
+
     @Transactional
-    public MatchEntity requestMatch(Long childRequestId, Long childTargetId) {
+    @Override
+    public MatchEntity requestMatch(Long childRequestId, Long childTargetId, String userEmail) {
         if (childRequestId.equals(childTargetId)) {
             throw new BusinessLogicException("You cannot request a match with the same child.");
         }
 
         ChildEntity childRequest = childRepository.findById(childRequestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Initiator child not found: " + childRequestId));
+
+        if (!childRequest.getFamily().getUser().getEmail().equals(userEmail)) {
+            throw new AccessDeniedException("You cannot request a match for a child that is not yours.");
+        }
+
         ChildEntity childTarget = childRepository.findById(childTargetId)
                 .orElseThrow(() -> new ResourceNotFoundException("Target child not found: " + childTargetId));
 
@@ -108,10 +122,11 @@ public class MatchServiceImpl implements MatchService {
         MatchEntity match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
 
-        UserEntity currentUser = match.getChildTarget().getFamily().getUser();
-        if (!currentUser.getEmail().equals(currentUserEmail)) {
-            throw new BusinessLogicException("You do not have permission to respond to this request.");
-        }
+        validateUserInMatch(match, currentUserEmail);
+
+        UserEntity currentUser = (match.getChildTarget().getFamily().getUser().getEmail().equals(currentUserEmail))
+                ? match.getChildTarget().getFamily().getUser()
+                : match.getChildRequest().getFamily().getUser();
 
         if (!canBypassVerification(currentUser) && currentUser.getVerificationStatus() != VerificationStatus.VERIFIED) {
             throw new BusinessLogicException("You must be VERIFIED to respond to matches.");
@@ -184,6 +199,8 @@ public class MatchServiceImpl implements MatchService {
         MatchEntity match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
 
+        validateUserInMatch(match, userEmail);
+
         UserEntity requester = match.getChildRequest().getFamily().getUser();
         UserEntity target = match.getChildTarget().getFamily().getUser();
 
@@ -197,8 +214,6 @@ public class MatchServiceImpl implements MatchService {
                 throw new BusinessLogicException("You must be VERIFIED to confirm a match.");
             }
             match.setNeighborAccepted(true);
-        } else {
-            throw new BusinessLogicException("Not authorized to confirm this match.");
         }
 
         if (match.isUserAccepted() && match.isNeighborAccepted()) {
