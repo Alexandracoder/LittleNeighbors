@@ -13,6 +13,7 @@ import com.alexandracoder.littleneighbors.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,15 @@ public class MessageServiceImpl implements MessageService {
     private final FamilyRepository familyRepository;
     private final MessageMapper messageMapper;
 
+    private void validateUserInMatch(MatchEntity match, Long currentUserId) {
+        Long requesterId = match.getChildRequest().getFamily().getUser().getId();
+        Long targetId = match.getChildTarget().getFamily().getUser().getId();
+
+        if (!requesterId.equals(currentUserId) && !targetId.equals(currentUserId)) {
+            throw new AccessDeniedException("You are not part of this match");
+        }
+    }
+
     @Override
     @Transactional
     public MessageResponseDTO sendMessage(SendMessageDTO dto, String senderEmail) {
@@ -39,13 +49,11 @@ public class MessageServiceImpl implements MessageService {
         MatchEntity match = matchRepository.findById(dto.matchId())
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
 
-        UserEntity receiver;
+        validateUserInMatch(match, sender.getId());
 
-        if (match.getChildRequest().getFamily().getUser().getId().equals(sender.getId())) {
-            receiver = match.getChildTarget().getFamily().getUser();
-        } else {
-            receiver = match.getChildRequest().getFamily().getUser();
-        }
+        UserEntity receiver = (match.getChildRequest().getFamily().getUser().getId().equals(sender.getId()))
+                ? match.getChildTarget().getFamily().getUser()
+                : match.getChildRequest().getFamily().getUser();
 
         MessageEntity message = MessageEntity.builder()
                 .sender(sender)
@@ -61,27 +69,22 @@ public class MessageServiceImpl implements MessageService {
     @Override
     @Transactional(readOnly = true)
     public ChatHistoryResponseDTO getChatHistoryByMatch(Long matchId, String currentUserEmail) {
+        UserEntity currentUser = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         MatchEntity match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
 
+        validateUserInMatch(match, currentUser.getId());
 
         Specification<MessageEntity> spec = MessageSpecifications.hasMatchId(matchId);
         List<MessageResponseDTO> messages = messageRepository.findAll(spec).stream()
                 .map(messageMapper::toResponseDTO)
                 .toList();
 
-        boolean userAccepted;
-        boolean neighborAccepted;
-
-        if (match.getChildRequest().getFamily().getUser().getEmail().equals(currentUserEmail)) {
-            userAccepted = match.isUserAccepted();
-            neighborAccepted = match.isNeighborAccepted();
-        } else {
-
-            userAccepted = match.isNeighborAccepted();
-            neighborAccepted = match.isUserAccepted();
-        }
+        boolean isRequester = match.getChildRequest().getFamily().getUser().getEmail().equals(currentUserEmail);
+        boolean userAccepted = isRequester ? match.isUserAccepted() : match.isNeighborAccepted();
+        boolean neighborAccepted = isRequester ? match.isNeighborAccepted() : match.isUserAccepted();
 
         return new ChatHistoryResponseDTO(messages, userAccepted, neighborAccepted);
     }
@@ -89,36 +92,26 @@ public class MessageServiceImpl implements MessageService {
     @Override
     @Transactional(readOnly = true)
     public List<MessageResponseDTO> getChatHistory(Long familyIdA, Long familyIdB) {
-        Long userIdA = familyRepository.findById(familyIdA)
-                .map(f -> f.getUser().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Family not found: " + familyIdA));
-
-        Long userIdB = familyRepository.findById(familyIdB)
-                .map(f -> f.getUser().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Family not found: " + familyIdB));
-
-        Specification<MessageEntity> spec = MessageSpecifications.isConversationBetween(userIdA, userIdB);
-
-        return messageRepository.findAll(spec).stream()
-                .map(messageMapper::toResponseDTO)
-                .toList();
+        throw new UnsupportedOperationException("Use getChatHistoryByMatch instead for security reasons");
     }
 
     @Override
     @Transactional
     public MessageWebSocketDTO saveFromWebSocket(Long matchId, MessageWebSocketDTO dto) {
         MatchEntity match = matchRepository.findById(matchId)
-                .orElseThrow(() -> new EntityNotFoundException("Match no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Match not found"));
 
         UserEntity sender = userRepository.findById(dto.senderId())
-                .orElseThrow(() -> new EntityNotFoundException("Usuario emisor no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Sender not found"));
+
+        validateUserInMatch(match, sender.getId());
 
         UserEntity receiver = (match.getRequestUser().getId().equals(sender.getId()))
                 ? match.getTargetUser()
                 : match.getRequestUser();
 
         if (receiver == null) {
-            throw new RuntimeException("No se pudo determinar el receptor del mensaje");
+            throw new RuntimeException("Receiver could not be determined");
         }
 
         MessageEntity entity = MessageEntity.builder()
