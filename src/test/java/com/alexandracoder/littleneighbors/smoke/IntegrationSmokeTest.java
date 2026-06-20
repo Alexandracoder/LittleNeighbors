@@ -28,13 +28,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(AdminController.class)
 @Import(SecurityConfig.class)
 @ActiveProfiles("test")
-@TestPropertySource(properties = "jwt.secret=un_secreto_de_prueba_de_32_caracteres_minimo")
 @DisplayName("AdminController - Smoke Test")
+// Consolidamos las propiedades en una sola anotación para evitar conflictos
 @TestPropertySource(properties = {
+        "jwt.secret=un_secreto_de_prueba_de_32_caracteres_minimo",
         "JWT_SECRET=test_secret_for_integration_tests_123456",
         "ALLOWED_ORIGINS=http://localhost:5173"
 })
-
 class IntegrationSmokeTest {
 
     @Autowired
@@ -42,7 +42,6 @@ class IntegrationSmokeTest {
 
     @MockBean
     private QrService qrService;
-
 
     @MockBean
     private UserRepository userRepository;

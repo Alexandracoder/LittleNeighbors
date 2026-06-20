@@ -2,21 +2,20 @@ version: '3.8'
 
 services:
   db:
-    image: mysql:8.0
+    image: postgres:16
     platform: linux/amd64
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: littleneighbors_1
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      POSTGRES_DB: littleneighbors
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d littleneighbors"]
       interval: 10s
-      timeout: 10s
-      retries: 10
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
@@ -25,7 +24,7 @@ services:
     platform: linux/amd64
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - DB_URL=${DB_URL}
+      - DB_URL=jdbc:postgresql://db:5432/littleneighbors
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
@@ -36,4 +35,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  mysql_data:
+  postgres_data:
