@@ -1,0 +1,2 @@
+ALTER TABLE users
+ADD COLUMN rejection_reason VARCHAR(255) NULL;
