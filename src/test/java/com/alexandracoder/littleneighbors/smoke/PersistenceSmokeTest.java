@@ -2,6 +2,7 @@ package com.alexandracoder.littleneighbors.smoke;
 
 import com.alexandracoder.littleneighbors.city.entity.CityEntity;
 import com.alexandracoder.littleneighbors.city.repository.CityRepository;
+import com.alexandracoder.littleneighbors.config.TestMailConfig;
 import com.alexandracoder.littleneighbors.enums.FamilyStatus;
 import com.alexandracoder.littleneighbors.enums.Role;
 import com.alexandracoder.littleneighbors.enums.VerificationStatus;
@@ -15,6 +16,7 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -29,6 +31,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Import(TestMailConfig.class)
 @SpringBootTest
 @Testcontainers
 @Tag("smoke")

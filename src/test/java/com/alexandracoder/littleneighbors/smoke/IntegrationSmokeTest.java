@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SecurityConfig.class)
 @ActiveProfiles("test")
 @DisplayName("AdminController - Smoke Test")
-// Consolidamos las propiedades en una sola anotación para evitar conflictos
+
 @TestPropertySource(properties = {
         "jwt.secret=un_secreto_de_prueba_de_32_caracteres_minimo",
         "JWT_SECRET=test_secret_for_integration_tests_123456",
