@@ -2,6 +2,8 @@ package com.alexandracoder.littleneighbors;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -31,7 +33,8 @@ class LittleneighborsApplicationTests {
         registry.add("jwt.secret", () -> "un_secreto_de_prueba_de_32_caracteres_minimo");
         registry.add("jwt.expiration", () -> "3600000");
     }
-
+    @MockBean
+    private JavaMailSender javaMailSender;
     @Test
     void contextLoads() {
 

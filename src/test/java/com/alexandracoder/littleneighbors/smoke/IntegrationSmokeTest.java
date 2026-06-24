@@ -12,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
@@ -26,16 +27,19 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AdminController.class)
-@Import(SecurityConfig.class)
 @ActiveProfiles("test")
+@Import(SecurityConfig.class)
 @DisplayName("AdminController - Smoke Test")
-// Consolidamos las propiedades en una sola anotación para evitar conflictos
+
 @TestPropertySource(properties = {
         "jwt.secret=un_secreto_de_prueba_de_32_caracteres_minimo",
         "JWT_SECRET=test_secret_for_integration_tests_123456",
         "ALLOWED_ORIGINS=http://localhost:5173"
 })
 class IntegrationSmokeTest {
+
+    @MockBean
+    private JavaMailSender javaMailSender;
 
     @Autowired
     private MockMvc mockMvc;

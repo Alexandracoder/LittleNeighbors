@@ -15,6 +15,9 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -38,8 +41,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestPropertySource(properties = {
         "JWT_SECRET=test_secret_for_integration_tests_123456",
         "ALLOWED_ORIGINS=http://localhost:5173"
+
 })
+
 class PersistenceSmokeTest {
+    @MockBean
+    private JavaMailSender javaMailSender;
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")

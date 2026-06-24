@@ -1,9 +1,13 @@
 package com.alexandracoder.littleneighbors.qr;
 
+import com.alexandracoder.littleneighbors.config.TestMailConfig;
 import com.alexandracoder.littleneighbors.qr.service.QrService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -22,6 +26,9 @@ import static org.assertj.core.api.Assertions.assertThat;
         "ALLOWED_ORIGINS=http://localhost:5173"
 })
 public class QrIntegrationTest {
+
+    @MockBean
+    private JavaMailSender javaMailSender;
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
