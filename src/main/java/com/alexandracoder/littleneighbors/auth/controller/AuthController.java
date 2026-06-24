@@ -2,6 +2,7 @@ package com.alexandracoder.littleneighbors.auth.controller;
 
 import com.alexandracoder.littleneighbors.auth.dto.*;
 import com.alexandracoder.littleneighbors.auth.service.AuthService;
+import com.alexandracoder.littleneighbors.email.service.EmailService;
 import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO;
 import com.alexandracoder.littleneighbors.shared.exceptions.UnauthorizedAccessException;
 import com.alexandracoder.littleneighbors.shared.exceptions.UserAlreadyExistsException;
@@ -21,6 +22,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailService emailService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody AuthRequest request) {
@@ -56,6 +58,16 @@ public class AuthController {
 
         UserProfileDTO profile = authService.getCurrentProfile(principal.getName());
         return ResponseEntity.ok(profile);
+    }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestParam String email) {
+        emailService.sendEmail(
+                email,
+                "Password Recovery",
+                "Hello, you have requested to recover your password in Little Neighbors."
+        );
+
+        return ResponseEntity.ok("If the email exists, you will receive a recovery message.");
     }
 }
 
