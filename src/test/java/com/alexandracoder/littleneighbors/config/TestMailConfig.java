@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.mail.javamail.JavaMailSender;
 import static org.mockito.Mockito.mock;
 
-@Import(TestMailConfig.class)
 @TestConfiguration
 public class TestMailConfig {
 
