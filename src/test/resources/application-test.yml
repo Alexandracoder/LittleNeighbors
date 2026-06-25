@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/littleneighbors_test
+    username: postgres
+    password: alexandra
+  jpa:
+    hibernate:
+      ddl-auto: update
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+app:
+  cors:
+    allowed-origins: http://localhost:5173
+
+jwt:
+  secret: this-is-a-very-long-and-secure-secret-key-at-least-thirty-two-bytes-long
+  expiration: 3600000
