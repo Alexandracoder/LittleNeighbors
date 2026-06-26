@@ -1,51 +1,51 @@
 package com.alexandracoder.littleneighbors.email.service;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
+import com.alexandracoder.littleneighbors.shared.config.AppMailProperties;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 @Service
+@RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
-
-    @Value("${spring.mail.username}")
-    private String fromAddress;
-
-    @Value("${app.frontend.url}")
-    private String frontendUrl;
-
-    public EmailServiceImpl(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
-    }
+    private final TemplateEngine templateEngine;
+    private final AppMailProperties mailProperties;
 
     @Override
-    public void sendEmail(String to, String subject, String text) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromAddress);
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(text);
-        mailSender.send(message);
+    public void sendEmail(String to, String subject, String htmlBody) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(mailProperties.getFromAddress());
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(htmlBody, true);
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            throw new IllegalStateException("Failed to send email", e);
+        }
     }
 
     @Override
     public void sendWelcomeEmail(String to, String firstName) {
-        String subject = "Welcome to LittleNeighbors!";
-        String text = "Hello " + firstName + ",\n\n" +
-                "Welcome to our community! We are happy to have you with us.";
-        sendEmail(to, subject, text);
+        Context context = new Context();
+        context.setVariable("firstName", firstName);
+        String html = templateEngine.process("welcome", context);
+        sendEmail(to, "Welcome to LittleNeighbors!", html);
     }
 
     @Override
     public void sendResetPasswordEmail(String to, String token) {
-        String subject = "Password Recovery";
-        String resetLink = frontendUrl + "/reset-password/" + token;
-        String text = "Hello,\n\n" +
-                "You have requested to recover your password. Click the link below to proceed:\n" +
-                resetLink + "\n\n" +
-                "This link will expire in 15 minutes.";
-        sendEmail(to, subject, text);
+        Context context = new Context();
+        context.setVariable("resetLink", mailProperties.getFrontendUrl() + "/reset-password/" + token);
+        String html = templateEngine.process("password-reset", context);
+        sendEmail(to, "Password Recovery", html);
     }
 }
