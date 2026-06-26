@@ -55,22 +55,29 @@ spring:
     url: ${DB_URL}
     username: ${DB_USER}
     password: ${DB_PASS}
-
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5
       connection-timeout: 30000
   jpa:
-
     hibernate:
       ddl-auto: none
     properties:
       hibernate:
-
         dialect: org.hibernate.dialect.PostgreSQLDialect
   flyway:
-
     enabled: true
+  mail:
+    host: ${SPRING_MAIL_HOST}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_AUTH:true}
+          starttls:
+            enable: ${SPRING_MAIL_STARTTLS:true}
 
 jwt:
   secret: ${JWT_SECRET}
