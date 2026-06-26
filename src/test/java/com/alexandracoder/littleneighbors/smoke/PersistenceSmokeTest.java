@@ -2,6 +2,7 @@ package com.alexandracoder.littleneighbors.smoke;
 
 import com.alexandracoder.littleneighbors.city.entity.CityEntity;
 import com.alexandracoder.littleneighbors.city.repository.CityRepository;
+import com.alexandracoder.littleneighbors.email.service.EmailService;
 import com.alexandracoder.littleneighbors.enums.FamilyStatus;
 import com.alexandracoder.littleneighbors.enums.Role;
 import com.alexandracoder.littleneighbors.enums.VerificationStatus;
@@ -37,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("smoke")
 @DisplayName("FamilyRepository — persistence smoke tests (Real PostgreSQL)")
 @Transactional
+@Import(com.alexandracoder.littleneighbors.config.TestMailConfig.class)
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
         "JWT_SECRET=test_secret_for_integration_tests_123456",
@@ -47,6 +49,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PersistenceSmokeTest {
     @MockBean
     private JavaMailSender javaMailSender;
+
+    @MockBean
+    private EmailService emailService;
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
