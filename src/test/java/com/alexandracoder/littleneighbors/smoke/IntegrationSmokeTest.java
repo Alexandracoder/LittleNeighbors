@@ -30,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(AdminController.class)
 @ActiveProfiles("test")
 @Import(SecurityConfig.class)
+
 @DisplayName("AdminController - Smoke Test")
 
 @TestPropertySource(properties = {

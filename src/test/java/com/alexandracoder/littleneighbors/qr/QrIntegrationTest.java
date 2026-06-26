@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
+@Import(com.alexandracoder.littleneighbors.config.TestMailConfig.class)
 @TestPropertySource(properties = {
         "JWT_SECRET=this-is-a-very-long-and-secure-secret-key-at-least-thirty-two-bytes-long",
         "ALLOWED_ORIGINS=http://localhost:5173"

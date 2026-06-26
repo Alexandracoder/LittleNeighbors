@@ -38,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("smoke")
 @DisplayName("FamilyRepository — persistence smoke tests (Real PostgreSQL)")
 @Transactional
+@Import(com.alexandracoder.littleneighbors.config.TestMailConfig.class)
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
         "JWT_SECRET=test_secret_for_integration_tests_123456",
