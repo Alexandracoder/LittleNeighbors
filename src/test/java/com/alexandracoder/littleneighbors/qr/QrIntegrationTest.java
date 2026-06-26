@@ -1,6 +1,7 @@
 package com.alexandracoder.littleneighbors.qr;
 
 import com.alexandracoder.littleneighbors.config.TestMailConfig;
+import com.alexandracoder.littleneighbors.email.service.EmailService;
 import com.alexandracoder.littleneighbors.qr.service.QrService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,9 @@ public class QrIntegrationTest {
 
     @MockBean
     private JavaMailSender javaMailSender;
+
+    @MockBean
+    private EmailService emailService;
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")

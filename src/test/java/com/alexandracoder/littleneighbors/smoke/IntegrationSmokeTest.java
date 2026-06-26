@@ -1,5 +1,6 @@
 package com.alexandracoder.littleneighbors.smoke;
 
+import com.alexandracoder.littleneighbors.email.service.EmailService;
 import com.alexandracoder.littleneighbors.qr.controller.AdminController;
 import com.alexandracoder.littleneighbors.qr.service.QrService;
 import com.alexandracoder.littleneighbors.security.config.SecurityConfig;
@@ -40,6 +41,9 @@ class IntegrationSmokeTest {
 
     @MockBean
     private JavaMailSender javaMailSender;
+
+    @MockBean
+    private EmailService emailService;
 
     @Autowired
     private MockMvc mockMvc;

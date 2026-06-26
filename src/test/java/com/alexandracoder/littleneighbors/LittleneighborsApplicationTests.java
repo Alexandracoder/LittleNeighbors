@@ -1,5 +1,6 @@
 package com.alexandracoder.littleneighbors;
 
+import com.alexandracoder.littleneighbors.email.service.EmailService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -35,6 +36,9 @@ class LittleneighborsApplicationTests {
     }
     @MockBean
     private JavaMailSender javaMailSender;
+
+    @MockBean
+    private EmailService emailService;
     @Test
     void contextLoads() {
 

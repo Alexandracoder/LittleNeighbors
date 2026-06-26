@@ -2,6 +2,7 @@ package com.alexandracoder.littleneighbors.smoke;
 
 import com.alexandracoder.littleneighbors.city.entity.CityEntity;
 import com.alexandracoder.littleneighbors.city.repository.CityRepository;
+import com.alexandracoder.littleneighbors.email.service.EmailService;
 import com.alexandracoder.littleneighbors.enums.FamilyStatus;
 import com.alexandracoder.littleneighbors.enums.Role;
 import com.alexandracoder.littleneighbors.enums.VerificationStatus;
@@ -47,6 +48,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PersistenceSmokeTest {
     @MockBean
     private JavaMailSender javaMailSender;
+
+    @MockBean
+    private EmailService emailService;
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
