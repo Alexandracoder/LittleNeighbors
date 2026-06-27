@@ -163,4 +163,20 @@ public class AuthServiceImpl implements AuthService {
             emailService.sendResetPasswordEmail(user.getEmail(), token);
         });
     }
+
+    @Override
+    public void resetPassword(String token, String newPassword) {
+        UserEntity user = userRepository.findByResetPasswordToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired reset token"));
+
+        if (user.getResetPasswordExpires() == null ||
+                user.getResetPasswordExpires().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Reset token has expired");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setResetPasswordToken(null);
+        user.setResetPasswordExpires(null);
+        userRepository.save(user);
+    }
 }

@@ -17,4 +17,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpec
     boolean existsByEmail(@NotBlank @Email String email);
 
     List<UserEntity> findByVerificationStatus(VerificationStatus status);
+
+    Optional<UserEntity> findByResetPasswordToken(String token);
 }
