@@ -41,9 +41,10 @@ public class MessageController {
     }
 
     @GetMapping("/history/{familyIdA}/{familyIdB}")
-    public ResponseEntity<List<MessageResponseDTO>> getChatHistory(
+    public ResponseEntity<Void> getChatHistory(
             @PathVariable Long familyIdA,
             @PathVariable Long familyIdB) {
-        return ResponseEntity.ok(messageService.getChatHistory(familyIdA, familyIdB));
+
+        return ResponseEntity.status(410).build();
     }
 }

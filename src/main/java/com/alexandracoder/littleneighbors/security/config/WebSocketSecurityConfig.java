@@ -14,7 +14,6 @@ import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 @Configuration
@@ -29,16 +28,19 @@ public class WebSocketSecurityConfig implements WebSocketMessageBrokerConfigurer
         registration.interceptors(new ChannelInterceptor() {
             @Override
             public Message<?> preSend(Message<?> message, MessageChannel channel) {
-                StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+                StompHeaderAccessor accessor =
+                        MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
                 if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
                     String authHeader = accessor.getFirstNativeHeader("Authorization");
-
                     if (authHeader != null && authHeader.startsWith("Bearer ")) {
                         String token = authHeader.substring(7);
-                        Jwt jwt = jwtDecoder.decode(token);
-                        JwtAuthenticationToken auth = new JwtAuthenticationToken(jwt);
-                        accessor.setUser(auth);
+                        try {
+                            Jwt jwt = jwtDecoder.decode(token);
+                            accessor.setUser(new JwtAuthenticationToken(jwt));
+                        } catch (Exception e) {
+
+                        }
                     }
                 }
                 return message;
