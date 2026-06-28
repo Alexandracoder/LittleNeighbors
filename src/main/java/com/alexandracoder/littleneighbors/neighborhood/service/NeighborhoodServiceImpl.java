@@ -9,9 +9,11 @@ import com.alexandracoder.littleneighbors.neighborhood.mapper.NeighborhoodMapper
 import com.alexandracoder.littleneighbors.neighborhood.repository.NeighborhoodRepository;
 import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
 import com.alexandracoder.littleneighbors.shared.exceptions.BusinessLogicException;
+import com.alexandracoder.littleneighbors.specifications.NeighborhoodSpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -82,5 +84,17 @@ public class NeighborhoodServiceImpl implements NeighborhoodService {
     private NeighborhoodEntity findOrThrow(Long id) {
         return neighborhoodRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Neighborhood not found with id: " + id));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<NeighborhoodResponseDTO> getAll(String name, Long cityId, Pageable pageable) {
+
+        Specification<NeighborhoodEntity> spec = Specification
+                .where(NeighborhoodSpecifications.hasName(name))
+                .and(NeighborhoodSpecifications.hasCityId(cityId));
+
+        return neighborhoodRepository.findAll(spec, pageable)
+                .map(neighborhoodMapper::toResponseDTO);
     }
 }

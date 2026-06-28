@@ -25,17 +25,20 @@ import org.springframework.web.bind.annotation.*;
 public class NeighborhoodController {
 
     private final NeighborhoodService neighborhoodService;
-
     @Operation(summary = "List all neighborhoods",
-            description = "Returns a paginated list of all neighborhoods. Accessible by FAMILY and ADMIN.")
+            description = "Returns a paginated list of all neighborhoods with optional filters.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "List successfully returned"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
     @GetMapping
     @PreAuthorize("hasRole('USER') or hasRole('FAMILY') or hasRole('ADMIN')")
-    public ResponseEntity<Page<NeighborhoodResponseDTO>> getAll(@ParameterObject Pageable pageable) {
-        return ResponseEntity.ok(neighborhoodService.getAll(pageable));
+    public ResponseEntity<Page<NeighborhoodResponseDTO>> getAll(
+            @Parameter(description = "Filter by name") @RequestParam(required = false) String name,
+            @Parameter(description = "Filter by city ID") @RequestParam(required = false) Long cityId,
+            @ParameterObject Pageable pageable) {
+
+        return ResponseEntity.ok(neighborhoodService.getAll(name, cityId, pageable));
     }
 
     @Operation(summary = "Get a neighborhood by ID",

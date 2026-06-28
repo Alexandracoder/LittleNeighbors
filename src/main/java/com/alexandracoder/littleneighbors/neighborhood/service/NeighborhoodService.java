@@ -4,6 +4,7 @@ import com.alexandracoder.littleneighbors.neighborhood.dto.NeighborhoodRequestDT
 import com.alexandracoder.littleneighbors.neighborhood.dto.NeighborhoodResponseDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface NeighborhoodService {
 
@@ -12,4 +13,7 @@ public interface NeighborhoodService {
     NeighborhoodResponseDTO create(NeighborhoodRequestDTO dto);
     NeighborhoodResponseDTO update(Long id, NeighborhoodRequestDTO dto);
     void delete(Long id);
+
+    @Transactional(readOnly = true)
+    Page<NeighborhoodResponseDTO> getAll(String name, Long cityId, Pageable pageable);
 }
