@@ -58,12 +58,13 @@ spring:
     type: com.zaxxer.hikari.HikariDataSource
     url: ${DB_URL}
     username: ${DB_USER}
-    password: ${DB_PASS}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5
       connection-timeout: 30000
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: none
     properties:
@@ -97,4 +98,6 @@ jwt:
 
 logging:
   level:
-    org.springframework.security: DEBUG
+    root: WARN
+    com.alexandracoder: INFO
+    org.springframework.security: WARN

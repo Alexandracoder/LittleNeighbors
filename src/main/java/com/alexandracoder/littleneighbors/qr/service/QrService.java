@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public interface QrService {
-    QrEntity saveLead(String email, String neighborhood);
+    QrEntity saveLead(String email, String neighborhood, boolean consentGiven, String privacyPolicyVersion);
 
     @Transactional(readOnly = true)
     Optional<QrEntity> findByInviteToken(String token);

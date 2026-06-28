@@ -1,1 +1,0 @@
-ALTER TABLE children ADD COLUMN description VARCHAR(500);
