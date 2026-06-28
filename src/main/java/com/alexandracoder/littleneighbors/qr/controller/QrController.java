@@ -3,6 +3,8 @@ package com.alexandracoder.littleneighbors.qr.controller;
 import com.alexandracoder.littleneighbors.qr.dto.PilotLeadRequest;
 import com.alexandracoder.littleneighbors.qr.entity.QrEntity;
 import com.alexandracoder.littleneighbors.qr.service.QrService;
+import com.alexandracoder.littleneighbors.shared.ratelimit.RateLimiterService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,13 +22,36 @@ import java.util.Map;
 public class QrController {
 
     private final QrService qrService;
+    private final RateLimiterService rateLimiterService;
 
+    private String resolveClientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        return (forwarded != null && !forwarded.isBlank())
+                ? forwarded.split(",")[0].trim()
+                : request.getRemoteAddr();
+    }
 
     @PostMapping("/pilot-lead")
-    public ResponseEntity<?> registerQrLead(@Valid @RequestBody PilotLeadRequest request) {
+    public ResponseEntity<?> registerQrLead(
+            @Valid @RequestBody PilotLeadRequest request,
+            HttpServletRequest httpRequest) {
+
+        String ip = resolveClientIp(httpRequest);
+
+        if (!rateLimiterService.isAllowed("qr-lead:ip:" + ip, 5, 600)) {
+            log.warn("Rate limit exceeded for QR lead registration. IP: {}", ip);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body("Too many requests. Please try again later.");
+        }
+
+        if (!rateLimiterService.isAllowed("qr-lead:email:" + request.getEmail(), 3, 3600)) {
+            log.warn("Rate limit exceeded for QR lead by email: {}", request.getEmail());
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body("Too many requests for this email. Please try again later.");
+        }
 
         try {
-            QrEntity savedLead = qrService.saveLead(request.getEmail(), request.getNeighborhood());
+            QrEntity savedLead = qrService.saveLead(request.getEmail(), request.getNeighborhood(), request.isConsentGiven(), request.getPrivacyPolicyVersion());
             log.info("QR lead registered -> Neighborhood: {}, Email: {}",
                     savedLead.getNeighborhood(), savedLead.getEmail());
 

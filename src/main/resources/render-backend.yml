@@ -1,0 +1,42 @@
+services:
+  # Backend — Web Service (Docker)
+  - type: web
+    name: littleneighbors-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DB_URL
+        fromDatabase:
+          name: littleneighbors-db
+          property: connectionString
+      - key: DB_USER
+        fromDatabase:
+          name: littleneighbors-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: littleneighbors-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: APP_FRONTEND_URL
+        sync: false
+      - key: APP_MAIL_FROM_ADDRESS
+        sync: false
+      - key: SPRING_MAIL_HOST
+        sync: false
+      - key: SPRING_MAIL_PORT
+        value: "587"
+      - key: SPRING_MAIL_USERNAME
+        sync: false
+      - key: SPRING_MAIL_PASSWORD
+        sync: false
+
+databases:
+  - name: littleneighbors-db
+    databaseName: littleneighbors
+    plan: free

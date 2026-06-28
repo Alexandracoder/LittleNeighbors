@@ -1,6 +1,5 @@
 package com.alexandracoder.littleneighbors.qr;
 
-import com.alexandracoder.littleneighbors.config.TestMailConfig;
 import com.alexandracoder.littleneighbors.email.service.EmailService;
 import com.alexandracoder.littleneighbors.qr.service.QrService;
 import org.junit.jupiter.api.Test;
@@ -56,9 +55,10 @@ public class QrIntegrationTest {
 
     @Test
     void shouldCountLeadsCaseInsensitiveAndTrimmed() {
-        qrService.saveLead("familia1@test.com", "Benimaclet");
-        qrService.saveLead("familia2@test.com", "benimaclet");
-        qrService.saveLead("familia3@test.com", "  BENIMACLET  ");
+
+        qrService.saveLead("familia1@test.com", "Benimaclet", true, "v1");
+        qrService.saveLead("familia2@test.com", "benimaclet", true, "v1");
+        qrService.saveLead("familia3@test.com", "  BENIMACLET  ", true, "v1");
 
         long count = qrService.countLeadsByNeighborhood("Benimaclet");
 
