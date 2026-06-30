@@ -9,4 +9,6 @@ public interface NeighborhoodRepository extends JpaRepository<NeighborhoodEntity
 
     Optional<NeighborhoodEntity> findByNameIgnoreCase(String benimaclet);
 
+    Optional<NeighborhoodEntity> findByName(String name);
+
 }
