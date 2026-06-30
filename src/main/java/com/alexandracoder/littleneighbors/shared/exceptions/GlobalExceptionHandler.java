@@ -69,6 +69,16 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(BusinessLogicException.class)
+    public ResponseEntity<Object> handleBusinessLogic(
+            BusinessLogicException ex
+    ) {
+        return buildResponse(
+                ex.getMessage(),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Object> handleAccessDenied(
             AccessDeniedException ex

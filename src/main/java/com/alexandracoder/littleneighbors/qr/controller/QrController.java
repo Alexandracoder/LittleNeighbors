@@ -18,7 +18,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/public")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class QrController {
 
     private final QrService qrService;
@@ -37,7 +36,7 @@ public class QrController {
             HttpServletRequest httpRequest) {
 
         String ip = resolveClientIp(httpRequest);
-
+        // 5 registros por IP cada 10 minutos
         if (!rateLimiterService.isAllowed("qr-lead:ip:" + ip, 5, 600)) {
             log.warn("Rate limit exceeded for QR lead registration. IP: {}", ip);
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
