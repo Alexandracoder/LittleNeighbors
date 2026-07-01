@@ -16,4 +16,13 @@ public class NeighborhoodSpecifications {
             );
         };
     }
+    public static Specification<NeighborhoodEntity> hasCityId(Long cityId) {
+        return (root, query, criteriaBuilder) -> {
+            if (cityId == null) {
+                return criteriaBuilder.conjunction();
+            }
+
+            return criteriaBuilder.equal(root.get("city").get("id"), cityId);
+        };
+    }
 }
