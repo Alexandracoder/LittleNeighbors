@@ -14,6 +14,6 @@ import java.util.Optional;
 @Repository
 public interface NeighborhoodRepository extends JpaRepository<NeighborhoodEntity, Long>, JpaSpecificationExecutor<NeighborhoodEntity> {
 
-    @EntityGraph(attributePaths = {"city"})
-    Page<NeighborhoodEntity> findAll(Specification<NeighborhoodEntity> spec, Pageable pageable);
+    Optional<NeighborhoodEntity> findByName(String name);
+
 }

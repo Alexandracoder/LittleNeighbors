@@ -5,6 +5,7 @@ import com.alexandracoder.littleneighbors.child.repository.ChildRepository;
 import com.alexandracoder.littleneighbors.enums.MatchStatus;
 import com.alexandracoder.littleneighbors.enums.VerificationStatus;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
+import com.alexandracoder.littleneighbors.enums.NotificationType;
 import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
 import com.alexandracoder.littleneighbors.match.dto.MatchResponseDetailDTO;
 import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
@@ -96,11 +97,24 @@ public class MatchServiceImpl implements MatchService {
                 .stream()
                 .filter(m -> m.getChildRequest().getId().equals(childTargetId) || m.getChildTarget().getId().equals(childTargetId))
                 .findFirst()
-                .orElseGet(() -> matchRepository.save(MatchEntity.builder()
-                        .childRequest(childRequest)
-                        .childTarget(childTarget)
-                        .status(MatchStatus.PENDING)
-                        .build()));
+                .orElseGet(() -> {
+                    MatchEntity savedMatch = matchRepository.save(MatchEntity.builder()
+                            .childRequest(childRequest)
+                            .childTarget(childTarget)
+                            .status(MatchStatus.PENDING)
+                            .build());
+
+                    FamilyEntity targetFamily = childTarget.getFamily();
+                    notificationService.createInternalNotification(
+                            targetFamily,
+                            "¡Nueva solicitud de conexión!",
+                            childRequest.getFamily().getFamilyName() + " quiere conectar con tu familia.",
+                            NotificationType.PLAYDATE_REQUEST,
+                            savedMatch.getId()
+                    );
+
+                    return savedMatch;
+                });
     }
 
     @Override

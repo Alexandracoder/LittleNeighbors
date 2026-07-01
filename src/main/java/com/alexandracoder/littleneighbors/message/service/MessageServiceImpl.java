@@ -6,6 +6,8 @@ import com.alexandracoder.littleneighbors.match.repository.MatchRepository;
 import com.alexandracoder.littleneighbors.message.dto.*;
 import com.alexandracoder.littleneighbors.message.entity.MessageEntity;
 import com.alexandracoder.littleneighbors.message.repository.MessageRepository;
+import com.alexandracoder.littleneighbors.enums.NotificationType;
+import com.alexandracoder.littleneighbors.notification.service.NotificationService;
 import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
 import com.alexandracoder.littleneighbors.specifications.MessageSpecifications;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
@@ -30,6 +32,7 @@ public class MessageServiceImpl implements MessageService {
     private final UserRepository userRepository;
     private final FamilyRepository familyRepository;
     private final MessageMapper messageMapper;
+    private final NotificationService notificationService;
 
     private void validateUserInMatch(MatchEntity match, Long currentUserId) {
         Long requesterId = match.getChildRequest().getFamily().getUser().getId();
@@ -63,7 +66,22 @@ public class MessageServiceImpl implements MessageService {
                 .sentAt(LocalDateTime.now())
                 .build();
 
-        return messageMapper.toResponseDTO(messageRepository.save(message));
+        MessageEntity savedMessage = messageRepository.save(message);
+
+        notificationService.createInternalNotification(
+                receiver.getFamily(),
+                "Nuevo mensaje",
+                sender.getFullName() + ": " + truncate(dto.content()),
+                NotificationType.CHAT_MESSAGE,
+                match.getId()
+        );
+
+        return messageMapper.toResponseDTO(savedMessage);
+    }
+
+    private String truncate(String text) {
+        if (text == null) return "";
+        return text.length() > 60 ? text.substring(0, 57) + "..." : text;
     }
 
     @Override
@@ -123,6 +141,14 @@ public class MessageServiceImpl implements MessageService {
                 .build();
 
         MessageEntity saved = messageRepository.save(entity);
+
+        notificationService.createInternalNotification(
+                receiver.getFamily(),
+                "Nuevo mensaje",
+                sender.getFullName() + ": " + truncate(dto.content()),
+                NotificationType.CHAT_MESSAGE,
+                match.getId()
+        );
 
         return new MessageWebSocketDTO(
                 saved.getId(),
