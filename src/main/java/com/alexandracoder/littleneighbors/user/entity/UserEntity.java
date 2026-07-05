@@ -44,6 +44,14 @@ public class UserEntity extends BaseEntity implements UserDetails {
     private String resetPasswordToken;
     private LocalDateTime resetPasswordExpires;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean consentGiven = false;
+
+    private LocalDateTime consentAt;
+
+    private String privacyPolicyVersion;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default

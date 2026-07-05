@@ -1,6 +1,10 @@
 package com.alexandracoder.littleneighbors.auth.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public record ResetPasswordRequest(
-        String token,
+        @NotBlank String token,
+        @NotBlank @Size(min = 8, max = 72, message = "Password must be at least 8 characters long")
         String newPassword
 ) {}

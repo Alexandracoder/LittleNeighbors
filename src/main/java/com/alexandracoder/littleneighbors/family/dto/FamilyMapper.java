@@ -8,9 +8,16 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 @Component
 public class FamilyMapper {
+
+    // Radio aproximado del jitter alrededor del centroide del barrio, en
+    // grados (~0.003 grados ~= 250-300m en Valencia). Suficiente para que no
+    // se amontonen los pines de varias familias del mismo barrio exactamente
+    // en el mismo punto, sin llegar a implicar una dirección real.
+    private static final double JITTER_DEGREES = 0.003;
 
     public FamilyResponseDTO toResponse(FamilyEntity entity) {
         if (entity == null) return null;
@@ -41,6 +48,8 @@ public class FamilyMapper {
                 .toList()
                 : Collections.emptyList();
 
+        double[] coordinates = resolveCoordinates(entity, neighborhood);
+
         return new FamilyResponseDTO(
                 entity.getId(),
                 entity.getRepresentativeName(),
@@ -53,13 +62,39 @@ public class FamilyMapper {
                 postalCode,
                 cityName,
                 children,
-                entity.getLongitude(),
-                entity.getLatitude()
-
-
+                coordinates[0],
+                coordinates[1]
         );
     }
 
+    /**
+     * Devuelve [latitude, longitude] para pintar el pin de esta familia en
+     * el mapa. Si la familia tiene coordenadas propias, se usan tal cual.
+     * Si no (el caso normal: no pedimos dirección exacta por privacidad),
+     * se aproxima al centroide de su barrio con un pequeño desplazamiento
+     * aleatorio pero ESTABLE (semilla = id de familia), para que el pin no
+     * salte de sitio cada vez que se recarga la página.
+     */
+    private double[] resolveCoordinates(FamilyEntity entity, NeighborhoodEntity neighborhood) {
+        if (entity.getLatitude() != null && entity.getLongitude() != null) {
+            return new double[]{entity.getLatitude(), entity.getLongitude()};
+        }
+
+        if (neighborhood == null || neighborhood.getLatitude() == null || neighborhood.getLongitude() == null) {
+            return new double[]{Double.NaN, Double.NaN};
+        }
+
+        long seed = entity.getId() != null ? entity.getId() : 0L;
+        Random jitterRandom = new Random(seed);
+
+        double latJitter = (jitterRandom.nextDouble() * 2 - 1) * JITTER_DEGREES;
+        double lngJitter = (jitterRandom.nextDouble() * 2 - 1) * JITTER_DEGREES;
+
+        return new double[]{
+                neighborhood.getLatitude() + latJitter,
+                neighborhood.getLongitude() + lngJitter
+        };
+    }
 
     private ChildSummaryDTO toChildSummary(ChildEntity child) {
         if (child == null) return null;

@@ -93,6 +93,14 @@ management:
     mail:
       enabled: false
 
+# Swagger/OpenAPI solo para dev: en prod no queremos exponer la documentación
+# completa de la API (rutas, DTOs, esquemas) a cualquiera.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
 jwt:
   secret: ${JWT_SECRET}
 

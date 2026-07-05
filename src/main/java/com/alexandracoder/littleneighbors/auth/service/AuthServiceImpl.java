@@ -3,6 +3,7 @@ package com.alexandracoder.littleneighbors.auth.service;
 import com.alexandracoder.littleneighbors.auth.dto.*;
 import com.alexandracoder.littleneighbors.email.service.EmailService;
 import com.alexandracoder.littleneighbors.enums.Role;
+import com.alexandracoder.littleneighbors.enums.VerificationStatus;
 import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
@@ -27,6 +28,9 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
+    // Mantener sincronizado con PRIVACY_POLICY_VERSION en el frontend (Register.tsx)
+    private static final String CURRENT_PRIVACY_POLICY_VERSION = "1.0";
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -45,6 +49,17 @@ public class AuthServiceImpl implements AuthService {
                 .lastName(request.lastName())
                 .password(passwordEncoder.encode(request.password()))
                 .roles(new HashSet<>(Set.of(Role.USER)))
+                .consentGiven(true)
+                .consentAt(LocalDateTime.now())
+                .privacyPolicyVersion(CURRENT_PRIVACY_POLICY_VERSION)
+                // Toda familia nueva empieza pendiente de revisión manual del
+                // admin (ver ModerationController/AdminUserController). El
+                // default de la entidad es VERIFIED porque ese valor tiene
+                // sentido para otros caminos de creación (seed de datos,
+                // AdminBootstrap), pero un registro real de un desconocido
+                // SIEMPRE debe pasar por moderación antes de poder contactar
+                // con otras familias.
+                .verificationStatus(VerificationStatus.PENDING_REVIEW)
                 .build();
 
         userRepository.save(user);

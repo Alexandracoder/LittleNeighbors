@@ -1,6 +1,6 @@
 package com.alexandracoder.littleneighbors.dashboard.controller;
 
-import com.alexandracoder.littleneighbors.user.entity.UserEntity;
+import com.alexandracoder.littleneighbors.dashboard.dto.AdminPendingUserDTO;
 import com.alexandracoder.littleneighbors.enums.VerificationStatus;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,20 @@ public class AdminUserController {
 
     @GetMapping("/pending")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserEntity>> getPendingUsers() {
-        return ResponseEntity.ok(userRepository.findByVerificationStatus(VerificationStatus.PENDING_REVIEW));
+    public ResponseEntity<List<AdminPendingUserDTO>> getPendingUsers() {
+        List<AdminPendingUserDTO> pending = userRepository
+                .findByVerificationStatus(VerificationStatus.PENDING_REVIEW)
+                .stream()
+                .map(u -> new AdminPendingUserDTO(
+                        u.getId(),
+                        u.getEmail(),
+                        u.getFirstName(),
+                        u.getLastName(),
+                        u.getVerificationStatus(),
+                        u.getCreatedAt()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(pending);
     }
 }
