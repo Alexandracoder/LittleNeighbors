@@ -23,6 +23,19 @@ services:
           property: password
       - key: JWT_SECRET
         generateValue: true
+      # Modo demo: cuando es "true", cualquier usuario puede enviar/aceptar
+      # solicitudes de contacto sin estar verificado (ver canBypassVerification
+      # en MatchServiceImpl). Ponlo a "true" en Render solo mientras dure la
+      # demo al ayuntamiento, y vuelve a "false" (o bórralo) para el pilot real,
+      # donde sí quieres exigir verificación de las familias.
+      - key: APP_DEMO_MODE
+        sync: false
+      # Rota la contraseña del admin al arrancar (ver AdminBootstrap.java).
+      # Rellenar manualmente en el dashboard de Render, nunca comitear un valor aquí.
+      - key: ADMIN_BOOTSTRAP_EMAIL
+        sync: false
+      - key: ADMIN_BOOTSTRAP_PASSWORD
+        sync: false
       - key: APP_FRONTEND_URL
         sync: false
       - key: APP_MAIL_FROM_ADDRESS

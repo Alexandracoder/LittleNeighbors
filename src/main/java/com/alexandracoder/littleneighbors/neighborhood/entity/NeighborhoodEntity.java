@@ -30,6 +30,14 @@ public class NeighborhoodEntity extends BaseEntity {
     @Column(name = "postal_code", nullable = true)
     private String postalCode;
 
+    // Centroide aproximado del barrio. Se usa como posición del pin en el
+    // mapa de Explorar cuando la familia no tiene coordenadas propias (que
+    // es siempre, hoy: no pedimos la dirección exacta por privacidad, dado
+    // que hay menores implicados).
+    private Double latitude;
+
+    private Double longitude;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id", nullable = false)
     private CityEntity city;
