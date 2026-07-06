@@ -17,6 +17,7 @@ import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -51,7 +53,6 @@ public class AuthServiceImpl implements AuthService {
                 .consentGiven(true)
                 .consentAt(LocalDateTime.now())
                 .privacyPolicyVersion(CURRENT_PRIVACY_POLICY_VERSION)
-
                 .verificationStatus(VerificationStatus.PENDING_REVIEW)
                 .build();
 
@@ -158,7 +159,6 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void sendWelcomeEmail(String email, String firstName, Locale locale) {
-        // Ahora pasamos el locale recibido
         emailService.sendWelcomeEmail(email, firstName, locale);
     }
 
@@ -170,12 +170,9 @@ public class AuthServiceImpl implements AuthService {
             user.setResetPasswordExpires(LocalDateTime.now().plusMinutes(15));
             userRepository.save(user);
 
-            // Ahora pasamos el locale recibido
             emailService.sendResetPasswordEmail(user.getEmail(), token, locale);
         });
     }
-
-
 
     @Override
     public void resetPassword(String token, String newPassword) {
