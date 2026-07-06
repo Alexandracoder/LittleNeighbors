@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.Locale;
 import java.util.Map;
 
 @RestController
@@ -37,15 +38,13 @@ public class AuthController {
     public ResponseEntity<?> login(@Valid @RequestBody AuthRequest request, HttpServletRequest httpRequest) {
         String ip = resolveClientIp(httpRequest);
 
-        // 10 intentos por IP cada 5 minutos: suficiente para un usuario despistado,
-        // demasiado lento para fuerza bruta.
+
         if (!rateLimiterService.isAllowed("auth-login:ip:" + ip, 10, 300)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(Map.of("error", "Too many login attempts. Please try again later."));
         }
 
-        // Además, por email, para que no se pueda malgastar el cupo de IP
-        // probando contraseñas contra una sola cuenta desde varias IPs.
+
         if (!rateLimiterService.isAllowed("auth-login:email:" + request.email(), 10, 300)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(Map.of("error", "Too many login attempts for this account. Please try again later."));
@@ -65,21 +64,19 @@ public class AuthController {
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) throws UserAlreadyExistsException {
         String ip = resolveClientIp(httpRequest);
 
-        // 5 registros por IP cada hora: evita scripts creando cuentas en bucle.
         if (!rateLimiterService.isAllowed("auth-register:ip:" + ip, 5, 3600)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(Map.of("error", "Too many registration attempts. Please try again later."));
         }
 
         authService.register(request);
-        authService.sendWelcomeEmail(request.email(), request.firstName());
-        return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
-    }
 
-    @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
-        AuthResponse response = authService.reloadUserTokenFromRefresh(request.refreshToken());
-        return ResponseEntity.ok(response);
+        Locale locale = org.springframework.web.servlet.support.RequestContextUtils.getLocale(httpRequest);
+
+
+        authService.sendWelcomeEmail(request.email(), request.firstName(), locale);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
     }
 
     @GetMapping("/profile")
@@ -90,24 +87,22 @@ public class AuthController {
         UserProfileDTO profile = authService.getCurrentProfile(principal.getName());
         return ResponseEntity.ok(profile);
     }
-
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestBody EmailRequest request, HttpServletRequest httpRequest) {
         String ip = resolveClientIp(httpRequest);
 
-        // 3 solicitudes por IP y por email cada 15 min: evita usar este endpoint
-        // para bombardear de emails a una bandeja de entrada ajena.
         if (!rateLimiterService.isAllowed("auth-forgot:ip:" + ip, 3, 900)
                 || !rateLimiterService.isAllowed("auth-forgot:email:" + request.email(), 3, 900)) {
-            // Misma respuesta que el caso normal a propósito: no revelamos
-            // si el email existe ni que se ha activado un límite.
+
             return ResponseEntity.ok("If the email exists, you will receive a recovery message.");
         }
 
-        authService.initiatePasswordReset(request.email());
+        Locale locale = org.springframework.web.servlet.support.RequestContextUtils.getLocale(httpRequest);
+
+        authService.initiatePasswordReset(request.email(), locale);
+
         return ResponseEntity.ok("If the email exists, you will receive a recovery message.");
     }
-
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         try {

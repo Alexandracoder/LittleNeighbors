@@ -4,11 +4,13 @@ import com.alexandracoder.littleneighbors.shared.config.AppMailProperties;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource; // Importante
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import java.util.Locale; // Importante
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +19,7 @@ public class EmailServiceImpl implements EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
     private final AppMailProperties mailProperties;
+    private final MessageSource messageSource; // Inyección de MessageSource
 
     @Override
     public void sendEmail(String to, String subject, String htmlBody) {
@@ -34,18 +37,27 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void sendWelcomeEmail(String to, String firstName) {
-        Context context = new Context();
+    public void sendWelcomeEmail(String to, String firstName, Locale locale) {
+        // Pasamos el locale al contexto para que Thymeleaf use el archivo correcto
+        Context context = new Context(locale);
         context.setVariable("firstName", firstName);
+
         String html = templateEngine.process("welcome", context);
-        sendEmail(to, "Welcome to LittleNeighbors!", html);
+
+        // Obtenemos el asunto traducido usando messageSource
+        String subject = messageSource.getMessage("welcome.subject", null, locale);
+
+        sendEmail(to, subject, html);
     }
 
     @Override
-    public void sendResetPasswordEmail(String to, String token) {
-        Context context = new Context();
+    public void sendResetPasswordEmail(String to, String token, Locale locale) {
+        Context context = new Context(locale);
         context.setVariable("resetLink", mailProperties.getFrontendUrl() + "/reset-password/" + token);
         String html = templateEngine.process("password-reset", context);
-        sendEmail(to, "Password Recovery", html);
+
+        String subject = messageSource.getMessage("password.subject", null, locale);
+
+        sendEmail(to, subject, html);
     }
 }

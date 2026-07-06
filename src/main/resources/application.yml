@@ -12,7 +12,7 @@ jwt:
   expiration: 3600000
 
 app:
-  demo-mode: ${APP_DEMO_MODE:false}
+  demo-mode: ${APP_DEMO_MODE:true}
 
   mail:
     from-address: ${APP_MAIL_FROM_ADDRESS}
