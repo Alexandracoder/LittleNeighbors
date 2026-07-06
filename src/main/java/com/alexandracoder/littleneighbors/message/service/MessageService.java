@@ -2,7 +2,6 @@ package com.alexandracoder.littleneighbors.message.service;
 
 import com.alexandracoder.littleneighbors.message.dto.ChatHistoryResponseDTO;
 import com.alexandracoder.littleneighbors.message.dto.MessageResponseDTO;
-import com.alexandracoder.littleneighbors.message.dto.MessageWebSocketDTO;
 import com.alexandracoder.littleneighbors.message.dto.SendMessageDTO;
 import com.alexandracoder.littleneighbors.message.entity.MessageEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +16,4 @@ public interface MessageService {
     List<MessageResponseDTO> getChatHistory(Long myFamilyId, Long matchFamilyId);
 
     ChatHistoryResponseDTO getChatHistoryByMatch(Long matchId, String currentUserEmail);
-
-    @Transactional
-    MessageWebSocketDTO saveFromWebSocket(Long matchId, MessageWebSocketDTO dto);
 }

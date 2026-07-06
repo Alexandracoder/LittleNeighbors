@@ -2,11 +2,8 @@ package com.alexandracoder.littleneighbors.user.controller;
 
 import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO; // Importa tu DTO
 import com.alexandracoder.littleneighbors.profile.service.ProfileService; // Importa tu servicio
-import com.alexandracoder.littleneighbors.user.dto.UserRegisterDTO;
-import com.alexandracoder.littleneighbors.user.dto.UserResponseDTO;
 import com.alexandracoder.littleneighbors.user.dto.UserStatusDTO;
 import com.alexandracoder.littleneighbors.user.service.UserService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,13 +17,10 @@ public class UserController {
     private final UserService userService;
     private final ProfileService profileService;
 
-    @PostMapping("/register")
-    public ResponseEntity<UserResponseDTO> registerUser(
-            @Valid @RequestBody UserRegisterDTO dto) {
-        UserResponseDTO createdUser = userService.registerUser(dto);
-        return ResponseEntity.ok(createdUser);
-    }
-
+    // El registro de usuarios se hace exclusivamente por /api/auth/register
+    // (AuthController), que sí tiene rate limiting y consentimiento RGPD.
+    // Este controller solía tener también un POST /register duplicado sin
+    // ninguna de esas protecciones; se eliminó a propósito.
 
     @GetMapping("/me")
     public ResponseEntity<UserProfileDTO> getCurrentUser(Authentication authentication) {

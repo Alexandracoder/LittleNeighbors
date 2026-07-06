@@ -3,6 +3,7 @@ package com.alexandracoder.littleneighbors.auth.service;
 import com.alexandracoder.littleneighbors.auth.dto.*;
 import com.alexandracoder.littleneighbors.email.service.EmailService;
 import com.alexandracoder.littleneighbors.enums.Role;
+import com.alexandracoder.littleneighbors.enums.VerificationStatus;
 import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
@@ -27,6 +28,8 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
+    private static final String CURRENT_PRIVACY_POLICY_VERSION = "1.0";
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -45,6 +48,11 @@ public class AuthServiceImpl implements AuthService {
                 .lastName(request.lastName())
                 .password(passwordEncoder.encode(request.password()))
                 .roles(new HashSet<>(Set.of(Role.USER)))
+                .consentGiven(true)
+                .consentAt(LocalDateTime.now())
+                .privacyPolicyVersion(CURRENT_PRIVACY_POLICY_VERSION)
+
+                .verificationStatus(VerificationStatus.PENDING_REVIEW)
                 .build();
 
         userRepository.save(user);
@@ -148,21 +156,26 @@ public class AuthServiceImpl implements AuthService {
         );
     }
 
-    public void sendWelcomeEmail(String email, String firstName) {
-        emailService.sendWelcomeEmail(email, firstName);
+    @Override
+    public void sendWelcomeEmail(String email, String firstName, Locale locale) {
+        // Ahora pasamos el locale recibido
+        emailService.sendWelcomeEmail(email, firstName, locale);
     }
 
     @Override
-    public void initiatePasswordReset(String email) {
+    public void initiatePasswordReset(String email, Locale locale) {
         userRepository.findByEmail(email).ifPresent(user -> {
             String token = UUID.randomUUID().toString();
             user.setResetPasswordToken(token);
             user.setResetPasswordExpires(LocalDateTime.now().plusMinutes(15));
             userRepository.save(user);
 
-            emailService.sendResetPasswordEmail(user.getEmail(), token);
+            // Ahora pasamos el locale recibido
+            emailService.sendResetPasswordEmail(user.getEmail(), token, locale);
         });
     }
+
+
 
     @Override
     public void resetPassword(String token, String newPassword) {

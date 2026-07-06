@@ -16,6 +16,20 @@ services:
       - path: /*
         name: Referrer-Policy
         value: strict-origin-when-cross-origin
+      # Si cambias el dominio del backend o añades un dominio propio,
+      # actualiza aquí los orígenes de connect-src/img-src.
+      - path: /*
+        name: Content-Security-Policy
+        value: >-
+          default-src 'self';
+          script-src 'self';
+          style-src 'self' 'unsafe-inline';
+          img-src 'self' data: https:;
+          font-src 'self' data:;
+          connect-src 'self' https://littleneighbors-backend.onrender.com wss://littleneighbors-backend.onrender.com https://api.cloudinary.com;
+          frame-ancestors 'none';
+          base-uri 'self';
+          form-action 'self'
     routes:
       - type: rewrite
         source: /*
