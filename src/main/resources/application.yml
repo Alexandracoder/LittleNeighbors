@@ -8,6 +8,11 @@ spring:
     deserialization:
       read-unknown-enum-values-as-null: true
 
+  messages:
+    basename: messages/messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+
 jwt:
   expiration: 3600000
 
@@ -93,8 +98,6 @@ management:
     mail:
       enabled: false
 
-# Swagger/OpenAPI solo para dev: en prod no queremos exponer la documentación
-# completa de la API (rutas, DTOs, esquemas) a cualquiera.
 springdoc:
   api-docs:
     enabled: false
