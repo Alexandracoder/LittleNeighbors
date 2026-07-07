@@ -10,6 +10,7 @@ import com.alexandracoder.littleneighbors.shared.ratelimit.RateLimiterService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
     private final AuthService authService;
@@ -73,8 +75,11 @@ public class AuthController {
 
         Locale locale = org.springframework.web.servlet.support.RequestContextUtils.getLocale(httpRequest);
 
-
-        authService.sendWelcomeEmail(request.email(), request.firstName(), locale);
+        try {
+            authService.sendWelcomeEmail(request.email(), request.firstName(), locale);
+        } catch (Exception e) {
+            log.error("No se pudo enviar el email de bienvenida a {}", request.email(), e);
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
     }
@@ -99,7 +104,11 @@ public class AuthController {
 
         Locale locale = org.springframework.web.servlet.support.RequestContextUtils.getLocale(httpRequest);
 
-        authService.initiatePasswordReset(request.email(), locale);
+        try {
+            authService.initiatePasswordReset(request.email(), locale);
+        } catch (Exception e) {
+            log.error("Error initiating password reset for {}", request.email(), e);
+        }
 
         return ResponseEntity.ok("If the email exists, you will receive a recovery message.");
     }
