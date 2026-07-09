@@ -29,7 +29,8 @@ public class UserMapper {
         return new UserProfileDTO(
                 entity.getEmail(),
                 roles,
-                familyDto
+                familyDto,
+                entity.getVerificationStatus()
         );
     }
 }

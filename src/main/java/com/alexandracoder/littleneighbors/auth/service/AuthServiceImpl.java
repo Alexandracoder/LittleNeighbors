@@ -94,11 +94,16 @@ public class AuthServiceImpl implements AuthService {
         UserEntity user = userRepository.findOne(UserSpecifications.hasEmailWithFullProfile(email))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
+        VerificationStatus status = user.getVerificationStatus();
+
+        VerificationStatus VerificationStatus = com.alexandracoder.littleneighbors.enums.VerificationStatus.VERIFIED;
         return new UserProfileDTO(
                 user.getEmail(),
                 user.getRoles().stream().map(Enum::name).toList(),
-                user.getFamily() != null ? mapToFamilyDTO(user.getFamily()) : null
+                user.getFamily() != null ? mapToFamilyDTO(user.getFamily()) : null,
+                VerificationStatus
         );
+
     }
 
     private FamilyResponseDTO mapToFamilyDTO(FamilyEntity family) {

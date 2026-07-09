@@ -17,18 +17,23 @@ public class UserController {
     private final UserService userService;
     private final ProfileService profileService;
 
-    // El registro de usuarios se hace exclusivamente por /api/auth/register
-    // (AuthController), que sí tiene rate limiting y consentimiento RGPD.
-    // Este controller solía tener también un POST /register duplicado sin
-    // ninguna de esas protecciones; se eliminó a propósito.
+
 
     @GetMapping("/me")
     public ResponseEntity<UserProfileDTO> getCurrentUser(Authentication authentication) {
+        String email = authentication.getName();
+        UserProfileDTO profile = profileService.getCurrentUserProfile(email);
+        UserStatusDTO status = userService.getUserStatus(email);
 
-        UserProfileDTO profile = profileService.getCurrentUserProfile(authentication.getName());
-        return ResponseEntity.ok(profile);
+        UserProfileDTO updatedProfile = new UserProfileDTO(
+                profile.email(),
+                profile.roles(),
+                profile.family(),
+                status.verificationStatus() // Aquí inyectas el valor
+        );
+
+        return ResponseEntity.ok(updatedProfile);
     }
-
     @GetMapping("/me/status")
     public ResponseEntity<UserStatusDTO> getUserStatus(Authentication authentication) {
         UserStatusDTO status = userService.getUserStatus(authentication.getName());
