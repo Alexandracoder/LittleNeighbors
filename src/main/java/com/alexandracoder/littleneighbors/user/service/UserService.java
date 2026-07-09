@@ -1,9 +1,11 @@
 package com.alexandracoder.littleneighbors.user.service;
 
+import com.alexandracoder.littleneighbors.enums.VerificationStatus;
 import com.alexandracoder.littleneighbors.user.dto.UserStatusDTO;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value; // Import necesario
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +17,10 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
+
+
+    @Value("${app.demo-mode:true}")
+    private boolean isDemoMode;
 
     @Transactional(readOnly = true)
     public UserStatusDTO getUserStatus(String email) {
@@ -32,11 +38,14 @@ public class UserService {
                 .map(role -> "ROLE_" + role.name())
                 .collect(Collectors.toList());
 
+
+        VerificationStatus status = isDemoMode ? VerificationStatus.VERIFIED : user.getVerificationStatus();
+
         return new UserStatusDTO(
                 hasFamily,
                 hasChildren,
                 hasFamily && hasChildren,
-                user.getVerificationStatus(),
+                status,
                 roles
         );
     }
