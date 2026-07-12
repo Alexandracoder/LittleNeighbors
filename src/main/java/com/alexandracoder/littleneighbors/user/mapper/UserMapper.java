@@ -2,7 +2,7 @@ package com.alexandracoder.littleneighbors.user.mapper;
 
 import com.alexandracoder.littleneighbors.family.dto.FamilyMapper;
 import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
-import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO;
+import com.alexandracoder.littleneighbors.user.dto.UserProfileDTO;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

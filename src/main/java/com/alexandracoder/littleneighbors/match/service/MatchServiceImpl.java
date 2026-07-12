@@ -16,6 +16,7 @@ import com.alexandracoder.littleneighbors.specifications.FamilySpecifications;
 import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
 import com.alexandracoder.littleneighbors.shared.exceptions.BusinessLogicException;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
+import com.alexandracoder.littleneighbors.block.service.BlockService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
@@ -33,6 +34,7 @@ public class MatchServiceImpl implements MatchService {
     private final ChildRepository childRepository;
     private final FamilyRepository familyRepository;
     private final NotificationService notificationService;
+    private final BlockService blockService;
     private final boolean demoMode;
 
     public MatchServiceImpl(
@@ -40,11 +42,13 @@ public class MatchServiceImpl implements MatchService {
             ChildRepository childRepository,
             FamilyRepository familyRepository,
             NotificationService notificationService,
+            BlockService blockService,
             @Value("${app.demo-mode:false}") boolean demoMode) {
         this.matchRepository = matchRepository;
         this.childRepository = childRepository;
         this.familyRepository = familyRepository;
         this.notificationService = notificationService;
+        this.blockService = blockService;
         this.demoMode = demoMode;
     }
 
@@ -90,6 +94,10 @@ public class MatchServiceImpl implements MatchService {
 
         if (!childRequest.getFamily().getNeighborhood().getId().equals(childTarget.getFamily().getNeighborhood().getId())) {
             throw new BusinessLogicException("Connections are only allowed within the same neighborhood.");
+        }
+
+        if (blockService.isBlockedEitherWay(childRequest.getFamily().getId(), childTarget.getFamily().getId())) {
+            throw new BusinessLogicException("Cannot connect with this family.");
         }
 
         LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
@@ -202,6 +210,7 @@ public class MatchServiceImpl implements MatchService {
                 .myChildGender(myChild.getGender().toString())
                 .theirChildId(theirChild.getId())
                 .theirChildGender(theirChild.getGender().toString())
+                .theirFamilyId(theirChild.getFamily().getId())
                 .theirFamilyName(theirChild.getFamily().getFamilyName())
                 .theirNeighborhoodName(theirChild.getFamily().getNeighborhood() != null ? theirChild.getFamily().getNeighborhood().getName() : "N/A")
                 .build();

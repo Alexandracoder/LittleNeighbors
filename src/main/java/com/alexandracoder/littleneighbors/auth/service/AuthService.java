@@ -1,7 +1,7 @@
 package com.alexandracoder.littleneighbors.auth.service;
 
 import com.alexandracoder.littleneighbors.auth.dto.*;
-import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO;
+import com.alexandracoder.littleneighbors.user.dto.UserProfileDTO;
 import com.alexandracoder.littleneighbors.shared.exceptions.UserAlreadyExistsException;
 import jakarta.validation.Valid;
 

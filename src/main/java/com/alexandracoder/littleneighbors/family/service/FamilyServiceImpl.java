@@ -14,6 +14,7 @@ import com.alexandracoder.littleneighbors.match.repository.MatchRepository;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
 import com.alexandracoder.littleneighbors.neighborhood.repository.NeighborhoodRepository;
 import com.alexandracoder.littleneighbors.security.service.JwtService;
+import com.alexandracoder.littleneighbors.block.service.BlockService;
 import com.alexandracoder.littleneighbors.specifications.FamilySpecifications;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
@@ -49,6 +50,7 @@ public class FamilyServiceImpl implements FamilyService {
     @Getter
     private final MatchRepository matchRepository;
     private final JwtService jwtService;;
+    private final BlockService blockService;
 
     @Override
     @Transactional
@@ -179,7 +181,10 @@ public class FamilyServiceImpl implements FamilyService {
                 .and(FamilySpecifications.isNotMyFamily(myFamily.getId()))
                 .and(FamilySpecifications.hasChildWithCriteria(min, max, interestIds));
 
+        List<Long> blockedFamilyIds = blockService.getBlockedFamilyIdsInvolving(myFamily.getId());
+
         return familyRepository.findAll(spec).stream()
+                .filter(f -> !blockedFamilyIds.contains(f.getId()))
                 .map(this.familyMapper::toResponse)
                 .collect(Collectors.toList());
     }

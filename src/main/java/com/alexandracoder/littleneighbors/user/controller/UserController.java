@@ -1,6 +1,6 @@
 package com.alexandracoder.littleneighbors.user.controller;
 
-import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO; // Importa tu DTO
+import com.alexandracoder.littleneighbors.user.dto.UserProfileDTO; // Importa tu DTO
 import com.alexandracoder.littleneighbors.profile.service.ProfileService; // Importa tu servicio
 import com.alexandracoder.littleneighbors.user.dto.UserStatusDTO;
 import com.alexandracoder.littleneighbors.user.service.UserService;
