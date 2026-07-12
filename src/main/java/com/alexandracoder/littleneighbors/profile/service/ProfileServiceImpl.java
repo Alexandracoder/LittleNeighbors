@@ -1,6 +1,6 @@
 package com.alexandracoder.littleneighbors.profile.service;
 
-import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO;
+import com.alexandracoder.littleneighbors.user.dto.UserProfileDTO;
 import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.user.mapper.UserMapper;

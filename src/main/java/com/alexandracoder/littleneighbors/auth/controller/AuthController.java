@@ -3,7 +3,7 @@ package com.alexandracoder.littleneighbors.auth.controller;
 import com.alexandracoder.littleneighbors.auth.dto.*;
 import com.alexandracoder.littleneighbors.auth.service.AuthService;
 import com.alexandracoder.littleneighbors.email.dto.EmailRequest;
-import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO;
+import com.alexandracoder.littleneighbors.user.dto.UserProfileDTO;
 import com.alexandracoder.littleneighbors.shared.exceptions.UnauthorizedAccessException;
 import com.alexandracoder.littleneighbors.shared.exceptions.UserAlreadyExistsException;
 import com.alexandracoder.littleneighbors.shared.ratelimit.RateLimiterService;

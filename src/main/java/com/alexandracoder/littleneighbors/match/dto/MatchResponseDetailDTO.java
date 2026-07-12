@@ -13,6 +13,7 @@ public record MatchResponseDetailDTO(
         String myChildGender,
         Long theirChildId,
         String theirChildGender,
+        Long theirFamilyId,
         String theirFamilyName,
         String theirNeighborhoodName
 ) {}
