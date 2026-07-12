@@ -12,8 +12,10 @@ import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundExce
 import com.alexandracoder.littleneighbors.specifications.MessageSpecifications;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
+import com.alexandracoder.littleneighbors.block.service.BlockService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ import java.util.List;
 @Transactional
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MessageServiceImpl implements MessageService {
 
     private final MessageRepository messageRepository;
@@ -33,6 +36,7 @@ public class MessageServiceImpl implements MessageService {
     private final FamilyRepository familyRepository;
     private final MessageMapper messageMapper;
     private final NotificationService notificationService;
+    private final BlockService blockService;
 
     private void validateUserInMatch(MatchEntity match, Long currentUserId) {
         Long requesterId = match.getChildRequest().getFamily().getUser().getId();
@@ -53,6 +57,19 @@ public class MessageServiceImpl implements MessageService {
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
 
         validateUserInMatch(match, sender.getId());
+
+        Long senderFamilyId = match.getChildRequest().getFamily().getUser().getId().equals(sender.getId())
+                ? match.getChildRequest().getFamily().getId()
+                : match.getChildTarget().getFamily().getId();
+        Long otherFamilyId = senderFamilyId.equals(match.getChildRequest().getFamily().getId())
+                ? match.getChildTarget().getFamily().getId()
+                : match.getChildRequest().getFamily().getId();
+
+        if (blockService.isBlockedEitherWay(senderFamilyId, otherFamilyId)) {
+            log.warn("Mensaje rechazado: bloqueo activo entre familias {} y {} (match {})",
+                    senderFamilyId, otherFamilyId, match.getId());
+            throw new AccessDeniedException("Messaging is not available for this conversation.");
+        }
 
         UserEntity receiver = (match.getChildRequest().getFamily().getUser().getId().equals(sender.getId()))
                 ? match.getChildTarget().getFamily().getUser()

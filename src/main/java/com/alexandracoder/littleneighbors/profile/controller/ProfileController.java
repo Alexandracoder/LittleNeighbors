@@ -1,6 +1,6 @@
 package com.alexandracoder.littleneighbors.profile.controller;
 
-import com.alexandracoder.littleneighbors.profile.dto.UserProfileDTO;
+import com.alexandracoder.littleneighbors.user.dto.UserProfileDTO;
 import com.alexandracoder.littleneighbors.profile.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
