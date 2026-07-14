@@ -12,6 +12,7 @@ import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundExce
 import com.alexandracoder.littleneighbors.specifications.PlaydateSpecifications;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,10 +26,11 @@ public class PlaydateServiceImpl implements PlaydateService {
 
     private final PlaydateRepository playdateRepository;
     private final MatchRepository matchRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     @Transactional
-    public PlaydateEntity createPlaydate(PlaydateRequestDTO dto, String currentUserEmail) {
+    public PlaydateResponseDTO createPlaydate(PlaydateRequestDTO dto, String currentUserEmail) {
         MatchEntity match = matchRepository.findById(dto.matchId())
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found with ID: " + dto.matchId()));
 
@@ -47,13 +49,34 @@ public class PlaydateServiceImpl implements PlaydateService {
                 .status(PlaydateStatus.PENDING)
                 .build();
 
-        return playdateRepository.save(playdate);
+        PlaydateEntity saved = playdateRepository.save(playdate);
+
+        // El frontend (SchedulesPage.tsx) está suscrito a este topic y
+        // simplemente vuelve a pedir la lista en cuanto le llega algo aquí
+        // (no le importa el contenido del mensaje, solo que llegue algo).
+        // Antes nadie publicaba en este topic, así que la otra familia
+        // tenía que refrescar la página a mano para ver la propuesta nueva.
+        messagingTemplate.convertAndSend("/topic/playdates/" + match.getId(), "updated");
+
+        return mapToResponseDTO(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<PlaydateEntity> findByMatchId(Long matchId) {
-        return playdateRepository.findByMatchId(matchId);
+    public List<PlaydateResponseDTO> findByMatchId(Long matchId, String currentUserEmail) {
+        MatchEntity match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found with ID: " + matchId));
+
+        String requesterEmail = match.getChildRequest().getFamily().getUser().getEmail();
+        String targetEmail = match.getChildTarget().getFamily().getUser().getEmail();
+        if (!requesterEmail.equals(currentUserEmail) && !targetEmail.equals(currentUserEmail)) {
+            throw new AccessDeniedException("You are not part of this match");
+        }
+
+        return playdateRepository.findByMatchId(matchId)
+                .stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -78,6 +101,9 @@ public class PlaydateServiceImpl implements PlaydateService {
 
         playdate.setStatus(PlaydateStatus.ACCEPTED);
         PlaydateEntity updatedPlaydate = playdateRepository.save(playdate);
+
+        messagingTemplate.convertAndSend(
+                "/topic/playdates/" + updatedPlaydate.getMatch().getId(), "updated");
 
         return mapToResponseDTO(updatedPlaydate);
     }

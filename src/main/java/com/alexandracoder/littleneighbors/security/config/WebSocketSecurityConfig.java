@@ -16,7 +16,10 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
+import com.alexandracoder.littleneighbors.match.repository.MatchRepository;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Configuration
@@ -24,8 +27,10 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class WebSocketSecurityConfig implements WebSocketMessageBrokerConfigurer {
 
-    private static final Pattern MATCH_TOPIC_PATTERN = Pattern.compile("^/topic/messages/(\\d+)$");
+    private static final Pattern MATCH_TOPIC_PATTERN =
+            Pattern.compile("^/topic/(?:messages|playdates)/(\\d+)$");
     private final JwtDecoder jwtDecoder;
+    private final MatchRepository matchRepository;
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
@@ -67,13 +72,26 @@ public class WebSocketSecurityConfig implements WebSocketMessageBrokerConfigurer
 
     private void authorizeSubscribe(StompHeaderAccessor accessor) {
         String destination = accessor.getDestination();
-        if (destination == null || !MATCH_TOPIC_PATTERN.matcher(destination).matches()) {
-            return;
-        }
+        if (destination == null) return;
+
+        Matcher matcher = MATCH_TOPIC_PATTERN.matcher(destination);
+        if (!matcher.matches()) return;
 
         JwtAuthenticationToken auth = (JwtAuthenticationToken) accessor.getUser();
         if (auth == null) {
             throw new MessagingException("Unauthenticated subscription");
+        }
+
+        Long matchId = Long.parseLong(matcher.group(1));
+        MatchEntity match = matchRepository.findWithFamiliesById(matchId)
+                .orElseThrow(() -> new MessagingException("Match not found"));
+
+        String email = auth.getToken().getSubject();
+        String requesterEmail = match.getChildRequest().getFamily().getUser().getEmail();
+        String targetEmail = match.getChildTarget().getFamily().getUser().getEmail();
+
+        if (!requesterEmail.equals(email) && !targetEmail.equals(email)) {
+            throw new MessagingException("You are not part of this match");
         }
     }
 }

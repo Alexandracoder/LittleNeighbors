@@ -37,6 +37,13 @@ public class PlaydateEntity extends BaseEntity {
     @JsonIgnoreProperties("playdates")
     private MatchEntity match;
 
+    // Familia que propuso la quedada. Necesario para no permitir que la
+    // misma familia que la crea sea también quien la confirme (ver
+    // V10__add_playdate_creator.sql).
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_family_id")
+    private com.alexandracoder.littleneighbors.family.entity.FamilyEntity createdByFamily;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default

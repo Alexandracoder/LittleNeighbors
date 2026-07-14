@@ -18,6 +18,14 @@ jwt:
 
 app:
   demo-mode: ${APP_DEMO_MODE:true}
+  matching:
+    # Máximo de conexiones (matches) ACEPTADAS por semana y por niño/a.
+    # 4 = valor para el piloto (más margen para generar densidad de red
+    # entre familias). "Exclusividad" para conocerse bien, pero sin
+    # frenar el crecimiento inicial. Pon 0 para desactivar el límite.
+    # Se puede sobreescribir sin tocar código con la env var
+    # APP_MATCHING_WEEKLY_LIMIT (p.ej. en Render).
+    weekly-limit: ${APP_MATCHING_WEEKLY_LIMIT:4}
 
   mail:
     from-address: ${APP_MAIL_FROM_ADDRESS}

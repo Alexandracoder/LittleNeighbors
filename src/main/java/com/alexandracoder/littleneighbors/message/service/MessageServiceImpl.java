@@ -85,10 +85,13 @@ public class MessageServiceImpl implements MessageService {
 
         MessageEntity savedMessage = messageRepository.save(message);
 
+        // Antes el mensaje de la notificación incluía el contenido real del
+        // chat (truncado). Por privacidad, mejor solo avisar de que hay
+        // mensaje nuevo, sin mostrar qué dice hasta que se abre el chat.
         notificationService.createInternalNotification(
                 receiver.getFamily(),
                 "Nuevo mensaje",
-                sender.getFullName() + ": " + truncate(dto.content()),
+                "Tienes un mensaje nuevo de " + sender.getFullName(),
                 NotificationType.CHAT_MESSAGE,
                 match.getId()
         );

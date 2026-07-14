@@ -10,5 +10,6 @@ public record PlaydateResponseDTO(
         String status,
         Long matchId,
         String requesterFamilyName,
-        String receiverFamilyName
+        String receiverFamilyName,
+        Long createdByFamilyId
 ) {}
