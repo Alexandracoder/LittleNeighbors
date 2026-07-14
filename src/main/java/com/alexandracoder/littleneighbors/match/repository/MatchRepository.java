@@ -22,4 +22,15 @@ public interface MatchRepository extends JpaRepository<MatchEntity, Long>, JpaSp
             "childTarget.family.user"
     })
     List<MatchEntity> findByChildTargetFamilyUserEmail(String email);
+
+    // Variante de findById que trae ya cargadas las familias/usuarios de
+    // ambos niños. Se usa fuera de un contexto @Transactional normal (p.ej.
+    // en la verificación de suscripciones WebSocket), donde un simple
+    // findById() + acceso a childRequest.getFamily() (LAZY) dispararía un
+    // LazyInitializationException al no haber sesión de Hibernate abierta.
+    @EntityGraph(attributePaths = {
+            "childRequest.family.user",
+            "childTarget.family.user"
+    })
+    java.util.Optional<MatchEntity> findWithFamiliesById(Long id);
 }

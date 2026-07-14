@@ -22,6 +22,8 @@ public interface FamilyService {
             Long currentChildId,
             List<Long> interestIds,
             Integer minAge,
-            Integer maxAge
+            Integer maxAge,
+            Boolean includePregnant,
+            boolean citywide
     );
 }

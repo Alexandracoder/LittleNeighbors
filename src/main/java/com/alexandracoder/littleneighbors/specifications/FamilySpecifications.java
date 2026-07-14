@@ -1,6 +1,7 @@
 package com.alexandracoder.littleneighbors.specifications;
 
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
+import com.alexandracoder.littleneighbors.enums.LifeStage;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.interest.entity.InterestEntity;
 import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
@@ -32,7 +33,7 @@ public class FamilySpecifications {
         return (root, query, cb) -> cb.equal(root.get("neighborhood").get("id"), neighborhoodId);
     }
 
-    public static Specification<FamilyEntity> hasChildWithCriteria(int minAge, int maxAge, List<Long> interestIds) {
+    public static Specification<FamilyEntity> hasChildWithCriteria(int minAge, int maxAge, List<Long> interestIds, Boolean includePregnant) {
         return (root, query, cb) -> {
             Subquery<Long> sub = query.subquery(Long.class);
             Root<ChildEntity> child = sub.from(ChildEntity.class);
@@ -45,11 +46,16 @@ public class FamilySpecifications {
             Predicate belongsToFamily = cb.equal(child.get("family"), root);
             Predicate agePredicate = cb.between(child.get("birthDate"), minBirthDate, maxBirthDate);
 
+
+            Predicate stagePredicate = Boolean.TRUE.equals(includePregnant)
+                    ? cb.or(agePredicate, cb.equal(child.get("lifeStage"), LifeStage.PREGNANCY))
+                    : agePredicate;
+
             if (interestIds != null && !interestIds.isEmpty()) {
                 Join<ChildEntity, InterestEntity> interests = child.join("interests", JoinType.INNER);
-                sub.where(cb.and(belongsToFamily, agePredicate, interests.get("id").in(interestIds)));
+                sub.where(cb.and(belongsToFamily, stagePredicate, interests.get("id").in(interestIds)));
             } else {
-                sub.where(cb.and(belongsToFamily, agePredicate));
+                sub.where(cb.and(belongsToFamily, stagePredicate));
             }
             return cb.exists(sub);
         };

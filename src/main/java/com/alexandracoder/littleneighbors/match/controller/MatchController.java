@@ -42,7 +42,7 @@ public class MatchController {
 
         List<Long> filterInterests = (interestIds == null) ? new ArrayList<>() : interestIds;
         List<FamilyEntity> families = matchService.findCompatibleFamilies(
-                neighborhoodId, minAge, maxAge, filterInterests, currentChildId
+                neighborhoodId, minAge, maxAge, filterInterests, true, currentChildId
         );
 
         boolean isUserLocked = currentChildId != null && matchService.hasActiveMatchThisWeek(currentChildId);

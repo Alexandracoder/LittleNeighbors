@@ -7,5 +7,6 @@ public enum InterestType {
     SCIENCE,
     TECHNOLOGY,
     OUTDOOR,
+    PREGNANCY,
     OTHER
 }

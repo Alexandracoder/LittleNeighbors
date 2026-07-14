@@ -13,13 +13,16 @@ public interface MatchService {
     MatchEntity requestMatch(Long childRequestId, Long childTargetId, String userEmail);
 
     @Transactional
-    List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int maxAge, List<Long> interestIds, Long currentChildId);
+    List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int maxAge, List<Long> interestIds, Long currentChildId, Boolean includePregnant);
 
     void validateWeeklyConstraint(Long childId);
 
     boolean hasActiveMatchThisWeek(Long childId);
 
     List<MatchResponseDetailDTO> getMatchesForUser(String email);
+
+    @Transactional(readOnly = true)
+    List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int maxAge, List<Long> interestIds, Boolean includePregnant, Long currentChildId);
 
     void respondToMatch(Long matchId, MatchStatus status, String currentUserEmail);
 

@@ -36,6 +36,7 @@ public class MatchServiceImpl implements MatchService {
     private final NotificationService notificationService;
     private final BlockService blockService;
     private final boolean demoMode;
+    private final int weeklyMatchLimit;
 
     public MatchServiceImpl(
             MatchRepository matchRepository,
@@ -43,13 +44,15 @@ public class MatchServiceImpl implements MatchService {
             FamilyRepository familyRepository,
             NotificationService notificationService,
             BlockService blockService,
-            @Value("${app.demo-mode:false}") boolean demoMode) {
+            @Value("${app.demo-mode:false}") boolean demoMode,
+            @Value("${app.matching.weekly-limit:4}") int weeklyMatchLimit) {
         this.matchRepository = matchRepository;
         this.childRepository = childRepository;
         this.familyRepository = familyRepository;
         this.notificationService = notificationService;
         this.blockService = blockService;
         this.demoMode = demoMode;
+        this.weeklyMatchLimit = weeklyMatchLimit;
     }
 
     private boolean canBypassVerification(UserEntity user) {
@@ -115,8 +118,8 @@ public class MatchServiceImpl implements MatchService {
                     FamilyEntity targetFamily = childTarget.getFamily();
                     notificationService.createInternalNotification(
                             targetFamily,
-                            "¡Nueva solicitud de conexión!",
-                            childRequest.getFamily().getFamilyName() + " quiere conectar con tu familia.",
+                            "New connection request!",
+                            childRequest.getFamily().getFamilyName() + " wants to connect with your family.",
                             NotificationType.PLAYDATE_REQUEST,
                             savedMatch.getId()
                     );
@@ -126,14 +129,19 @@ public class MatchServiceImpl implements MatchService {
     }
 
     @Override
+    public List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int maxAge, List<Long> interestIds, Long currentChildId, Boolean includePregnant) {
+        return List.of();
+    }
+
     @Transactional(readOnly = true)
-    public List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int maxAge, List<Long> interestIds, Long currentChildId) {
+    @Override
+    public List<FamilyEntity> findCompatibleFamilies(Long neighborhoodId, int minAge, int maxAge, List<Long> interestIds, Boolean includePregnant, Long currentChildId) {
         if (neighborhoodId == null) return List.of();
 
         Long myFamilyId = currentChildId != null ? childRepository.findById(currentChildId).map(c -> c.getFamily().getId()).orElse(null) : null;
 
         return familyRepository.findAll(Specification.where(FamilySpecifications.hasNeighborhood(neighborhoodId))
-                .and(FamilySpecifications.hasChildWithCriteria(minAge, maxAge, interestIds))
+                .and(FamilySpecifications.hasChildWithCriteria(minAge, maxAge, interestIds, includePregnant))
                 .and(FamilySpecifications.isNotChild(currentChildId))
                 .and(FamilySpecifications.isNotMyFamily(myFamilyId)));
     }
@@ -169,8 +177,11 @@ public class MatchServiceImpl implements MatchService {
 
     @Override
     public void validateWeeklyConstraint(Long childId) {
-        if (countAcceptedMatchesThisWeek(childId) >= 2) {
-            throw new BusinessLogicException("Limit reached: Only 2 official connections are allowed per week.");
+        if (weeklyMatchLimit > 0 && countAcceptedMatchesThisWeek(childId) >= weeklyMatchLimit) {
+            throw new BusinessLogicException(
+                    "You have reached the weekly limit of " + weeklyMatchLimit + " new connections! 🌱 "
+                            + "We encourage you to spend time getting to know your current connections. "
+                            + "New connections will be available next week.");
         }
     }
 
