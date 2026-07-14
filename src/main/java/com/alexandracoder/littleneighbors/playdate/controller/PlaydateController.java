@@ -55,7 +55,17 @@ public class PlaydateController {
     }
     @PatchMapping("/{playdateId}/confirm")
     @PreAuthorize("hasRole('FAMILY')")
-    public ResponseEntity<PlaydateResponseDTO> confirmPlaydate(@PathVariable Long playdateId) {
-        return ResponseEntity.ok(playdateService.confirm(playdateId));
+    public ResponseEntity<PlaydateResponseDTO> confirmPlaydate(
+            @PathVariable Long playdateId,
+            Principal principal) {
+        return ResponseEntity.ok(playdateService.confirm(playdateId, principal.getName()));
+    }
+
+    @PatchMapping("/{playdateId}/reject")
+    @PreAuthorize("hasRole('FAMILY')")
+    public ResponseEntity<PlaydateResponseDTO> rejectPlaydate(
+            @PathVariable Long playdateId,
+            Principal principal) {
+        return ResponseEntity.ok(playdateService.reject(playdateId, principal.getName()));
     }
 }

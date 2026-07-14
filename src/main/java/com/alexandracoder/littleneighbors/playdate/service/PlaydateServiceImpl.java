@@ -1,9 +1,13 @@
 package com.alexandracoder.littleneighbors.playdate.service;
 
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
+import com.alexandracoder.littleneighbors.enums.NotificationType;
 import com.alexandracoder.littleneighbors.enums.PlaydateStatus;
+import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
+import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
 import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
 import com.alexandracoder.littleneighbors.match.repository.MatchRepository;
+import com.alexandracoder.littleneighbors.notification.service.NotificationService;
 import com.alexandracoder.littleneighbors.playdate.dto.PlaydateRequestDTO;
 import com.alexandracoder.littleneighbors.playdate.dto.PlaydateResponseDTO;
 import com.alexandracoder.littleneighbors.playdate.entity.PlaydateEntity;
@@ -26,6 +30,8 @@ public class PlaydateServiceImpl implements PlaydateService {
 
     private final PlaydateRepository playdateRepository;
     private final MatchRepository matchRepository;
+    private final FamilyRepository familyRepository;
+    private final NotificationService notificationService;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
@@ -34,22 +40,39 @@ public class PlaydateServiceImpl implements PlaydateService {
         MatchEntity match = matchRepository.findById(dto.matchId())
                 .orElseThrow(() -> new ResourceNotFoundException("Match not found with ID: " + dto.matchId()));
 
-        String initiatorEmail = match.getChildRequest().getFamily().getUser().getEmail();
-        String targetEmail = match.getChildTarget().getFamily().getUser().getEmail();
+        FamilyEntity requesterFamily = match.getChildRequest().getFamily();
+        FamilyEntity targetFamily = match.getChildTarget().getFamily();
+        String initiatorEmail = requesterFamily.getUser().getEmail();
+        String targetEmail = targetFamily.getUser().getEmail();
 
         if (!currentUserEmail.equals(initiatorEmail) && !currentUserEmail.equals(targetEmail)) {
             throw new AccessDeniedException("You are not part of this match");
         }
+
+        FamilyEntity creatorFamily = currentUserEmail.equals(initiatorEmail) ? requesterFamily : targetFamily;
+        FamilyEntity recipientFamily = currentUserEmail.equals(initiatorEmail) ? targetFamily : requesterFamily;
 
         PlaydateEntity playdate = PlaydateEntity.builder()
                 .title(dto.title())
                 .startTime(dto.startTime())
                 .description(dto.description())
                 .match(match)
+                .createdByFamily(creatorFamily)
                 .status(PlaydateStatus.PENDING)
                 .build();
 
         PlaydateEntity saved = playdateRepository.save(playdate);
+
+        // Antes esto no existía: nadie avisaba a la otra familia de que
+        // había una quedada nueva propuesta. Solo se refrescaba la lista
+        // en tiempo real vía WS si YA tenías la agenda abierta, pero no
+        // llegaba nada a "Notificaciones".
+        notificationService.createInternalNotification(
+                recipientFamily,
+                "Nueva propuesta de quedada",
+                creatorFamily.getFamilyName() + " os ha propuesto un plan: \"" + dto.title() + "\"",
+                NotificationType.PLAYDATE_REQUEST,
+                match.getId());
 
         // El frontend (SchedulesPage.tsx) está suscrito a este topic y
         // simplemente vuelve a pedir la lista en cuanto le llega algo aquí
@@ -91,7 +114,7 @@ public class PlaydateServiceImpl implements PlaydateService {
 
     @Override
     @Transactional
-    public PlaydateResponseDTO confirm(Long playdateId) {
+    public PlaydateResponseDTO confirm(Long playdateId, String currentUserEmail) {
         PlaydateEntity playdate = playdateRepository.findById(playdateId)
                 .orElseThrow(() -> new EntityNotFoundException("Playdate not found with ID: " + playdateId));
 
@@ -99,8 +122,78 @@ public class PlaydateServiceImpl implements PlaydateService {
             throw new IllegalStateException("Only pending playdates can be confirmed");
         }
 
+        FamilyEntity requesterFamily = playdate.getMatch().getChildRequest().getFamily();
+        FamilyEntity targetFamily = playdate.getMatch().getChildTarget().getFamily();
+        String requesterEmail = requesterFamily.getUser().getEmail();
+        String targetEmail = targetFamily.getUser().getEmail();
+
+        if (!requesterEmail.equals(currentUserEmail) && !targetEmail.equals(currentUserEmail)) {
+            throw new AccessDeniedException("You are not part of this match");
+        }
+
+        // BUG que reportó Alexandra: quien creaba la quedada también podía
+        // pulsar "Confirmar" sobre su propia propuesta (este método no
+        // comprobaba nada), así que quedaba aceptada sin que la otra
+        // familia hubiera tenido opción de decidir. Ahora solo puede
+        // confirmar quien NO la creó.
+        if (playdate.getCreatedByFamily() != null
+                && currentUserEmail.equals(playdate.getCreatedByFamily().getUser().getEmail())) {
+            throw new AccessDeniedException("You can't confirm a playdate you proposed yourself");
+        }
+
         playdate.setStatus(PlaydateStatus.ACCEPTED);
         PlaydateEntity updatedPlaydate = playdateRepository.save(playdate);
+
+        if (updatedPlaydate.getCreatedByFamily() != null) {
+            notificationService.createInternalNotification(
+                    updatedPlaydate.getCreatedByFamily(),
+                    "¡Plan confirmado!",
+                    "Vuestra propuesta \"" + updatedPlaydate.getTitle() + "\" ha sido confirmada 🎉",
+                    NotificationType.MATCH_CONFIRMED,
+                    updatedPlaydate.getMatch().getId());
+        }
+
+        messagingTemplate.convertAndSend(
+                "/topic/playdates/" + updatedPlaydate.getMatch().getId(), "updated");
+
+        return mapToResponseDTO(updatedPlaydate);
+    }
+
+    @Override
+    @Transactional
+    public PlaydateResponseDTO reject(Long playdateId, String currentUserEmail) {
+        PlaydateEntity playdate = playdateRepository.findById(playdateId)
+                .orElseThrow(() -> new EntityNotFoundException("Playdate not found with ID: " + playdateId));
+
+        if (playdate.getStatus() != PlaydateStatus.PENDING) {
+            throw new IllegalStateException("Only pending playdates can be rejected");
+        }
+
+        FamilyEntity requesterFamily = playdate.getMatch().getChildRequest().getFamily();
+        FamilyEntity targetFamily = playdate.getMatch().getChildTarget().getFamily();
+        String requesterEmail = requesterFamily.getUser().getEmail();
+        String targetEmail = targetFamily.getUser().getEmail();
+
+        if (!requesterEmail.equals(currentUserEmail) && !targetEmail.equals(currentUserEmail)) {
+            throw new AccessDeniedException("You are not part of this match");
+        }
+
+        if (playdate.getCreatedByFamily() != null
+                && currentUserEmail.equals(playdate.getCreatedByFamily().getUser().getEmail())) {
+            throw new AccessDeniedException("You can't reject a playdate you proposed yourself");
+        }
+
+        playdate.setStatus(PlaydateStatus.REJECTED);
+        PlaydateEntity updatedPlaydate = playdateRepository.save(playdate);
+
+        if (updatedPlaydate.getCreatedByFamily() != null) {
+            notificationService.createInternalNotification(
+                    updatedPlaydate.getCreatedByFamily(),
+                    "Plan rechazado",
+                    "Vuestra propuesta \"" + updatedPlaydate.getTitle() + "\" no ha podido confirmarse esta vez.",
+                    NotificationType.SYSTEM,
+                    updatedPlaydate.getMatch().getId());
+        }
 
         messagingTemplate.convertAndSend(
                 "/topic/playdates/" + updatedPlaydate.getMatch().getId(), "updated");
@@ -138,7 +231,8 @@ public class PlaydateServiceImpl implements PlaydateService {
                 entity.getStatus().name(),
                 matchId,
                 reqName,
-                resName
+                resName,
+                entity.getCreatedByFamily() != null ? entity.getCreatedByFamily().getId() : null
         );
     }
 }
