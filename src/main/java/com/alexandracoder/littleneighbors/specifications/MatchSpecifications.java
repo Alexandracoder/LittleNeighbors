@@ -1,7 +1,9 @@
 package com.alexandracoder.littleneighbors.specifications;
 
+import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.enums.MatchStatus;
 import com.alexandracoder.littleneighbors.match.entity.MatchEntity;
+import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
@@ -13,11 +15,12 @@ public class MatchSpecifications {
         return (root, query, cb) -> {
             if (childId == null || after == null) return null;
 
-           root.fetch("childRequest", JoinType.LEFT);
-            root.fetch("childTarget", JoinType.LEFT);
 
-            Predicate isRequestor = cb.equal(root.get("childRequest").get("id"), childId);
-            Predicate isTarget = cb.equal(root.get("childTarget").get("id"), childId);
+            Join<MatchEntity, ChildEntity> requestJoin = root.join("childRequest", JoinType.INNER);
+            Join<MatchEntity, ChildEntity> targetJoin = root.join("childTarget", JoinType.INNER);
+
+            Predicate isRequestor = cb.equal(requestJoin.get("id"), childId);
+            Predicate isTarget = cb.equal(targetJoin.get("id"), childId);
 
             return cb.and(cb.or(isRequestor, isTarget), cb.greaterThan(root.get("createdAt"), after));
         };

@@ -1,5 +1,6 @@
 package com.alexandracoder.littleneighbors.shared.exceptions;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -112,6 +113,21 @@ public class GlobalExceptionHandler {
         body.put("status", HttpStatus.BAD_REQUEST.value());
 
         return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Object> handleDataIntegrityViolation(
+            DataIntegrityViolationException ex
+    ) {
+        // Evita que violaciones de constraints de BD (valores fuera de un
+        // CHECK, duplicados, FKs, etc.) se cuelen como un 500 genérico.
+        // Ver V9__fix_gender_check_and_pregnancy_interests.sql para el caso
+        // concreto que motivó esto (constraint chk_gender desactualizado).
+        ex.printStackTrace();
+        return buildResponse(
+                "Invalid data: one of the provided values is not allowed.",
+                HttpStatus.BAD_REQUEST
+        );
     }
 
     @ExceptionHandler(Exception.class)

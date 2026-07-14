@@ -166,7 +166,7 @@ public class FamilyServiceImpl implements FamilyService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<FamilyResponseDTO> explorePlaymateFamilies(String userEmail, Long currentChildId, List<Long> interestIds, Integer minAge, Integer maxAge) {
+    public List<FamilyResponseDTO> explorePlaymateFamilies(String userEmail, Long currentChildId, List<Long> interestIds, Integer minAge, Integer maxAge, Boolean includePregnant, boolean citywide) {
 
         FamilyEntity myFamily = familyRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Family not found for: " + userEmail));
@@ -174,12 +174,16 @@ public class FamilyServiceImpl implements FamilyService {
         int min = minAge != null ? minAge : 0;
         int max = maxAge != null ? maxAge : 18;
 
-
+        // "Toda la ciudad" = no restringir por barrio (pero seguimos dentro
+        // de la misma ciudad, ya que hoy solo existe Valencia modelada).
+        // Antes el frontend mandaba "scope" pero nunca llegaba al backend,
+        // así que este toggle no hacía nada y el explore siempre filtraba
+        // por barrio.
         Specification<FamilyEntity> spec = Specification
                 .where(FamilySpecifications.fetchAll())
-                .and(FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId()))
+                .and(citywide ? null : FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId()))
                 .and(FamilySpecifications.isNotMyFamily(myFamily.getId()))
-                .and(FamilySpecifications.hasChildWithCriteria(min, max, interestIds));
+                .and(FamilySpecifications.hasChildWithCriteria(min, max, interestIds, includePregnant));
 
         List<Long> blockedFamilyIds = blockService.getBlockedFamilyIdsInvolving(myFamily.getId());
 

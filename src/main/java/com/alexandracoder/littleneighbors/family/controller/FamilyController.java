@@ -50,10 +50,12 @@ public class FamilyController {
             @RequestParam(required = false) Long currentChildId,
             @RequestParam(required = false) List<Long> interestIds,
             @RequestParam(required = false) Integer minAge,
-            @RequestParam(required = false) Integer maxAge) {
+            @RequestParam(required = false) Integer maxAge,
+            @RequestParam(required = false) Boolean includePregnant,
+            @RequestParam(required = false, defaultValue = "false") boolean citywide) {
 
         return ResponseEntity.ok(familyService.explorePlaymateFamilies(
-                principal.getName(), currentChildId, interestIds, minAge, maxAge));
+                principal.getName(), currentChildId, interestIds, minAge, maxAge, includePregnant, citywide));
     }
 
     @GetMapping("/my-family")
