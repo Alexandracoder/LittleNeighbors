@@ -43,6 +43,7 @@ public class EventServiceImplTest {
     @Mock private FamilyRepository familyRepository;
     @Mock private NotificationService notificationService;
     @Mock private EventMapper eventMapper;
+    @Mock private com.alexandracoder.littleneighbors.event.repository.EventDismissalRepository eventDismissalRepository;
 
     @InjectMocks
     private EventServiceImpl eventService;
@@ -78,7 +79,7 @@ public class EventServiceImplTest {
         when(eventRepository.save(any(EventEntity.class))).thenReturn(eventEntity);
         when(familyRepository.findByNeighborhood_NameAndIdNot(anyString(), anyLong())).thenReturn(Collections.emptyList());
         when(eventMapper.toResponse(any(EventEntity.class)))
-                .thenReturn(new EventResponseDTO(1L, "Title", "Desc", LocalDateTime.now(), 0.0, 0.0, 1L));
+                .thenReturn(new EventResponseDTO(1L, "Title", "Desc", LocalDateTime.now(), 0.0, 0.0, 1L, 1L, "Rojas"));
 
         EventResponseDTO response = eventService.createEvent(request);
 
@@ -92,13 +93,31 @@ public class EventServiceImplTest {
         List<EventEntity> events = List.of(eventEntity);
 
         when(eventRepository.findAll(any(Specification.class))).thenReturn(events);
+        when(familyRepository.findByUserEmail(anyString())).thenReturn(Optional.of(family));
+        when(eventDismissalRepository.findDismissedEventIdsByFamilyId(anyLong())).thenReturn(Collections.emptyList());
         when(eventMapper.toResponse(any(EventEntity.class)))
-                .thenReturn(new EventResponseDTO(1L, "Event 1", "Desc", LocalDateTime.now(), 1.0, 1.0, 1L));
+                .thenReturn(new EventResponseDTO(1L, "Event 1", "Desc", LocalDateTime.now(), 1.0, 1.0, 1L, 1L, "Rojas"));
 
-        List<EventResponseDTO> results = eventService.getEventsInArea(0.0, 2.0, 0.0, 2.0);
+        List<EventResponseDTO> results = eventService.getEventsInArea(0.0, 2.0, 0.0, 2.0, "test@example.com", false);
 
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
+        verify(eventRepository).findAll(any(Specification.class));
+    }
+
+    @Test
+    void getEventsInArea_citywide_ignoresFamilyNeighborhood() {
+        List<EventEntity> events = List.of(eventEntity);
+
+        when(eventRepository.findAll(any(Specification.class))).thenReturn(events);
+        when(familyRepository.findByUserEmail(anyString())).thenReturn(Optional.of(family));
+        when(eventDismissalRepository.findDismissedEventIdsByFamilyId(anyLong())).thenReturn(Collections.emptyList());
+        when(eventMapper.toResponse(any(EventEntity.class)))
+                .thenReturn(new EventResponseDTO(1L, "Event 1", "Desc", LocalDateTime.now(), 1.0, 1.0, 1L, 1L, "Rojas"));
+
+        List<EventResponseDTO> results = eventService.getEventsInArea(0.0, 2.0, 0.0, 2.0, "test@example.com", true);
+
+        assertFalse(results.isEmpty());
         verify(eventRepository).findAll(any(Specification.class));
     }
 }

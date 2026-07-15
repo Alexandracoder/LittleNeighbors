@@ -16,4 +16,9 @@ public class EventSpecifications {
     public static Specification<EventEntity> isUpcoming() {
         return (root, query, cb) -> cb.greaterThan(root.get("eventDate"), java.time.LocalDateTime.now());
     }
+
+    public static Specification<EventEntity> inNeighborhood(Long neighborhoodId) {
+        if (neighborhoodId == null) return null;
+        return (root, query, cb) -> cb.equal(root.get("neighborhood").get("id"), neighborhoodId);
+    }
 }

@@ -23,9 +23,17 @@ public class EventController {
             @RequestParam Double minLat,
             @RequestParam Double maxLat,
             @RequestParam Double minLon,
-            @RequestParam Double maxLon) {
+            @RequestParam Double maxLon,
+            @RequestParam(required = false, defaultValue = "false") boolean citywide,
+            java.security.Principal principal) {
 
-        return ResponseEntity.ok(eventService.getEventsInArea(minLat, maxLat, minLon, maxLon));
+        return ResponseEntity.ok(eventService.getEventsInArea(minLat, maxLat, minLon, maxLon, principal.getName(), citywide));
+    }
+
+    @PostMapping("/{id}/hide")
+    public ResponseEntity<Void> hideEvent(@PathVariable Long id, java.security.Principal principal) {
+        eventService.hideEvent(id, principal.getName());
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping

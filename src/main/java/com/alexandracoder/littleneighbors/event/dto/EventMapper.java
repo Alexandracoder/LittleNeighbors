@@ -14,7 +14,9 @@ public class EventMapper {
                 entity.getEventDate(),
                 entity.getLatitude(),
                 entity.getLongitude(),
-                entity.getNeighborhood() != null ? entity.getNeighborhood().getId() : null
+                entity.getNeighborhood() != null ? entity.getNeighborhood().getId() : null,
+                entity.getCreatorFamily() != null ? entity.getCreatorFamily().getId() : null,
+                entity.getCreatorFamily() != null ? entity.getCreatorFamily().getFamilyName() : null
         );
     }
 

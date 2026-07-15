@@ -68,4 +68,13 @@ public class PlaydateController {
             Principal principal) {
         return ResponseEntity.ok(playdateService.reject(playdateId, principal.getName()));
     }
+
+    @DeleteMapping("/{playdateId}")
+    @PreAuthorize("hasRole('FAMILY')")
+    public ResponseEntity<Void> deletePlaydate(
+            @PathVariable Long playdateId,
+            Principal principal) {
+        playdateService.deletePlaydate(playdateId, principal.getName());
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -15,4 +15,6 @@ public interface PlaydateService {
     PlaydateResponseDTO confirm(Long playdateId, String currentUserEmail);
 
     PlaydateResponseDTO reject(Long playdateId, String currentUserEmail);
+
+    void deletePlaydate(Long playdateId, String currentUserEmail);
 }

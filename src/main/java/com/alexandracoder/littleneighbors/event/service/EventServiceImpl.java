@@ -31,6 +31,7 @@ public class EventServiceImpl implements EventService {
     private final FamilyRepository familyRepository;
     private final NotificationService notificationService;
     private final EventMapper eventMapper;
+    private final com.alexandracoder.littleneighbors.event.repository.EventDismissalRepository eventDismissalRepository;
 
     @Override
     @Transactional
@@ -68,11 +69,35 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EventResponseDTO> getEventsInArea(Double minLat, Double maxLat, Double minLon, Double maxLon) {
-        Specification<EventEntity> spec = Specification.where(EventSpecifications.withinBoundingBox(minLat, maxLat, minLon, maxLon))
-                .and(EventSpecifications.isUpcoming());
+    public List<EventResponseDTO> getEventsInArea(Double minLat, Double maxLat, Double minLon, Double maxLon, String currentUserEmail, boolean citywide) {
+        FamilyEntity currentFamily = familyRepository.findByUserEmail(currentUserEmail).orElse(null);
 
-        return eventRepository.findAll(spec).stream()
+        // Por defecto solo se ven los eventos del barrio de la familia (el
+        // tejido de barrio es la prioridad); citywide=true amplía a toda
+        // el área pedida (hoy, toda Valencia), igual que ya hace Explore
+        // con su toggle "Toda la Ciudad".
+        Long neighborhoodId = (!citywide && currentFamily != null && currentFamily.getNeighborhood() != null)
+                ? currentFamily.getNeighborhood().getId()
+                : null;
+
+        Specification<EventEntity> spec = Specification.where(EventSpecifications.withinBoundingBox(minLat, maxLat, minLon, maxLon))
+                .and(EventSpecifications.isUpcoming())
+                .and(EventSpecifications.inNeighborhood(neighborhoodId));
+
+        List<EventEntity> events = eventRepository.findAll(spec);
+
+        // No mostramos los eventos que esta familia ya haya "quitado de su
+        // vista" (ver hideEvent). No se borran, solo se filtran aquí.
+        if (currentFamily != null) {
+            List<Long> dismissedIds = eventDismissalRepository.findDismissedEventIdsByFamilyId(currentFamily.getId());
+            if (!dismissedIds.isEmpty()) {
+                events = events.stream()
+                        .filter(e -> !dismissedIds.contains(e.getId()))
+                        .toList();
+            }
+        }
+
+        return events.stream()
                 .map(eventMapper::toResponse)
                 .toList();
     }
@@ -121,5 +146,26 @@ public class EventServiceImpl implements EventService {
         existingEvent.setNeighborhood(neighborhood);
 
         return eventMapper.toResponse(eventRepository.save(existingEvent));
+    }
+
+    @Override
+    @Transactional
+    public void hideEvent(Long eventId, String currentUserEmail) {
+        EventEntity event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+
+        FamilyEntity currentFamily = familyRepository.findByUserEmail(currentUserEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Family profile not found"));
+
+        if (eventDismissalRepository.existsByEventIdAndFamilyId(eventId, currentFamily.getId())) {
+            return; // ya estaba oculto, no hace falta duplicar
+        }
+
+        com.alexandracoder.littleneighbors.event.entity.EventDismissalEntity dismissal =
+                com.alexandracoder.littleneighbors.event.entity.EventDismissalEntity.builder()
+                        .event(event)
+                        .family(currentFamily)
+                        .build();
+        eventDismissalRepository.save(dismissal);
     }
 }

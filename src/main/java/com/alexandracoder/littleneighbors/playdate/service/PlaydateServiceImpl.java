@@ -63,12 +63,14 @@ public class PlaydateServiceImpl implements PlaydateService {
 
         PlaydateEntity saved = playdateRepository.save(playdate);
 
+
         notificationService.createInternalNotification(
                 recipientFamily,
                 "Nueva propuesta de quedada",
                 creatorFamily.getFamilyName() + " os ha propuesto un plan: \"" + dto.title() + "\"",
                 NotificationType.PLAYDATE_REQUEST,
                 match.getId());
+
 
         messagingTemplate.convertAndSend("/topic/playdates/" + match.getId(), "updated");
 
@@ -121,6 +123,7 @@ public class PlaydateServiceImpl implements PlaydateService {
         if (!requesterEmail.equals(currentUserEmail) && !targetEmail.equals(currentUserEmail)) {
             throw new AccessDeniedException("You are not part of this match");
         }
+
 
         if (playdate.getCreatedByFamily() != null
                 && currentUserEmail.equals(playdate.getCreatedByFamily().getUser().getEmail())) {
@@ -185,6 +188,27 @@ public class PlaydateServiceImpl implements PlaydateService {
                 "/topic/playdates/" + updatedPlaydate.getMatch().getId(), "updated");
 
         return mapToResponseDTO(updatedPlaydate);
+    }
+
+    @Override
+    @Transactional
+    public void deletePlaydate(Long playdateId, String currentUserEmail) {
+        PlaydateEntity playdate = playdateRepository.findById(playdateId)
+                .orElseThrow(() -> new EntityNotFoundException("Playdate not found with ID: " + playdateId));
+
+        FamilyEntity requesterFamily = playdate.getMatch().getChildRequest().getFamily();
+        FamilyEntity targetFamily = playdate.getMatch().getChildTarget().getFamily();
+        String requesterEmail = requesterFamily.getUser().getEmail();
+        String targetEmail = targetFamily.getUser().getEmail();
+
+        if (!requesterEmail.equals(currentUserEmail) && !targetEmail.equals(currentUserEmail)) {
+            throw new AccessDeniedException("You are not part of this match");
+        }
+
+        Long matchId = playdate.getMatch().getId();
+        playdateRepository.delete(playdate);
+
+        messagingTemplate.convertAndSend("/topic/playdates/" + matchId, "updated");
     }
 
     private PlaydateResponseDTO mapToResponseDTO(PlaydateEntity entity) {
