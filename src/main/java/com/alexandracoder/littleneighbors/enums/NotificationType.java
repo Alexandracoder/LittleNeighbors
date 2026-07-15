@@ -8,5 +8,6 @@ public enum NotificationType {
     EVENT_UPDATED,
     EVENT_CANCELLED,
     PLAYDATE_REQUEST,
+    PLAYDATE_REJECTED,
     SYSTEM
 }

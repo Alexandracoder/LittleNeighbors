@@ -63,10 +63,6 @@ public class PlaydateServiceImpl implements PlaydateService {
 
         PlaydateEntity saved = playdateRepository.save(playdate);
 
-        // Antes esto no existía: nadie avisaba a la otra familia de que
-        // había una quedada nueva propuesta. Solo se refrescaba la lista
-        // en tiempo real vía WS si YA tenías la agenda abierta, pero no
-        // llegaba nada a "Notificaciones".
         notificationService.createInternalNotification(
                 recipientFamily,
                 "Nueva propuesta de quedada",
@@ -74,11 +70,6 @@ public class PlaydateServiceImpl implements PlaydateService {
                 NotificationType.PLAYDATE_REQUEST,
                 match.getId());
 
-        // El frontend (SchedulesPage.tsx) está suscrito a este topic y
-        // simplemente vuelve a pedir la lista en cuanto le llega algo aquí
-        // (no le importa el contenido del mensaje, solo que llegue algo).
-        // Antes nadie publicaba en este topic, así que la otra familia
-        // tenía que refrescar la página a mano para ver la propuesta nueva.
         messagingTemplate.convertAndSend("/topic/playdates/" + match.getId(), "updated");
 
         return mapToResponseDTO(saved);
@@ -131,11 +122,6 @@ public class PlaydateServiceImpl implements PlaydateService {
             throw new AccessDeniedException("You are not part of this match");
         }
 
-        // BUG que reportó Alexandra: quien creaba la quedada también podía
-        // pulsar "Confirmar" sobre su propia propuesta (este método no
-        // comprobaba nada), así que quedaba aceptada sin que la otra
-        // familia hubiera tenido opción de decidir. Ahora solo puede
-        // confirmar quien NO la creó.
         if (playdate.getCreatedByFamily() != null
                 && currentUserEmail.equals(playdate.getCreatedByFamily().getUser().getEmail())) {
             throw new AccessDeniedException("You can't confirm a playdate you proposed yourself");
@@ -191,7 +177,7 @@ public class PlaydateServiceImpl implements PlaydateService {
                     updatedPlaydate.getCreatedByFamily(),
                     "Plan rechazado",
                     "Vuestra propuesta \"" + updatedPlaydate.getTitle() + "\" no ha podido confirmarse esta vez.",
-                    NotificationType.SYSTEM,
+                    NotificationType.PLAYDATE_REJECTED,
                     updatedPlaydate.getMatch().getId());
         }
 
