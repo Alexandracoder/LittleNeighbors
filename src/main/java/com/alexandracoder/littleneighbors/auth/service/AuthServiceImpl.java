@@ -39,10 +39,15 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public void register(@Valid RegisterRequest request) throws UserAlreadyExistsException {
+    public void register(@Valid RegisterRequest request, Locale locale) throws UserAlreadyExistsException {
         if (userRepository.existsByEmail(request.email())) {
             throw new UserAlreadyExistsException("Email already taken: " + request.email());
         }
+
+        // BUG DE SEGURIDAD detectado en el piloto: antes se guardaba
+        // directamente con PENDING_REVIEW y no se generaba ningún token,
+        // así que nadie tenía que verificar su email para usar la app.
+        String verificationToken = UUID.randomUUID().toString();
 
         UserEntity user = UserEntity.builder()
                 .email(request.email())
@@ -53,9 +58,41 @@ public class AuthServiceImpl implements AuthService {
                 .consentGiven(true)
                 .consentAt(LocalDateTime.now())
                 .privacyPolicyVersion(CURRENT_PRIVACY_POLICY_VERSION)
-                .verificationStatus(VerificationStatus.PENDING_REVIEW)
+                .verificationStatus(VerificationStatus.UNVERIFIED)
+                .emailVerificationToken(verificationToken)
+                .emailVerificationExpires(LocalDateTime.now().plusHours(24))
                 .build();
 
+        userRepository.save(user);
+
+        try {
+            emailService.sendVerificationEmail(user.getEmail(), verificationToken, locale);
+        } catch (Exception e) {
+            log.error("No se pudo enviar el email de verificación a {}", user.getEmail(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void verifyEmail(String token) {
+        UserEntity user = userRepository.findByEmailVerificationToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired verification token"));
+
+        if (user.getEmailVerificationExpires() == null
+                || user.getEmailVerificationExpires().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Verification token has expired");
+        }
+
+        // Una vez confirmado el email, pasa a la cola de revisión manual
+        // del admin (ver ModerationController.verifyUser para el paso
+        // final a VERIFIED). No la marcamos VERIFIED directamente aquí:
+        // el email confirmado solo demuestra que controla ese correo, no
+        // que su identidad/familia haya sido revisada.
+        if (user.getVerificationStatus() == VerificationStatus.UNVERIFIED) {
+            user.setVerificationStatus(VerificationStatus.PENDING_REVIEW);
+        }
+        user.setEmailVerificationToken(null);
+        user.setEmailVerificationExpires(null);
         userRepository.save(user);
     }
 
@@ -67,6 +104,17 @@ public class AuthServiceImpl implements AuthService {
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new UnauthorizedAccessException("Invalid credentials");
+        }
+
+        // BUG DE SEGURIDAD detectado en el piloto: login() no comprobaba
+        // en absoluto el estado de verificación, así que cualquiera podía
+        // entrar y usar la app aunque nunca hubiera confirmado su email
+        // ni pasado la revisión del admin.
+        if (user.getVerificationStatus() == VerificationStatus.UNVERIFIED) {
+            throw new UnauthorizedAccessException("Please verify your email before logging in.");
+        }
+        if (user.getVerificationStatus() == VerificationStatus.BLOCKED) {
+            throw new UnauthorizedAccessException("This account has been blocked. Contact support for more information.");
         }
 
         List<String> roles = user.getRoles().stream()

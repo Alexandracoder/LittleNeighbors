@@ -56,7 +56,12 @@ public class MatchServiceImpl implements MatchService {
     }
 
     private boolean canBypassVerification(UserEntity user) {
-        boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.name().equals("ROLE_ADMIN"));
+        // BUG encontrado en auditoría: comparaba con "ROLE_ADMIN", pero
+        // el enum Role no lleva ese prefijo (sus valores son ADMIN,
+        // FAMILY, USER), así que esta comprobación de admin nunca daba
+        // true en la práctica. Quedaba enmascarado porque demoMode
+        // (antes con default "true") ya bypassaba todo de por sí.
+        boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.name().equals("ADMIN"));
         return demoMode || isAdmin;
     }
 

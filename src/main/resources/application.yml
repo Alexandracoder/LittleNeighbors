@@ -17,7 +17,14 @@ jwt:
   expiration: 3600000
 
 app:
-  demo-mode: ${APP_DEMO_MODE:true}
+  # BUG DE SEGURIDAD: este valor por defecto era "true", así que en
+  # cualquier entorno donde no se pusiera explícitamente la env var
+  # APP_DEMO_MODE=false (incluida potencialmente producción/Render si
+  # nadie la configuró a mano), la comprobación de verificación de
+  # usuario en matches (ver MatchServiceImpl.canBypassVerification) se
+  # saltaba siempre. "Seguro por defecto": ahora hay que activar el modo
+  # demo explícitamente, nunca al revés.
+  demo-mode: ${APP_DEMO_MODE:false}
   matching:
     # Máximo de conexiones (matches) ACEPTADAS por semana y por niño/a.
     # 4 = valor para el piloto (más margen para generar densidad de red

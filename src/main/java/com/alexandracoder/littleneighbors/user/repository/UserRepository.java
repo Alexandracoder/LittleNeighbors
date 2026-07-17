@@ -25,4 +25,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, JpaSpec
     List<UserEntity> findByVerificationStatus(VerificationStatus status);
 
     Optional<UserEntity> findByResetPasswordToken(String token);
+
+    Optional<UserEntity> findByEmailVerificationToken(String token);
 }

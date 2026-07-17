@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title th:text="#{verify.title}">Verify your email</title>
+</head>
+<body style="font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+<h2 style="color: #2c3e50;" th:text="#{verify.title}">Verify your email</h2>
+<p th:text="#{verify.body1}">Thanks for joining LittleNeighbors. Please confirm this is your email address:</p>
+
+<div style="text-align: center; margin: 30px 0;">
+    <a th:href="${verifyLink}" style="background-color: #F28749; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;" th:text="#{verify.button}">Verify email</a>
+</div>
+
+<p style="font-size: 0.9em; color: #7f8c8d;" th:text="#{verify.expiry}">This link will expire in 24 hours.</p>
+<br/>
+<p th:text="#{welcome.regards}">Best regards,</p>
+<strong th:text="#{welcome.team}">The LittleNeighbors Team</strong>
+</body>
+</html>

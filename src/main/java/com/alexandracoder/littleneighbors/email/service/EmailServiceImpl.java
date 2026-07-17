@@ -60,4 +60,15 @@ public class EmailServiceImpl implements EmailService {
 
         sendEmail(to, subject, html);
     }
+
+    @Override
+    public void sendVerificationEmail(String to, String token, Locale locale) {
+        Context context = new Context(locale);
+        context.setVariable("verifyLink", mailProperties.getFrontendUrl() + "/verify-email/" + token);
+        String html = templateEngine.process("verify-email", context);
+
+        String subject = messageSource.getMessage("verify.subject", null, locale);
+
+        sendEmail(to, subject, html);
+    }
 }

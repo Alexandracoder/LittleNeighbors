@@ -44,6 +44,9 @@ public class UserEntity extends BaseEntity implements UserDetails {
     private String resetPasswordToken;
     private LocalDateTime resetPasswordExpires;
 
+    private String emailVerificationToken;
+    private LocalDateTime emailVerificationExpires;
+
     @Builder.Default
     @Column(nullable = false)
     private boolean consentGiven = false;
@@ -55,7 +58,10 @@ public class UserEntity extends BaseEntity implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private VerificationStatus verificationStatus = VerificationStatus.VERIFIED;
+    // Antes el default era VERIFIED: cualquier ruta de creación de usuario
+    // que se olvidara de fijar este campo explícitamente dejaba al usuario
+    // ya verificado sin que nadie lo revisara. "Seguro por defecto".
+    private VerificationStatus verificationStatus = VerificationStatus.UNVERIFIED;
 
     @Column(name = "rejection_reason")
     private String rejectionReason;

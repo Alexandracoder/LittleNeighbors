@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,17 +32,20 @@ public class EventController {
     }
 
     @PostMapping("/{id}/hide")
+    @PreAuthorize("hasRole('FAMILY')")
     public ResponseEntity<Void> hideEvent(@PathVariable Long id, java.security.Principal principal) {
         eventService.hideEvent(id, principal.getName());
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('FAMILY')")
     public ResponseEntity<EventResponseDTO> createEvent(@Valid @RequestBody EventRequestDTO request) {
         return new ResponseEntity<>(eventService.createEvent(request), HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('FAMILY')")
     public ResponseEntity<Void> deleteEvent(@PathVariable Long id) {
         eventService.deleteEvent(id);
         return ResponseEntity.noContent().build();
@@ -55,6 +59,7 @@ public class EventController {
 
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('FAMILY')")
     public ResponseEntity<EventResponseDTO> updateEvent(
             @PathVariable Long id,
             @Valid @RequestBody EventRequestDTO request) {

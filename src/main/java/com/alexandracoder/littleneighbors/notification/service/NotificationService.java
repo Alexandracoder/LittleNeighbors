@@ -12,12 +12,12 @@ public interface NotificationService {
 
     void sendMatchSuccessNotification(MatchEntity match);
 
-    List<NotificationResponseDTO> getNotificationsForFamily(Long familyId, Boolean onlyUnread);
+    List<NotificationResponseDTO> getNotificationsForFamily(Long familyId, Boolean onlyUnread, String currentUserEmail);
 
 
     List<NotificationResponseDTO> getNotificationsByUserEmail(String email);
 
-    void markAsRead(Long notificationId);
+    void markAsRead(Long notificationId, String currentUserEmail);
 
     @Transactional
     void createInternalNotification(FamilyEntity recipient, String title, String message, NotificationType type, Long relatedId);

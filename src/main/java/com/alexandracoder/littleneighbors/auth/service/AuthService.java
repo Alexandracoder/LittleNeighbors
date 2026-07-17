@@ -8,7 +8,7 @@ import jakarta.validation.Valid;
 import java.util.Locale;
 
 public interface AuthService {
-    void register(@Valid RegisterRequest request) throws UserAlreadyExistsException;
+    void register(@Valid RegisterRequest request, Locale locale) throws UserAlreadyExistsException;
     AuthResponse login(AuthRequest request);
     UserProfileDTO getCurrentProfile(String email);
     AuthResponse reloadUserTokenFromRefresh(String refreshToken);
@@ -18,4 +18,6 @@ public interface AuthService {
     void initiatePasswordReset(String email, Locale locale);
 
     void resetPassword(String token, String newPassword);
+
+    void verifyEmail(String token);
 }

@@ -71,9 +71,9 @@ public class AuthController {
                     .body(Map.of("error", "Too many registration attempts. Please try again later."));
         }
 
-        authService.register(request);
-
         Locale locale = org.springframework.web.servlet.support.RequestContextUtils.getLocale(httpRequest);
+
+        authService.register(request, locale);
 
         try {
             authService.sendWelcomeEmail(request.email(), request.firstName(), locale);
@@ -82,6 +82,16 @@ public class AuthController {
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
+    }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<String> verifyEmail(@RequestBody Map<String, String> body) {
+        try {
+            authService.verifyEmail(body.get("token"));
+            return ResponseEntity.ok("Email verified successfully.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @GetMapping("/profile")
