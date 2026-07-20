@@ -68,8 +68,38 @@ public class AuthServiceImpl implements AuthService {
         try {
             emailService.sendVerificationEmail(user.getEmail(), verificationToken, locale);
         } catch (Exception e) {
-            log.error("No se pudo enviar el email de verificación a {}", user.getEmail(), e);
+            // Este log es la única pista visible de un fallo de envío (el
+            // registro sigue devolviendo 201 aunque el correo no llegue,
+            // a propósito, para no filtrar si un email ya existe). Si el
+            // correo de verificación no llega pero el de "olvidé mi
+            // contraseña" sí, mirar aquí primero: puede ser algo propio
+            // de esta plantilla/asunto, no del SMTP en general.
+            log.error("FALLO AL ENVIAR EMAIL DE VERIFICACIÓN a {} - revisar configuración SMTP " +
+                    "(SPRING_MAIL_HOST/USERNAME/PASSWORD) y APP_MAIL_FROM_ADDRESS en el entorno: {}",
+                    user.getEmail(), e.getMessage(), e);
         }
+    }
+
+    @Override
+    @Transactional
+    public void resendVerificationEmail(String email, Locale locale) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            // Si ya está verificado (o más allá), no tiene sentido reenviar.
+            if (user.getVerificationStatus() != VerificationStatus.UNVERIFIED) {
+                return;
+            }
+
+            String verificationToken = UUID.randomUUID().toString();
+            user.setEmailVerificationToken(verificationToken);
+            user.setEmailVerificationExpires(LocalDateTime.now().plusHours(24));
+            userRepository.save(user);
+
+            try {
+                emailService.sendVerificationEmail(user.getEmail(), verificationToken, locale);
+            } catch (Exception e) {
+                log.error("FALLO AL REENVIAR EMAIL DE VERIFICACIÓN a {}: {}", user.getEmail(), e.getMessage(), e);
+            }
+        });
     }
 
     @Override

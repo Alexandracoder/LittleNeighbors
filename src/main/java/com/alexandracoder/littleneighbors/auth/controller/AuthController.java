@@ -94,6 +94,28 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/resend-verification")
+    public ResponseEntity<String> resendVerification(
+            @RequestBody Map<String, String> body,
+            HttpServletRequest httpRequest) {
+        String email = body.get("email");
+        String ip = resolveClientIp(httpRequest);
+
+        // Mismo límite que el registro (5/hora por IP): evita que se use
+        // este endpoint para bombardear de correos a alguien.
+        if (!rateLimiterService.isAllowed("auth-resend-verification:ip:" + ip, 5, 3600)) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body("Too many requests. Please try again later.");
+        }
+
+        Locale locale = org.springframework.web.servlet.support.RequestContextUtils.getLocale(httpRequest);
+
+        // Siempre devolvemos el mismo mensaje exista o no la cuenta, para
+        // no dejar enumerar emails registrados probando aquí.
+        authService.resendVerificationEmail(email, locale);
+        return ResponseEntity.ok("If that email exists and is unverified, we've sent a new verification link.");
+    }
+
     @GetMapping("/profile")
     public ResponseEntity<UserProfileDTO> getProfile(Principal principal) {
         if (principal == null) {

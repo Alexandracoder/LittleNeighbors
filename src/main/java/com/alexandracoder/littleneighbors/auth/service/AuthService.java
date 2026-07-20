@@ -20,4 +20,6 @@ public interface AuthService {
     void resetPassword(String token, String newPassword);
 
     void verifyEmail(String token);
+
+    void resendVerificationEmail(String email, Locale locale);
 }
