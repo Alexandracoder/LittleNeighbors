@@ -2,6 +2,7 @@ package com.alexandracoder.littleneighbors.family.dto;
 
 import com.alexandracoder.littleneighbors.child.dto.ChildSummaryDTO;
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
+import com.alexandracoder.littleneighbors.enums.PhotoModerationStatus;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,21 @@ public class FamilyMapper {
     private static final double JITTER_DEGREES = 0.003;
 
     public FamilyResponseDTO toResponse(FamilyEntity entity) {
+        return buildResponse(entity, true);
+    }
+
+    /**
+     * Igual que toResponse, pero para vistas donde quien mira NO es la
+     * propia familia (mapa, explorar, ficha de otra familia): si la foto
+     * todavía no ha sido aprobada por un admin, se omite y el frontend
+     * cae en su placeholder/avatar por defecto en vez de mostrar una
+     * imagen sin revisar, que podría incluir a menores.
+     */
+    public FamilyResponseDTO toPublicResponse(FamilyEntity entity) {
+        return buildResponse(entity, false);
+    }
+
+    private FamilyResponseDTO buildResponse(FamilyEntity entity, boolean includeUnapprovedPhoto) {
         if (entity == null) return null;
 
         NeighborhoodEntity neighborhood = entity.getNeighborhood();
@@ -50,12 +66,17 @@ public class FamilyMapper {
 
         double[] coordinates = resolveCoordinates(entity, neighborhood);
 
+        boolean photoApproved = entity.getPhotoModerationStatus() == PhotoModerationStatus.APPROVED;
+        String photoUrl = (includeUnapprovedPhoto || photoApproved)
+                ? entity.getProfilePictureUrl()
+                : null;
+
         return new FamilyResponseDTO(
                 entity.getId(),
                 entity.getRepresentativeName(),
                 entity.getFamilyName(),
                 entity.getDescription(),
-                entity.getProfilePictureUrl(),
+                photoUrl,
                 neighborhoodId,
                 neighborhoodName,
                 streetName,

@@ -2,6 +2,7 @@ package com.alexandracoder.littleneighbors.family.entity;
 
 import com.alexandracoder.littleneighbors.child.entity.ChildEntity;
 import com.alexandracoder.littleneighbors.enums.FamilyStatus;
+import com.alexandracoder.littleneighbors.enums.PhotoModerationStatus;
 import com.alexandracoder.littleneighbors.neighborhood.entity.NeighborhoodEntity;
 import com.alexandracoder.littleneighbors.shared.BaseEntity;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
@@ -45,6 +46,14 @@ public class FamilyEntity extends BaseEntity {
 
     @Column(name = "profile_picture_url", length = 255, nullable = true)
     private String profilePictureUrl;
+
+    // Null mientras no haya foto. En cuanto se sube/cambia una, pasa a
+    // PENDING y no se muestra públicamente hasta que un admin la aprueba
+    // (ver FamilyMapper.toPublicResponse). La propia familia sigue viendo
+    // su foto en su perfil aunque esté PENDING o REJECTED.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "photo_moderation_status", length = 20, nullable = true)
+    private PhotoModerationStatus photoModerationStatus;
 
     @ManyToOne
     @JoinColumn(name = "neighborhood_id" , nullable = false)

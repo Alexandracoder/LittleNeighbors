@@ -1,5 +1,6 @@
 package com.alexandracoder.littleneighbors.family.repository;
 
+import com.alexandracoder.littleneighbors.enums.PhotoModerationStatus;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import org.springframework.data.jpa.domain.Specification;
@@ -34,4 +35,6 @@ public interface FamilyRepository extends JpaRepository<FamilyEntity, Long>,
     List<FamilyEntity> findAll(Specification<FamilyEntity> spec);
 
     boolean existsByUser(UserEntity user);
+
+    List<FamilyEntity> findByPhotoModerationStatus(PhotoModerationStatus status);
 }

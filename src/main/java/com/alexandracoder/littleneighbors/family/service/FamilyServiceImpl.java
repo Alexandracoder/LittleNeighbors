@@ -1,6 +1,7 @@
 package com.alexandracoder.littleneighbors.family.service;
 
 import com.alexandracoder.littleneighbors.enums.FamilyStatus;
+import com.alexandracoder.littleneighbors.enums.PhotoModerationStatus;
 import com.alexandracoder.littleneighbors.enums.Role;
 import com.alexandracoder.littleneighbors.family.dto.FamilyMapper;
 import com.alexandracoder.littleneighbors.family.dto.FamilyRequestDTO;
@@ -75,6 +76,7 @@ public class FamilyServiceImpl implements FamilyService {
                 .description(dto.description())
                 .representativeName(dto.representativeName())
                 .profilePictureUrl(dto.profilePictureUrl())
+                .photoModerationStatus(dto.profilePictureUrl() != null ? PhotoModerationStatus.PENDING : null)
                 .status(dto.status() != null ? dto.status() : FamilyStatus.SURPRISE)
                 .familyInterests(dto.familyInterests() != null ? dto.familyInterests() : new ArrayList<>())
                 .neighborhood(neighborhood)
@@ -106,10 +108,20 @@ public class FamilyServiceImpl implements FamilyService {
     }
     @Override
     @Transactional(readOnly = true)
-    public FamilyResponseDTO getFamilyById(Long id, String name) {
+    public FamilyResponseDTO getFamilyById(Long id, String userEmail) {
         FamilyEntity entity = familyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Family not found with id: " + id));
-        return this.familyMapper.toResponse(entity);
+
+        boolean isOwner = entity.getUser().getEmail().equals(userEmail);
+        boolean isAdmin = userRepository.findByEmail(userEmail)
+                .map(u -> u.getRoles().contains(Role.ADMIN))
+                .orElse(false);
+
+        // Cualquier otra familia mirando esta ficha (p.ej. desde el mapa)
+        // no debe ver una foto todavía sin revisar por un admin.
+        return (isOwner || isAdmin)
+                ? this.familyMapper.toResponse(entity)
+                : this.familyMapper.toPublicResponse(entity);
     }
 
     @Override
@@ -125,7 +137,19 @@ public class FamilyServiceImpl implements FamilyService {
         family.setRepresentativeName(dto.representativeName());
         family.setFamilyName(dto.familyName());
         family.setDescription(dto.description());
-        family.setProfilePictureUrl(dto.profilePictureUrl());
+
+        String previousPhotoUrl = family.getProfilePictureUrl();
+        String newPhotoUrl = dto.profilePictureUrl();
+        family.setProfilePictureUrl(newPhotoUrl);
+
+        if (newPhotoUrl == null) {
+            // Se quitó la foto: no hay nada que moderar.
+            family.setPhotoModerationStatus(null);
+        } else if (!newPhotoUrl.equals(previousPhotoUrl)) {
+            // Foto nueva o distinta a la anterior: vuelve a pasar por
+            // revisión aunque la anterior ya estuviera aprobada.
+            family.setPhotoModerationStatus(PhotoModerationStatus.PENDING);
+        }
 
         if (dto.neighborhoodId() != null) {
             family.setNeighborhood(neighborhoodRepository.findById(dto.neighborhoodId())
@@ -189,7 +213,7 @@ public class FamilyServiceImpl implements FamilyService {
 
         return familyRepository.findAll(spec).stream()
                 .filter(f -> !blockedFamilyIds.contains(f.getId()))
-                .map(this.familyMapper::toResponse)
+                .map(this.familyMapper::toPublicResponse)
                 .collect(Collectors.toList());
     }
     @Override
