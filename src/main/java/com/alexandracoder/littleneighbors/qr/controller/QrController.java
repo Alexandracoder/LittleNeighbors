@@ -1,5 +1,6 @@
 package com.alexandracoder.littleneighbors.qr.controller;
 
+import com.alexandracoder.littleneighbors.qr.PilotBarrios;
 import com.alexandracoder.littleneighbors.qr.dto.PilotLeadRequest;
 import com.alexandracoder.littleneighbors.qr.entity.QrEntity;
 import com.alexandracoder.littleneighbors.qr.service.QrService;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -64,6 +66,11 @@ public class QrController {
             log.error("Critical error processing QR registration", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error.");
         }
+    }
+
+    @GetMapping("/pilot-lead/barrios")
+    public ResponseEntity<List<String>> getPilotBarrios() {
+        return ResponseEntity.ok(PilotBarrios.BARRIOS);
     }
 
     @GetMapping("/pilot-lead/count")
