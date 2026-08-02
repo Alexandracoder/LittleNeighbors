@@ -73,21 +73,17 @@ public class AuthController {
 
         Locale locale = org.springframework.web.servlet.support.RequestContextUtils.getLocale(httpRequest);
 
-        authService.register(request, locale);
 
-        try {
-            authService.sendWelcomeEmail(request.email(), request.firstName(), locale);
-        } catch (Exception e) {
-            log.error("No se pudo enviar el email de bienvenida a {}", request.email(), e);
-        }
+        authService.register(request, locale);
 
         return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
     }
 
     @PostMapping("/verify-email")
-    public ResponseEntity<String> verifyEmail(@RequestBody Map<String, String> body) {
+    public ResponseEntity<String> verifyEmail(@RequestBody Map<String, String> body, HttpServletRequest httpRequest) {
         try {
-            authService.verifyEmail(body.get("token"));
+            Locale locale = org.springframework.web.servlet.support.RequestContextUtils.getLocale(httpRequest);
+            authService.verifyEmail(body.get("token"), locale);
             return ResponseEntity.ok("Email verified successfully.");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -101,8 +97,6 @@ public class AuthController {
         String email = body.get("email");
         String ip = resolveClientIp(httpRequest);
 
-        // Mismo límite que el registro (5/hora por IP): evita que se use
-        // este endpoint para bombardear de correos a alguien.
         if (!rateLimiterService.isAllowed("auth-resend-verification:ip:" + ip, 5, 3600)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body("Too many requests. Please try again later.");
@@ -110,8 +104,7 @@ public class AuthController {
 
         Locale locale = org.springframework.web.servlet.support.RequestContextUtils.getLocale(httpRequest);
 
-        // Siempre devolvemos el mismo mensaje exista o no la cuenta, para
-        // no dejar enumerar emails registrados probando aquí.
+
         authService.resendVerificationEmail(email, locale);
         return ResponseEntity.ok("If that email exists and is unverified, we've sent a new verification link.");
     }

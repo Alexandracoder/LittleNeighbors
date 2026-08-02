@@ -13,13 +13,11 @@ public interface AuthService {
     UserProfileDTO getCurrentProfile(String email);
     AuthResponse reloadUserTokenFromRefresh(String refreshToken);
 
-    void sendWelcomeEmail(String email, String firstName, Locale locale);
-
     void initiatePasswordReset(String email, Locale locale);
 
     void resetPassword(String token, String newPassword);
 
-    void verifyEmail(String token);
+    void verifyEmail(String token, java.util.Locale locale);
 
     void resendVerificationEmail(String email, Locale locale);
 }

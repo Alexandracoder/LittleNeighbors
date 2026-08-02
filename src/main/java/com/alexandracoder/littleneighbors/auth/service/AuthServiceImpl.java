@@ -75,7 +75,7 @@ public class AuthServiceImpl implements AuthService {
             // contraseña" sí, mirar aquí primero: puede ser algo propio
             // de esta plantilla/asunto, no del SMTP en general.
             log.error("FALLO AL ENVIAR EMAIL DE VERIFICACIÓN a {} - revisar configuración SMTP " +
-                    "(SPRING_MAIL_HOST/USERNAME/PASSWORD) y APP_MAIL_FROM_ADDRESS en el entorno: {}",
+                            "(SPRING_MAIL_HOST/USERNAME/PASSWORD) y APP_MAIL_FROM_ADDRESS en el entorno: {}",
                     user.getEmail(), e.getMessage(), e);
         }
     }
@@ -104,7 +104,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public void verifyEmail(String token) {
+    public void verifyEmail(String token, Locale locale) {
         UserEntity user = userRepository.findByEmailVerificationToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid or expired verification token"));
 
@@ -124,6 +124,17 @@ public class AuthServiceImpl implements AuthService {
         user.setEmailVerificationToken(null);
         user.setEmailVerificationExpires(null);
         userRepository.save(user);
+
+        // El email de bienvenida se dispara aquí, no en el registro: así
+        // solo llega un correo por cada paso (verificación al registrarse,
+        // bienvenida al confirmar), en vez de los dos casi seguidos de
+        // antes. Si falla el envío no debe tumbar la verificación, que ya
+        // se ha guardado correctamente.
+        try {
+            emailService.sendWelcomeEmail(user.getEmail(), user.getFirstName(), locale);
+        } catch (Exception e) {
+            log.error("No se pudo enviar el email de bienvenida a {}", user.getEmail(), e);
+        }
     }
 
     @Override
@@ -238,11 +249,6 @@ public class AuthServiceImpl implements AuthService {
                 user.getLastName(),
                 roles
         );
-    }
-
-    @Override
-    public void sendWelcomeEmail(String email, String firstName, Locale locale) {
-        emailService.sendWelcomeEmail(email, firstName, locale);
     }
 
     @Override
