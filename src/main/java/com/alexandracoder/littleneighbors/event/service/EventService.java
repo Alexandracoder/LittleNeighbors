@@ -18,4 +18,9 @@ public interface EventService {
     // borrarlo para el resto. Pensado para eventos que no has creado tú
     // (para los tuyos ya existe deleteEvent, que sí lo borra de verdad).
     void hideEvent(Long eventId, String currentUserEmail);
+
+    // Apuntarse/desapuntarse a un evento. Idempotente: apuntarse dos
+    // veces o desapuntarse sin estar apuntada no da error.
+    void attendEvent(Long eventId, String currentUserEmail);
+    void unattendEvent(Long eventId, String currentUserEmail);
 }

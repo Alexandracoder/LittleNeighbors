@@ -3,7 +3,9 @@ package com.alexandracoder.littleneighbors.event.service;
 import com.alexandracoder.littleneighbors.event.dto.EventMapper;
 import com.alexandracoder.littleneighbors.event.dto.EventRequestDTO;
 import com.alexandracoder.littleneighbors.event.dto.EventResponseDTO;
+import com.alexandracoder.littleneighbors.event.entity.EventAttendanceEntity;
 import com.alexandracoder.littleneighbors.event.entity.EventEntity;
+import com.alexandracoder.littleneighbors.event.repository.EventAttendanceRepository;
 import com.alexandracoder.littleneighbors.event.repository.EventRepository;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
@@ -16,11 +18,16 @@ import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundExce
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +39,7 @@ public class EventServiceImpl implements EventService {
     private final NotificationService notificationService;
     private final EventMapper eventMapper;
     private final com.alexandracoder.littleneighbors.event.repository.EventDismissalRepository eventDismissalRepository;
+    private final EventAttendanceRepository eventAttendanceRepository;
 
     @Override
     @Transactional
@@ -97,8 +105,27 @@ public class EventServiceImpl implements EventService {
             }
         }
 
+        List<Long> eventIds = events.stream().map(EventEntity::getId).toList();
+
+        // Contador de asistentes por evento, en una sola query (evita N+1).
+        Map<Long, Long> attendeeCounts = new HashMap<>();
+        if (!eventIds.isEmpty()) {
+            for (Object[] row : eventAttendanceRepository.countByEventIds(eventIds)) {
+                attendeeCounts.put((Long) row[0], (Long) row[1]);
+            }
+        }
+
+        // Qué eventos de esta lista tiene marcados como "voy" la familia actual.
+        Set<Long> attendedIds = currentFamily != null
+                ? new HashSet<>(eventAttendanceRepository.findAttendedEventIdsByFamilyId(currentFamily.getId()))
+                : Set.of();
+
         return events.stream()
-                .map(eventMapper::toResponse)
+                .map(e -> eventMapper.toResponse(
+                        e,
+                        attendeeCounts.getOrDefault(e.getId(), 0L),
+                        attendedIds.contains(e.getId())
+                ))
                 .toList();
     }
 
@@ -119,9 +146,18 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional(readOnly = true)
     public EventResponseDTO getEventById(Long id) {
-        return eventRepository.findById(id)
-                .map(eventMapper::toResponse)
+        EventEntity event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+
+        long attendeeCount = eventAttendanceRepository.countByEventId(id);
+        boolean isAttending = false;
+
+        FamilyEntity currentFamily = currentFamilyOrNull();
+        if (currentFamily != null) {
+            isAttending = eventAttendanceRepository.existsByEventIdAndFamilyId(id, currentFamily.getId());
+        }
+
+        return eventMapper.toResponse(event, attendeeCount, isAttending);
     }
 
     @Override
@@ -145,7 +181,10 @@ public class EventServiceImpl implements EventService {
         existingEvent.setLongitude(requestDTO.longitude());
         existingEvent.setNeighborhood(neighborhood);
 
-        return eventMapper.toResponse(eventRepository.save(existingEvent));
+        EventEntity saved = eventRepository.save(existingEvent);
+        long attendeeCount = eventAttendanceRepository.countByEventId(id);
+
+        return eventMapper.toResponse(saved, attendeeCount, false);
     }
 
     @Override
@@ -167,5 +206,57 @@ public class EventServiceImpl implements EventService {
                         .family(currentFamily)
                         .build();
         eventDismissalRepository.save(dismissal);
+    }
+
+    @Override
+    @Transactional
+    public void attendEvent(Long eventId, String currentUserEmail) {
+        EventEntity event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+
+        FamilyEntity currentFamily = familyRepository.findByUserEmail(currentUserEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Family profile not found"));
+
+        if (eventAttendanceRepository.existsByEventIdAndFamilyId(eventId, currentFamily.getId())) {
+            return; // ya estaba apuntada, no hace falta duplicar
+        }
+
+        EventAttendanceEntity attendance = EventAttendanceEntity.builder()
+                .event(event)
+                .family(currentFamily)
+                .build();
+        eventAttendanceRepository.save(attendance);
+
+        // Avisamos al organizador, salvo que se apunte a su propio evento.
+        if (event.getCreatorFamily() != null
+                && !event.getCreatorFamily().getId().equals(currentFamily.getId())) {
+            notificationService.createInternalNotification(
+                    event.getCreatorFamily(),
+                    "Someone's joining your plan!",
+                    currentFamily.getFamilyName() + " is attending: " + event.getTitle(),
+                    NotificationType.EVENT_ATTENDANCE_CONFIRMED,
+                    event.getId()
+            );
+        }
+    }
+
+    @Override
+    @Transactional
+    public void unattendEvent(Long eventId, String currentUserEmail) {
+        FamilyEntity currentFamily = familyRepository.findByUserEmail(currentUserEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Family profile not found"));
+
+        eventAttendanceRepository.deleteByEventIdAndFamilyId(eventId, currentFamily.getId());
+    }
+
+    // Devuelve la familia del usuario autenticado actualmente, o null si
+    // no hay usuario autenticado (getEventById es un endpoint público) o
+    // si el usuario aún no tiene perfil de familia.
+    private FamilyEntity currentFamilyOrNull() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return null;
+        }
+        return familyRepository.findByUserEmail(auth.getName()).orElse(null);
     }
 }

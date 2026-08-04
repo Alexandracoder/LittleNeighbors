@@ -65,4 +65,18 @@ public class EventController {
             @Valid @RequestBody EventRequestDTO request) {
         return ResponseEntity.ok(eventService.updateEvent(id, request));
     }
+
+    @PostMapping("/{id}/attend")
+    @PreAuthorize("hasRole('FAMILY')")
+    public ResponseEntity<Void> attendEvent(@PathVariable Long id, java.security.Principal principal) {
+        eventService.attendEvent(id, principal.getName());
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/attend")
+    @PreAuthorize("hasRole('FAMILY')")
+    public ResponseEntity<Void> unattendEvent(@PathVariable Long id, java.security.Principal principal) {
+        eventService.unattendEvent(id, principal.getName());
+        return ResponseEntity.noContent().build();
+    }
 }

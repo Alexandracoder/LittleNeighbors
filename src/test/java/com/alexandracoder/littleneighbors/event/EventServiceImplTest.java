@@ -4,6 +4,7 @@ import com.alexandracoder.littleneighbors.event.dto.EventMapper;
 import com.alexandracoder.littleneighbors.event.dto.EventRequestDTO;
 import com.alexandracoder.littleneighbors.event.dto.EventResponseDTO;
 import com.alexandracoder.littleneighbors.event.entity.EventEntity;
+import com.alexandracoder.littleneighbors.event.repository.EventAttendanceRepository;
 import com.alexandracoder.littleneighbors.event.repository.EventRepository;
 import com.alexandracoder.littleneighbors.event.service.EventServiceImpl;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
@@ -29,6 +30,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -44,6 +46,7 @@ public class EventServiceImplTest {
     @Mock private NotificationService notificationService;
     @Mock private EventMapper eventMapper;
     @Mock private com.alexandracoder.littleneighbors.event.repository.EventDismissalRepository eventDismissalRepository;
+    @Mock private EventAttendanceRepository eventAttendanceRepository;
 
     @InjectMocks
     private EventServiceImpl eventService;
@@ -79,7 +82,7 @@ public class EventServiceImplTest {
         when(eventRepository.save(any(EventEntity.class))).thenReturn(eventEntity);
         when(familyRepository.findByNeighborhood_NameAndIdNot(anyString(), anyLong())).thenReturn(Collections.emptyList());
         when(eventMapper.toResponse(any(EventEntity.class)))
-                .thenReturn(new EventResponseDTO(1L, "Title", "Desc", LocalDateTime.now(), 0.0, 0.0, 1L, 1L, "Rojas"));
+                .thenReturn(new EventResponseDTO(1L, "Title", "Desc", LocalDateTime.now(), 0.0, 0.0, 1L, 1L, "Rojas", 0L, false));
 
         EventResponseDTO response = eventService.createEvent(request);
 
@@ -95,8 +98,10 @@ public class EventServiceImplTest {
         when(eventRepository.findAll(any(Specification.class))).thenReturn(events);
         when(familyRepository.findByUserEmail(anyString())).thenReturn(Optional.of(family));
         when(eventDismissalRepository.findDismissedEventIdsByFamilyId(anyLong())).thenReturn(Collections.emptyList());
-        when(eventMapper.toResponse(any(EventEntity.class)))
-                .thenReturn(new EventResponseDTO(1L, "Event 1", "Desc", LocalDateTime.now(), 1.0, 1.0, 1L, 1L, "Rojas"));
+        when(eventAttendanceRepository.countByEventIds(any())).thenReturn(Collections.emptyList());
+        when(eventAttendanceRepository.findAttendedEventIdsByFamilyId(anyLong())).thenReturn(Collections.emptyList());
+        when(eventMapper.toResponse(any(EventEntity.class), anyLong(), anyBoolean()))
+                .thenReturn(new EventResponseDTO(1L, "Event 1", "Desc", LocalDateTime.now(), 1.0, 1.0, 1L, 1L, "Rojas", 0L, false));
 
         List<EventResponseDTO> results = eventService.getEventsInArea(0.0, 2.0, 0.0, 2.0, "test@example.com", false);
 
@@ -112,12 +117,55 @@ public class EventServiceImplTest {
         when(eventRepository.findAll(any(Specification.class))).thenReturn(events);
         when(familyRepository.findByUserEmail(anyString())).thenReturn(Optional.of(family));
         when(eventDismissalRepository.findDismissedEventIdsByFamilyId(anyLong())).thenReturn(Collections.emptyList());
-        when(eventMapper.toResponse(any(EventEntity.class)))
-                .thenReturn(new EventResponseDTO(1L, "Event 1", "Desc", LocalDateTime.now(), 1.0, 1.0, 1L, 1L, "Rojas"));
+        when(eventAttendanceRepository.countByEventIds(any())).thenReturn(Collections.emptyList());
+        when(eventAttendanceRepository.findAttendedEventIdsByFamilyId(anyLong())).thenReturn(Collections.emptyList());
+        when(eventMapper.toResponse(any(EventEntity.class), anyLong(), anyBoolean()))
+                .thenReturn(new EventResponseDTO(1L, "Event 1", "Desc", LocalDateTime.now(), 1.0, 1.0, 1L, 1L, "Rojas", 0L, false));
 
         List<EventResponseDTO> results = eventService.getEventsInArea(0.0, 2.0, 0.0, 2.0, "test@example.com", true);
 
         assertFalse(results.isEmpty());
         verify(eventRepository).findAll(any(Specification.class));
+    }
+
+    @Test
+    void attendEvent_success_notifiesOrganizer() {
+        FamilyEntity organizer = FamilyEntity.builder().id(2L).familyName("Organizadores").build();
+        eventEntity.setCreatorFamily(organizer);
+
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(eventEntity));
+        when(familyRepository.findByUserEmail(anyString())).thenReturn(Optional.of(family));
+        when(eventAttendanceRepository.existsByEventIdAndFamilyId(1L, 1L)).thenReturn(false);
+
+        eventService.attendEvent(1L, "test@example.com");
+
+        verify(eventAttendanceRepository).save(any());
+        verify(notificationService).createInternalNotification(
+                org.mockito.ArgumentMatchers.eq(organizer),
+                anyString(),
+                anyString(),
+                any(),
+                anyLong()
+        );
+    }
+
+    @Test
+    void attendEvent_alreadyAttending_isIdempotent() {
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(eventEntity));
+        when(familyRepository.findByUserEmail(anyString())).thenReturn(Optional.of(family));
+        when(eventAttendanceRepository.existsByEventIdAndFamilyId(1L, 1L)).thenReturn(true);
+
+        eventService.attendEvent(1L, "test@example.com");
+
+        verify(eventAttendanceRepository, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
+    void unattendEvent_success() {
+        when(familyRepository.findByUserEmail(anyString())).thenReturn(Optional.of(family));
+
+        eventService.unattendEvent(1L, "test@example.com");
+
+        verify(eventAttendanceRepository).deleteByEventIdAndFamilyId(1L, 1L);
     }
 }

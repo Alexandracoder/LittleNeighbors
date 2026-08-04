@@ -11,6 +11,8 @@ public record EventResponseDTO(
         Double longitude,
         Long neighborhoodId,
         Long creatorFamilyId,
-        String creatorFamilyName
+        String creatorFamilyName,
+        long attendeeCount,
+        boolean isAttending
 ) {
 }
