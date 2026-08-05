@@ -253,14 +253,20 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void initiatePasswordReset(String email, Locale locale) {
-        userRepository.findByEmail(email).ifPresent(user -> {
+        userRepository.findByEmail(email).ifPresentOrElse(user -> {
             String token = UUID.randomUUID().toString();
             user.setResetPasswordToken(token);
             user.setResetPasswordExpires(LocalDateTime.now().plusMinutes(15));
             userRepository.save(user);
 
             emailService.sendResetPasswordEmail(user.getEmail(), token, locale);
-        });
+        }, () -> log.debug(
+                "Password reset requested for an email with no matching account: {}. " +
+                "No email sent (esto es esperado y no se muestra al usuario, por seguridad; " +
+                "OJO: findByEmail es sensible a mayúsculas/minúsculas, revisar si el email " +
+                "de prueba coincide exactamente con el registrado).",
+                email
+        ));
     }
 
     @Override

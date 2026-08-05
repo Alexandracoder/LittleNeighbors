@@ -123,7 +123,11 @@ public class AuthController {
 
         if (!rateLimiterService.isAllowed("auth-forgot:ip:" + ip, 3, 900)
                 || !rateLimiterService.isAllowed("auth-forgot:email:" + request.email(), 3, 900)) {
-
+            // Antes esto no dejaba ningún rastro: si alguien probaba varias
+            // veces seguidas (típico al testear), a partir del 4º intento
+            // en 15 min el backend respondía "OK" pero no enviaba nada, sin
+            // forma de distinguirlo en logs de un fallo real de SMTP.
+            log.warn("Password reset request rate-limited (no email sent). IP: {}, email: {}", ip, request.email());
             return ResponseEntity.ok("If the email exists, you will receive a recovery message.");
         }
 
