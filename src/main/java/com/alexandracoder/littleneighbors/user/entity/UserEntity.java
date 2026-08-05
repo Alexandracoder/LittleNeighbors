@@ -78,6 +78,15 @@ public class UserEntity extends BaseEntity implements UserDetails {
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role")
     @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    // roles es un Set: Lombok con @Data genera equals()/hashCode()/toString()
+    // que lo incluyen por defecto. Cuando Hibernate está poblando ese Set
+    // en memoria (PersistentSet.injectLoadedState), cualquier llamada a
+    // hashCode() sobre la propia entidad mientras tanto (p. ej. desde
+    // session.merge() en otro save()) provoca un
+    // ConcurrentModificationException. 'family' ya estaba excluido por el
+    // mismo motivo; a este campo se le había olvidado.
     private Set<Role> roles = new HashSet<>();
 
     @Override
