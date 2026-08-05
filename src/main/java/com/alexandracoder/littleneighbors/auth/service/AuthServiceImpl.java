@@ -279,6 +279,11 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
+    // Mismo bug que en initiatePasswordReset: sin @Transactional,
+    // findByResetPasswordToken() y save() corrían en sesiones distintas,
+    // forzando un merge() de entidad detached que dispara el mismo bug de
+    // Hibernate con las colecciones EAGER (family + roles).
     public void resetPassword(String token, String newPassword) {
         UserEntity user = userRepository.findByResetPasswordToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid or expired reset token"));
