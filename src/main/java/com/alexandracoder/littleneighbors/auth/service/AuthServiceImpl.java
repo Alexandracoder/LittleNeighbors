@@ -252,6 +252,15 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
+    // Sin @Transactional, findByEmail() y save() corrían en sesiones
+    // Hibernate distintas: el usuario llegaba "detached" a save(), forzando
+    // un merge() que tiene que releer el usuario entero desde BD y
+    // reinicializar sus colecciones EAGER (family + roles) desde cero. Ahí
+    // es donde Hibernate tropezaba con un bug de re-entrada al inicializar
+    // dos colecciones EAGER a la vez -> ConcurrentModificationException.
+    // Con @Transactional, findByEmail+save comparten sesión: el usuario ya
+    // está "managed" y save() no necesita merge() en absoluto.
     public void initiatePasswordReset(String email, Locale locale) {
         userRepository.findByEmail(email).ifPresentOrElse(user -> {
             String token = UUID.randomUUID().toString();
