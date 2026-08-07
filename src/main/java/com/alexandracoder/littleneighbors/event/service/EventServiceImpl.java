@@ -41,12 +41,32 @@ public class EventServiceImpl implements EventService {
     private final com.alexandracoder.littleneighbors.event.repository.EventDismissalRepository eventDismissalRepository;
     private final EventAttendanceRepository eventAttendanceRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${app.demo-mode:false}")
+    private boolean demoMode;
+
+    // Mismo criterio que en MatchServiceImpl/FamilyServiceImpl.
+    private boolean canBypassVerification(com.alexandracoder.littleneighbors.user.entity.UserEntity user) {
+        boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.name().equals("ADMIN"));
+        return demoMode || isAdmin;
+    }
+
+    private void requireVerified(FamilyEntity family) {
+        if (!canBypassVerification(family.getUser())
+                && family.getUser().getVerificationStatus()
+                        != com.alexandracoder.littleneighbors.enums.VerificationStatus.VERIFIED) {
+            throw new com.alexandracoder.littleneighbors.shared.exceptions.BusinessLogicException(
+                    "Your account must be VERIFIED to do this.");
+        }
+    }
+
     @Override
     @Transactional
     public EventResponseDTO createEvent(EventRequestDTO requestDTO) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         FamilyEntity creator = familyRepository.findByUserEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Family profile not found"));
+
+        requireVerified(creator);
 
         NeighborhoodEntity neighborhood = neighborhoodRepository.findById(requestDTO.neighborhoodId())
                 .orElseThrow(() -> new ResourceNotFoundException("Neighborhood not found"));
@@ -216,6 +236,8 @@ public class EventServiceImpl implements EventService {
 
         FamilyEntity currentFamily = familyRepository.findByUserEmail(currentUserEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Family profile not found"));
+
+        requireVerified(currentFamily);
 
         if (eventAttendanceRepository.existsByEventIdAndFamilyId(eventId, currentFamily.getId())) {
             return; // ya estaba apuntada, no hace falta duplicar

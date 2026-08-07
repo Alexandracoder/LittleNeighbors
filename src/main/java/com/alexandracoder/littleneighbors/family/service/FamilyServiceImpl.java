@@ -53,6 +53,18 @@ public class FamilyServiceImpl implements FamilyService {
     private final JwtService jwtService;;
     private final BlockService blockService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.demo-mode:false}")
+    private boolean demoMode;
+
+    // Mismo criterio que en MatchServiceImpl: admin y demo-mode se saltan
+    // la verificación. Se repite aquí en vez de extraerlo a un helper
+    // compartido para no tocar MatchServiceImpl ni arriesgar su
+    // comportamiento ya probado — cambio mínimo y localizado.
+    private boolean canBypassVerification(UserEntity user) {
+        boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.name().equals("ADMIN"));
+        return demoMode || isAdmin;
+    }
+
     @Override
     @Transactional
     public OnboardingResponseDTO createFamily(FamilyRequestDTO dto, String userEmail) {
@@ -116,6 +128,18 @@ public class FamilyServiceImpl implements FamilyService {
         boolean isAdmin = userRepository.findByEmail(userEmail)
                 .map(u -> u.getRoles().contains(Role.ADMIN))
                 .orElse(false);
+
+        // Ver el perfil de OTRA familia (con fotos y perfiles de sus
+        // niños) requiere estar verificado. El propio perfil siempre se
+        // puede ver, verificado o no.
+        if (!isOwner && !isAdmin) {
+            UserEntity currentUser = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userEmail));
+            if (!canBypassVerification(currentUser)
+                    && currentUser.getVerificationStatus() != com.alexandracoder.littleneighbors.enums.VerificationStatus.VERIFIED) {
+                throw new BusinessLogicException("Your account must be VERIFIED to view other families' profiles.");
+            }
+        }
 
         // Cualquier otra familia mirando esta ficha (p.ej. desde el mapa)
         // no debe ver una foto todavía sin revisar por un admin.
@@ -195,6 +219,14 @@ public class FamilyServiceImpl implements FamilyService {
         FamilyEntity myFamily = familyRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Family not found for: " + userEmail));
 
+        // Ver perfiles completos de otras familias (con fotos y perfiles
+        // de sus niños) requiere estar verificado. El resumen del mapa
+        // (getFamilyMapSummary) sigue abierto sin esta restricción.
+        if (!canBypassVerification(myFamily.getUser())
+                && myFamily.getUser().getVerificationStatus() != com.alexandracoder.littleneighbors.enums.VerificationStatus.VERIFIED) {
+            throw new BusinessLogicException("Your account must be VERIFIED to explore other families' profiles.");
+        }
+
         int min = minAge != null ? minAge : 0;
         int max = maxAge != null ? maxAge : 18;
 
@@ -214,6 +246,29 @@ public class FamilyServiceImpl implements FamilyService {
         return familyRepository.findAll(spec).stream()
                 .filter(f -> !blockedFamilyIds.contains(f.getId()))
                 .map(this.familyMapper::toPublicResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Versión "resumida" para familias SIN verificar: solo coordenadas, sin
+    // nombre/foto/descripción/niños. Así cualquiera puede ver cuántas
+    // familias hay y más o menos dónde (para hacerse una idea del barrio),
+    // sin exponer perfiles identificables hasta que esté verificada.
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.alexandracoder.littleneighbors.family.dto.FamilyMapPinDTO> getFamilyMapSummary(String userEmail, boolean citywide) {
+        FamilyEntity myFamily = familyRepository.findByUserEmail(userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Family not found for: " + userEmail));
+
+        Specification<FamilyEntity> spec = Specification
+                .where(citywide ? null : FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId()))
+                .and(FamilySpecifications.isNotMyFamily(myFamily.getId()));
+
+        List<Long> blockedFamilyIds = blockService.getBlockedFamilyIdsInvolving(myFamily.getId());
+
+        return familyRepository.findAll(spec).stream()
+                .filter(f -> !blockedFamilyIds.contains(f.getId()))
+                .filter(f -> f.getLatitude() != null && f.getLongitude() != null)
+                .map(f -> new com.alexandracoder.littleneighbors.family.dto.FamilyMapPinDTO(f.getLatitude(), f.getLongitude()))
                 .collect(Collectors.toList());
     }
     @Override

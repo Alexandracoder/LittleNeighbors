@@ -2,6 +2,7 @@ package com.alexandracoder.littleneighbors.family.service;
 
 import com.alexandracoder.littleneighbors.family.dto.FamilyRequestDTO;
 import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
+import com.alexandracoder.littleneighbors.family.dto.FamilyMapPinDTO;
 import com.alexandracoder.littleneighbors.family.dto.OnboardingResponseDTO; // 🆕 Importamos el nuevo DTO
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,4 +27,7 @@ public interface FamilyService {
             Boolean includePregnant,
             boolean citywide
     );
+    // Disponible para cualquier familia, verificada o no: solo coordenadas,
+    // sin datos identificativos. Ver FamilyServiceImpl para el porqué.
+    List<FamilyMapPinDTO> getFamilyMapSummary(String userEmail, boolean citywide);
 }

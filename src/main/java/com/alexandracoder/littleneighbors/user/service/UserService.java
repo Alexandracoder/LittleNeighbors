@@ -22,6 +22,26 @@ public class UserService {
     @Value("${app.demo-mode:true}")
     private boolean isDemoMode;
 
+    @Transactional
+    public void submitVerification(String email, String idDocumentUrl, String selfieUrl) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // Si ya está VERIFIED o BLOCKED no dejamos que un reenvío lo mueva
+        // de estado: verificado ya no hace falta repetirlo, y bloqueado no
+        // se puede "colar" de vuelta enviando documentos otra vez.
+        if (user.getVerificationStatus() == VerificationStatus.VERIFIED
+                || user.getVerificationStatus() == VerificationStatus.BLOCKED) {
+            return;
+        }
+
+        user.setIdDocumentUrl(idDocumentUrl);
+        user.setSelfieUrl(selfieUrl);
+        user.setVerificationStatus(VerificationStatus.PENDING_REVIEW);
+        user.setRejectionReason(null);
+        userRepository.save(user);
+    }
+
     @Transactional(readOnly = true)
     public UserStatusDTO getUserStatus(String email) {
         UserEntity user = userRepository.findByEmail(email)

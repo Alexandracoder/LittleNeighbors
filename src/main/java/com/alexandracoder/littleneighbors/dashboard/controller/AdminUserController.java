@@ -29,7 +29,9 @@ public class AdminUserController {
                         u.getFirstName(),
                         u.getLastName(),
                         u.getVerificationStatus(),
-                        u.getCreatedAt()
+                        u.getCreatedAt(),
+                        u.getIdDocumentUrl(),
+                        u.getSelfieUrl()
                 ))
                 .toList();
 

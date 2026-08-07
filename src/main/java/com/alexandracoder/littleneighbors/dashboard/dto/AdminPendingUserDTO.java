@@ -10,5 +10,7 @@ public record AdminPendingUserDTO(
         String firstName,
         String lastName,
         VerificationStatus verificationStatus,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String idDocumentUrl,
+        String selfieUrl
 ) {}

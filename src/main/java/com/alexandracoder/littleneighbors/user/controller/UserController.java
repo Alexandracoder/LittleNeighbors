@@ -2,8 +2,10 @@ package com.alexandracoder.littleneighbors.user.controller;
 
 import com.alexandracoder.littleneighbors.user.dto.UserProfileDTO; // Importa tu DTO
 import com.alexandracoder.littleneighbors.profile.service.ProfileService; // Importa tu servicio
+import com.alexandracoder.littleneighbors.user.dto.SubmitVerificationRequestDTO;
 import com.alexandracoder.littleneighbors.user.dto.UserStatusDTO;
 import com.alexandracoder.littleneighbors.user.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -38,5 +40,14 @@ public class UserController {
     public ResponseEntity<UserStatusDTO> getUserStatus(Authentication authentication) {
         UserStatusDTO status = userService.getUserStatus(authentication.getName());
         return ResponseEntity.ok(status);
+    }
+
+    @PostMapping("/me/verification")
+    public ResponseEntity<Void> submitVerification(
+            Authentication authentication,
+            @Valid @RequestBody SubmitVerificationRequestDTO request) {
+        userService.submitVerification(
+                authentication.getName(), request.idDocumentUrl(), request.selfieUrl());
+        return ResponseEntity.ok().build();
     }
 }

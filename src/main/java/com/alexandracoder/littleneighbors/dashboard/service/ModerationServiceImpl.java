@@ -29,6 +29,11 @@ public class ModerationServiceImpl implements ModerationService {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setVerificationStatus(VerificationStatus.VERIFIED);
+        // Minimización de datos: en cuanto está verificada, no hace falta
+        // seguir guardando el documento de identidad ni el selfie — solo
+        // el resultado (verificationStatus).
+        user.setIdDocumentUrl(null);
+        user.setSelfieUrl(null);
         userRepository.save(user);
     }
 
@@ -38,6 +43,8 @@ public class ModerationServiceImpl implements ModerationService {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setVerificationStatus(VerificationStatus.BLOCKED);
+        user.setIdDocumentUrl(null);
+        user.setSelfieUrl(null);
         userRepository.save(user);
     }
     @Override
@@ -48,6 +55,8 @@ public class ModerationServiceImpl implements ModerationService {
 
         user.setVerificationStatus(VerificationStatus.REJECTED);
         user.setRejectionReason(reason);
+        user.setIdDocumentUrl(null);
+        user.setSelfieUrl(null);
         userRepository.save(user);
     }
 

@@ -58,6 +58,17 @@ public class FamilyController {
                 principal.getName(), currentChildId, interestIds, minAge, maxAge, includePregnant, citywide));
     }
 
+    // Disponible para CUALQUIER familia, verificada o no: solo coordenadas
+    // (sin nombre/foto/niños), para poder ver cuántas familias hay y más
+    // o menos dónde antes de verificarse.
+    @GetMapping("/explore/map-summary")
+    @PreAuthorize("hasRole('FAMILY')")
+    public ResponseEntity<List<com.alexandracoder.littleneighbors.family.dto.FamilyMapPinDTO>> exploreMapSummary(
+            Principal principal,
+            @RequestParam(required = false, defaultValue = "false") boolean citywide) {
+        return ResponseEntity.ok(familyService.getFamilyMapSummary(principal.getName(), citywide));
+    }
+
     @GetMapping("/my-family")
     @PreAuthorize("hasRole('FAMILY') or hasRole('ADMIN')")
     public ResponseEntity<?> getMyFamily(Principal principal) {

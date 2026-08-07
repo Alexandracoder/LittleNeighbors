@@ -68,6 +68,8 @@ public class UserEntity extends BaseEntity implements UserDetails {
 
     private String idDocumentUrl;
 
+    private String selfieUrl;
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
