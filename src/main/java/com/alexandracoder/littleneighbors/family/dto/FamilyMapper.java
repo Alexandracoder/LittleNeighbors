@@ -84,7 +84,8 @@ public class FamilyMapper {
                 cityName,
                 children,
                 coordinates[0],
-                coordinates[1]
+                coordinates[1],
+                includeUnapprovedPhoto ? entity.getPhotoModerationStatus() : null
         );
     }
 
@@ -96,7 +97,15 @@ public class FamilyMapper {
      * aleatorio pero ESTABLE (semilla = id de familia), para que el pin no
      * salte de sitio cada vez que se recarga la página.
      */
-    private double[] resolveCoordinates(FamilyEntity entity, NeighborhoodEntity neighborhood) {
+    /**
+     * Público para poder reutilizarlo desde getFamilyMapSummary (el
+     * resumen anónimo del mapa para no verificados): ahí necesitamos EXACTAMENTE
+     * el mismo cálculo (centroide del barrio + jitter estable) que usa el
+     * resto de la app, no solo family.getLatitude()/getLongitude() en
+     * crudo — esos casi siempre están vacíos a propósito (no se pide
+     * dirección exacta por privacidad).
+     */
+    public double[] resolveCoordinates(FamilyEntity entity, NeighborhoodEntity neighborhood) {
         if (entity.getLatitude() != null && entity.getLongitude() != null) {
             return new double[]{entity.getLatitude(), entity.getLongitude()};
         }

@@ -219,7 +219,8 @@ public class AuthServiceImpl implements AuthService {
                 city,
                 new ArrayList<>(),
                 family.getLatitude(),
-                family.getLongitude()
+                family.getLongitude(),
+                family.getPhotoModerationStatus()
         );
     }
 

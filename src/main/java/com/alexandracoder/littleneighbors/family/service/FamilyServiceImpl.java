@@ -267,8 +267,11 @@ public class FamilyServiceImpl implements FamilyService {
 
         return familyRepository.findAll(spec).stream()
                 .filter(f -> !blockedFamilyIds.contains(f.getId()))
-                .filter(f -> f.getLatitude() != null && f.getLongitude() != null)
-                .map(f -> new com.alexandracoder.littleneighbors.family.dto.FamilyMapPinDTO(f.getLatitude(), f.getLongitude()))
+                .map(f -> familyMapper.resolveCoordinates(f, f.getNeighborhood()))
+                // resolveCoordinates devuelve [NaN, NaN] cuando ni la familia
+                // ni su barrio tienen coordenadas — las descartamos.
+                .filter(coords -> !Double.isNaN(coords[0]) && !Double.isNaN(coords[1]))
+                .map(coords -> new com.alexandracoder.littleneighbors.family.dto.FamilyMapPinDTO(coords[0], coords[1]))
                 .collect(Collectors.toList());
     }
     @Override
