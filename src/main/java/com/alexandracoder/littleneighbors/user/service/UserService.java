@@ -19,7 +19,13 @@ public class UserService {
     private final UserRepository userRepository;
 
 
-    @Value("${app.demo-mode:true}")
+    // OJO: antes esto era ":true" por defecto — distinto del resto del
+    // código (application.yml, FamilyServiceImpl, EventServiceImpl, todos
+    // usan ":false"). Esa inconsistencia hacía que, si por lo que fuera el
+    // perfil activo no resolvía app.demo-mode aquí igual que en los demás
+    // sitios, este método devolviera SIEMPRE "VERIFIED" sin mirar la BD
+    // real — así que el frontend nunca detectaba que faltaba verificarse.
+    @Value("${app.demo-mode:false}")
     private boolean isDemoMode;
 
     @Transactional
