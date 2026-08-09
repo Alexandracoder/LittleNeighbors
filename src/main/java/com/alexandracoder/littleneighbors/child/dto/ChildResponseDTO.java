@@ -18,5 +18,6 @@ public record ChildResponseDTO(
         boolean isPrenatal,
         boolean pregnancySupport,
         Long familyId,
-        Long familyUserId
+        Long familyUserId,
+        String avatarKey
 ) {}

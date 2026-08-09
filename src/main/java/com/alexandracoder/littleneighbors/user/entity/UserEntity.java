@@ -47,6 +47,14 @@ public class UserEntity extends BaseEntity implements UserDetails {
     private String emailVerificationToken;
     private LocalDateTime emailVerificationExpires;
 
+    // Separado a propósito de 'verificationStatus': email confirmado y
+    // verificación de identidad (DNI+selfie) son dos cosas distintas. Antes
+    // se deducía "email confirmado" de verificationStatus != UNVERIFIED,
+    // pero eso dejó de servir en cuanto UNVERIFIED pasó a significar
+    // también "email confirmado, documentos aún no subidos".
+    @Builder.Default
+    private boolean emailVerified = false;
+
     @Builder.Default
     @Column(nullable = false)
     private boolean consentGiven = false;

@@ -5,5 +5,6 @@ public record ChildSummaryDTO(
         String nickname,
         String gender,
         Integer age,
-        com.alexandracoder.littleneighbors.enums.LifeStage lifeStage) {
+        com.alexandracoder.littleneighbors.enums.LifeStage lifeStage,
+        String avatarKey) {
 }

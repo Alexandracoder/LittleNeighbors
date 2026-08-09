@@ -66,6 +66,7 @@ public class ChildServiceImpl implements ChildService {
         child.setBirthDate(dto.birthDate());
         child.setDueDate(dto.dueDate());
         child.setDescription(dto.description());
+        child.setAvatarKey(dto.avatarKey());
 
         child.setPrenatal(dto.isPrenatal() != null && dto.isPrenatal());
         child.setPregnancySupport(dto.lifeStage() == com.alexandracoder.littleneighbors.enums.LifeStage.PREGNANCY);
@@ -86,6 +87,7 @@ public class ChildServiceImpl implements ChildService {
         child.setBirthDate(dto.birthDate());
         child.setGender(dto.gender());
         child.setDescription(dto.description());
+        child.setAvatarKey(dto.avatarKey());
 
         updateChildInterests(child, dto.interestIds());
 

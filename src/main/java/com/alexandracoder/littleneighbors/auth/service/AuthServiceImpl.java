@@ -113,16 +113,18 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Verification token has expired");
         }
 
-        // Una vez confirmado el email, pasa a la cola de revisión manual
-        // del admin (ver ModerationController.verifyUser para el paso
-        // final a VERIFIED). No la marcamos VERIFIED directamente aquí:
-        // el email confirmado solo demuestra que controla ese correo, no
-        // que su identidad/familia haya sido revisada.
-        if (user.getVerificationStatus() == VerificationStatus.UNVERIFIED) {
-            user.setVerificationStatus(VerificationStatus.PENDING_REVIEW);
-        }
+        // Confirmar el email demuestra que controlas ese correo, nada más
+        // — NO debe mover el estado de verificación de identidad. Antes
+        // esto saltaba directo a PENDING_REVIEW aquí mismo, de la época en
+        // que "verificar" solo era confirmar el email; con la subida real
+        // de DNI+selfie (ver UserService.submitVerification), ese salto
+        // automático hacía que la persona nunca llegase a ver el
+        // formulario de subida (PENDING_REVIEW hace que /verify-id
+        // muestre "en revisión" en vez del formulario) y el admin recibía
+        // solicitudes sin ningún documento que revisar.
         user.setEmailVerificationToken(null);
         user.setEmailVerificationExpires(null);
+        user.setEmailVerified(true);
         userRepository.save(user);
 
         // El email de bienvenida se dispara aquí, no en el registro: así
@@ -148,10 +150,11 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // BUG DE SEGURIDAD detectado en el piloto: login() no comprobaba
-        // en absoluto el estado de verificación, así que cualquiera podía
-        // entrar y usar la app aunque nunca hubiera confirmado su email
-        // ni pasado la revisión del admin.
-        if (user.getVerificationStatus() == VerificationStatus.UNVERIFIED) {
+        // en absoluto que el email estuviera confirmado. Usamos
+        // emailVerified (no verificationStatus): ese campo ahora es solo
+        // sobre la verificación de identidad con documentos, algo
+        // deliberadamente posterior al login, no un requisito para entrar.
+        if (!user.isEmailVerified()) {
             throw new UnauthorizedAccessException("Please verify your email before logging in.");
         }
         if (user.getVerificationStatus() == VerificationStatus.BLOCKED) {
@@ -220,7 +223,8 @@ public class AuthServiceImpl implements AuthService {
                 new ArrayList<>(),
                 family.getLatitude(),
                 family.getLongitude(),
-                family.getPhotoModerationStatus()
+                family.getPhotoModerationStatus(),
+                family.getPhotoRejectionReason()
         );
     }
 

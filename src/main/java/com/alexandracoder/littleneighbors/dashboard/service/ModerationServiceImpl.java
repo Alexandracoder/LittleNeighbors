@@ -76,18 +76,20 @@ public class ModerationServiceImpl implements ModerationService {
         FamilyEntity family = familyRepository.findById(familyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Family not found with id: " + familyId));
         family.setPhotoModerationStatus(PhotoModerationStatus.APPROVED);
+        family.setPhotoRejectionReason(null);
         familyRepository.save(family);
     }
 
     @Override
     @Transactional
-    public void rejectPhoto(Long familyId) {
+    public void rejectPhoto(Long familyId, String reason) {
         FamilyEntity family = familyRepository.findById(familyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Family not found with id: " + familyId));
         // No borramos la URL: así la familia sigue viendo en su propio
         // perfil qué foto subió y por qué la rechazamos, y puede subir
         // una nueva sin perder el resto de sus datos.
         family.setPhotoModerationStatus(PhotoModerationStatus.REJECTED);
+        family.setPhotoRejectionReason(reason);
         familyRepository.save(family);
     }
 }

@@ -55,6 +55,8 @@ public class FamilyEntity extends BaseEntity {
     @Column(name = "photo_moderation_status", length = 20, nullable = true)
     private PhotoModerationStatus photoModerationStatus;
 
+    private String photoRejectionReason;
+
     @ManyToOne
     @JoinColumn(name = "neighborhood_id" , nullable = false)
     private NeighborhoodEntity neighborhood;

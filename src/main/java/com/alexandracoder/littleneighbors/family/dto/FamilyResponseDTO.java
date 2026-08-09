@@ -22,5 +22,6 @@ public record FamilyResponseDTO(
         // la vista pública (toPublicResponse, mapa/explorar/ficha ajena) va
         // siempre a null: a otra familia no le aporta nada saber si TU foto
         // fue rechazada, y no hace falta exponerlo.
-        PhotoModerationStatus photoModerationStatus
+        PhotoModerationStatus photoModerationStatus,
+        String photoRejectionReason
 ) {}

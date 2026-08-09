@@ -31,8 +31,8 @@ public class ModerationController {
 
     @PostMapping("/photos/{familyId}/reject")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> rejectPhoto(@PathVariable Long familyId) {
-        moderationService.rejectPhoto(familyId);
+    public ResponseEntity<Void> rejectPhoto(@PathVariable Long familyId, @RequestBody String reason) {
+        moderationService.rejectPhoto(familyId, reason);
         return ResponseEntity.ok().build();
     }
 

@@ -11,5 +11,5 @@ public interface ModerationService {
 
     List<FamilyResponseDTO> getPendingPhotos();
     void approvePhoto(Long familyId);
-    void rejectPhoto(Long familyId);
+    void rejectPhoto(Long familyId, String reason);
 }

@@ -42,7 +42,8 @@ public class ChildMapper {
                 entity.isPrenatal(),
                 entity.isPregnancySupport(),
                 familyId,
-                familyUserId
+                familyUserId,
+                entity.getAvatarKey()
         );
     }
 
@@ -54,7 +55,8 @@ public class ChildMapper {
                 entity.getNickname(),
                 entity.getGender() != null ? entity.getGender().name() : null,
                 entity.getAge(),
-                entity.getLifeStage()
+                entity.getLifeStage(),
+                entity.getAvatarKey()
         );
     }
 }

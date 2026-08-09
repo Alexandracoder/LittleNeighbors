@@ -25,7 +25,9 @@ public record ChildRequestDTO(
         Boolean isPrenatal,
 
         @Size(max = 500, message = "Description cannot exceed 500 characters")
-        String description
+        String description,
+
+        String avatarKey
 
 ) {
     public ChildRequestDTO {

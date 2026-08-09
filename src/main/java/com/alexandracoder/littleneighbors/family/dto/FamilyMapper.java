@@ -85,7 +85,8 @@ public class FamilyMapper {
                 children,
                 coordinates[0],
                 coordinates[1],
-                includeUnapprovedPhoto ? entity.getPhotoModerationStatus() : null
+                includeUnapprovedPhoto ? entity.getPhotoModerationStatus() : null,
+                includeUnapprovedPhoto ? entity.getPhotoRejectionReason() : null
         );
     }
 
@@ -134,7 +135,8 @@ public class FamilyMapper {
                 child.getNickname(),
                 child.getGender() != null ? child.getGender().name() : "PRENATAL",
                 child.getAge(),
-                child.getLifeStage()
+                child.getLifeStage(),
+                child.getAvatarKey()
         );
     }
 

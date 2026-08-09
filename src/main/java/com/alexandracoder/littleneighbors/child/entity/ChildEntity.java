@@ -51,6 +51,13 @@ public class ChildEntity extends BaseEntity {
     @Size(max = 500, message = "The description cannot exceed 500 characters.")
     private String description;
 
+    // Clave de un avatar de una galería fija en el frontend (p.ej.
+    // "avatar1"), NO una URL subida — de ahí que no pase por moderación
+    // de fotos: son ilustraciones ya aprobadas de antemano, pensadas
+    // específicamente para perfiles de niños.
+    @Column(name = "avatar_key", length = 50)
+    private String avatarKey;
+
     @Column(name = "due_date")
     private LocalDate dueDate;
 
