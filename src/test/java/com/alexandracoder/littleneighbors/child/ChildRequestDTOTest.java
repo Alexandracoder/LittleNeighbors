@@ -33,7 +33,8 @@ class ChildRequestDTOTest {
                             Gender.BOY,
                             Set.of(),
                             false,
-                            "Loves painting"
+                            "Loves painting",
+                            null
                     ),
                     IllegalArgumentException.class
             );
@@ -55,7 +56,8 @@ class ChildRequestDTOTest {
                             null,
                             Set.of(),
                             false,
-                            "Loves football"
+                            "Loves football",
+                            null
                     ),
                     IllegalArgumentException.class
             );
@@ -77,7 +79,8 @@ class ChildRequestDTOTest {
                             Gender.GIRL,
                             Set.of(1L, 2L),
                             false,
-                            "A cheerful child."
+                            "A cheerful child.",
+                            null
                     )
             );
         }
@@ -99,7 +102,8 @@ class ChildRequestDTOTest {
                             null,
                             Set.of(),
                             true,
-                            "Expecting soon!"
+                            "Expecting soon!",
+                            null
                     )
             );
         }
@@ -120,7 +124,8 @@ class ChildRequestDTOTest {
                     Gender.BOY,
                     null,
                     false,
-                    "Active child"
+                    "Active child",
+                    null
             );
 
             assertThat(dto.interestIds()).isNotNull().isEmpty();
@@ -137,7 +142,8 @@ class ChildRequestDTOTest {
                     Gender.GIRL,
                     Set.of(),
                     null,
-                    "Loves music"
+                    "Loves music",
+                    null
             );
 
             assertThat(dto.isPrenatal()).isFalse();
@@ -161,7 +167,8 @@ class ChildRequestDTOTest {
                             Gender.BOY,
                             Set.of(),
                             false,
-                            desc
+                            desc,
+                            null
                     )
             );
         }

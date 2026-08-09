@@ -62,7 +62,8 @@ class ChildControllerTest {
                 false,
                 false,
                 10L,
-                5L
+                5L,
+                null
         );
     }
 
@@ -82,7 +83,8 @@ class ChildControllerTest {
                     Gender.BOY,
                     Set.of(),
                     false,
-                    "Valid bio"
+                    "Valid bio",
+                    null
             );
 
             when(childService.create(any(ChildRequestDTO.class), eq("parent@test.com")))
