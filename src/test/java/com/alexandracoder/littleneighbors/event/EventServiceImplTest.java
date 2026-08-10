@@ -58,7 +58,15 @@ public class EventServiceImplTest {
     @BeforeEach
     void setUp() {
         neighborhood = NeighborhoodEntity.builder().id(1L).name("Mislata").build();
-        family = FamilyEntity.builder().id(1L).familyName("Rojas").build();
+        // requireVerified() (createEvent/attendEvent) necesita un user con
+        // VerificationStatus.VERIFIED — antes 'family' no tenía user en
+        // absoluto y esto explotaba con NullPointerException.
+        com.alexandracoder.littleneighbors.user.entity.UserEntity verifiedUser =
+                com.alexandracoder.littleneighbors.user.entity.UserEntity.builder()
+                        .email("test@example.com")
+                        .verificationStatus(com.alexandracoder.littleneighbors.enums.VerificationStatus.VERIFIED)
+                        .build();
+        family = FamilyEntity.builder().id(1L).familyName("Rojas").user(verifiedUser).build();
         eventEntity = EventEntity.builder()
                 .id(1L)
                 .title("Test Event")
