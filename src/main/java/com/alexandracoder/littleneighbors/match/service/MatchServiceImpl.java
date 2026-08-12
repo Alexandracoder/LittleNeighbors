@@ -123,10 +123,9 @@ public class MatchServiceImpl implements MatchService {
                     FamilyEntity targetFamily = childTarget.getFamily();
                     notificationService.createInternalNotification(
                             targetFamily,
-                            "New connection request!",
-                            childRequest.getFamily().getFamilyName() + " wants to connect with your family.",
-                            NotificationType.PLAYDATE_REQUEST,
-                            savedMatch.getId()
+                            NotificationType.MATCH_REQUEST,
+                            savedMatch.getId(),
+                            childRequest.getFamily().getFamilyName()
                     );
 
                     return savedMatch;

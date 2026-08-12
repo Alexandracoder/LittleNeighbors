@@ -41,10 +41,9 @@ public class NotificationServiceImpl implements NotificationService {
 
         NotificationEntity notification = NotificationEntity.builder()
                 .recipientFamily(recipient)
-                .title("Match Established!")
-                .message("You can now contact the " + otherFamilyName + " family.")
                 .type(NotificationType.MATCH_SUCCESS)
                 .relatedId(match.getId())
+                .param1(otherFamilyName)
                 .isRead(false)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -98,13 +97,13 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public void createInternalNotification(FamilyEntity neighbor, String title, String message, NotificationType type, Long relatedId) {
+    public void createInternalNotification(FamilyEntity neighbor, NotificationType type, Long relatedId, String param1, String param2) {
         NotificationEntity notification = NotificationEntity.builder()
                 .recipientFamily(neighbor)
-                .title(title)
-                .message(message)
                 .type(type)
                 .relatedId(relatedId)
+                .param1(param1)
+                .param2(param2)
                 .isRead(false)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -137,7 +136,9 @@ public class NotificationServiceImpl implements NotificationService {
                 entity.getType(),
                 entity.getRelatedId(),
                 entity.isRead(),
-                entity.getCreatedAt()
+                entity.getCreatedAt(),
+                entity.getParam1(),
+                entity.getParam2()
         );
     }
 }

@@ -85,10 +85,10 @@ public class EventServiceImpl implements EventService {
         neighbors.forEach(neighbor -> {
             notificationService.createInternalNotification(
                     neighbor,
-                    "New plan in your neighborhood!",
-                    creator.getFamilyName() + " has organized: " + savedEvent.getTitle(),
                     NotificationType.EVENT_CREATED,
-                    savedEvent.getId()
+                    savedEvent.getId(),
+                    creator.getFamilyName(),
+                    savedEvent.getTitle()
             );
         });
 
@@ -254,10 +254,10 @@ public class EventServiceImpl implements EventService {
                 && !event.getCreatorFamily().getId().equals(currentFamily.getId())) {
             notificationService.createInternalNotification(
                     event.getCreatorFamily(),
-                    "Someone's joining your plan!",
-                    currentFamily.getFamilyName() + " is attending: " + event.getTitle(),
                     NotificationType.EVENT_ATTENDANCE_CONFIRMED,
-                    event.getId()
+                    event.getId(),
+                    currentFamily.getFamilyName(),
+                    event.getTitle()
             );
         }
     }

@@ -66,10 +66,10 @@ public class PlaydateServiceImpl implements PlaydateService {
 
         notificationService.createInternalNotification(
                 recipientFamily,
-                "Nueva propuesta de quedada",
-                creatorFamily.getFamilyName() + " os ha propuesto un plan: \"" + dto.title() + "\"",
                 NotificationType.PLAYDATE_REQUEST,
-                match.getId());
+                match.getId(),
+                creatorFamily.getFamilyName(),
+                dto.title());
 
 
         messagingTemplate.convertAndSend("/topic/playdates/" + match.getId(), "updated");
@@ -136,10 +136,9 @@ public class PlaydateServiceImpl implements PlaydateService {
         if (updatedPlaydate.getCreatedByFamily() != null) {
             notificationService.createInternalNotification(
                     updatedPlaydate.getCreatedByFamily(),
-                    "¡Plan confirmado!",
-                    "Vuestra propuesta \"" + updatedPlaydate.getTitle() + "\" ha sido confirmada 🎉",
                     NotificationType.MATCH_CONFIRMED,
-                    updatedPlaydate.getMatch().getId());
+                    updatedPlaydate.getMatch().getId(),
+                    updatedPlaydate.getTitle());
         }
 
         messagingTemplate.convertAndSend(
@@ -178,10 +177,9 @@ public class PlaydateServiceImpl implements PlaydateService {
         if (updatedPlaydate.getCreatedByFamily() != null) {
             notificationService.createInternalNotification(
                     updatedPlaydate.getCreatedByFamily(),
-                    "Plan rechazado",
-                    "Vuestra propuesta \"" + updatedPlaydate.getTitle() + "\" no ha podido confirmarse esta vez.",
                     NotificationType.PLAYDATE_REJECTED,
-                    updatedPlaydate.getMatch().getId());
+                    updatedPlaydate.getMatch().getId(),
+                    updatedPlaydate.getTitle());
         }
 
         messagingTemplate.convertAndSend(

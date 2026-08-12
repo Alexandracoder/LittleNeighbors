@@ -19,6 +19,17 @@ public interface NotificationService {
 
     void markAsRead(Long notificationId, String currentUserEmail);
 
+    // Antes recibía title/message ya escritos (de ahí la mezcla de
+    // idiomas: cada sitio los escribía a mano en el idioma que le
+    // apeteciera). Ahora solo se pasa el tipo + los datos variables, y el
+    // texto se construye en el frontend con i18next en el idioma activo
+    // de quien lo recibe.
     @Transactional
-    void createInternalNotification(FamilyEntity recipient, String title, String message, NotificationType type, Long relatedId);
+    void createInternalNotification(FamilyEntity recipient, NotificationType type, Long relatedId, String param1, String param2);
+
+    // Atajo para el caso frecuente de un solo parámetro.
+    @Transactional
+    default void createInternalNotification(FamilyEntity recipient, NotificationType type, Long relatedId, String param1) {
+        createInternalNotification(recipient, type, relatedId, param1, null);
+    }
 }

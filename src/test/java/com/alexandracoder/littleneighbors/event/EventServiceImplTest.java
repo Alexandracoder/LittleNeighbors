@@ -150,10 +150,10 @@ public class EventServiceImplTest {
         verify(eventAttendanceRepository).save(any());
         verify(notificationService).createInternalNotification(
                 org.mockito.ArgumentMatchers.eq(organizer),
-                anyString(),
-                anyString(),
                 any(),
-                anyLong()
+                anyLong(),
+                anyString(),
+                anyString()
         );
     }
 

@@ -90,10 +90,9 @@ public class MessageServiceImpl implements MessageService {
         // mensaje nuevo, sin mostrar qué dice hasta que se abre el chat.
         notificationService.createInternalNotification(
                 receiver.getFamily(),
-                "Nuevo mensaje",
-                "Tienes un mensaje nuevo de " + sender.getFullName(),
                 NotificationType.CHAT_MESSAGE,
-                match.getId()
+                match.getId(),
+                sender.getFullName()
         );
 
         return messageMapper.toResponseDTO(savedMessage);

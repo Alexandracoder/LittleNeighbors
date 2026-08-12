@@ -10,6 +10,8 @@ public record NotificationResponseDTO(
         NotificationType type,
         Long relatedId,
         boolean isRead,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String param1,
+        String param2
 ) {}
 
