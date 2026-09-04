@@ -194,9 +194,14 @@ public class FamilyServiceImpl implements FamilyService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + loggedUserEmail));
 
         if (loggedUser.getRoles().contains(Role.ADMIN) || family.getUser().getEmail().equals(loggedUserEmail)) {
-            if (!family.getChildren().isEmpty()) {
-                throw new BusinessLogicException("Cannot delete family with children profiles");
-            }
+            // Antes se bloqueaba el borrado si la familia tenía hijos dados
+            // de alta ("Cannot delete family with children profiles"), pero
+            // no hacía falta: la relación children ya tiene
+            // cascade=ALL + orphanRemoval=true (ver FamilyEntity), así que
+            // borrar la familia ya borra en cascada sus hijos igual que
+            // ChildServiceImpl.deleteByIdAndFamilyEmail borra uno suelto.
+            // Bloquearlo aquí solo impedía que familias reales con hijos
+            // pudieran borrar su propio perfil.
             familyRepository.delete(family);
             loggedUser.getRoles().remove(Role.FAMILY);
             loggedUser.getRoles().add(Role.USER);
