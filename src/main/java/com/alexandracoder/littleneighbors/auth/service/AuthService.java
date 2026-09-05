@@ -20,4 +20,6 @@ public interface AuthService {
     void verifyEmail(String token, java.util.Locale locale);
 
     void resendVerificationEmail(String email, Locale locale);
+
+    void deleteMyAccount(String email);
 }

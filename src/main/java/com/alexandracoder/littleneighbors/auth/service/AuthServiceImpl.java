@@ -303,4 +303,33 @@ public class AuthServiceImpl implements AuthService {
         user.setResetPasswordExpires(null);
         userRepository.save(user);
     }
+
+    @Override
+    @Transactional
+    public void deleteMyAccount(String email) {
+        // Borrado de cuenta completo (login + familia + hijos), distinto del
+        // "borrar mi perfil" de FamilyServiceImpl.deleteFamily (que solo
+        // quita la familia y deja el login intacto para poder re-registrarse
+        // sin perder la cuenta).
+        //
+        // Aquí SÍ se borra la UserEntity directamente con
+        // userRepository.delete(): a diferencia del bug de deleteFamily, no
+        // hay un delete() suelto seguido de un save() de otra entidad que
+        // aún la referencie — es un único remove() en cascada dentro de la
+        // misma transacción, así que no dispara el ObjectDeletedException
+        // que sí daba el otro flujo. La cascada baja así:
+        //   UserEntity -> FamilyEntity (cascade=ALL en la entidad, y
+        //   fk_families_user ON DELETE CASCADE en BD)
+        //   -> ChildEntity (cascade=ALL + orphanRemoval)
+        //   -> matches / blocked_families / notifications / eventos creados
+        //      y su asistencia (todo ON DELETE CASCADE en las migraciones,
+        //      incluida la V21 añadida para poder borrar el perfil)
+        //   -> user_roles, reports como reportante (ON DELETE CASCADE)
+        //   -> mensajes enviados/recibidos: se conservan, solo se pone a
+        //      NULL la referencia a quien se borra (ON DELETE SET NULL, V22)
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        userRepository.delete(user);
+    }
 }

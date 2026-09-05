@@ -27,11 +27,11 @@ public class MessageEntity extends BaseEntity {
     private MatchEntity match;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
+    @JoinColumn(name = "sender_id", nullable = true)
     private UserEntity sender;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "receiver_id", nullable = false)
+    @JoinColumn(name = "receiver_id", nullable = true)
     private UserEntity receiver;
 
     @Column(columnDefinition = "TEXT", nullable = false)

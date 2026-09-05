@@ -117,6 +117,16 @@ public class AuthController {
         UserProfileDTO profile = authService.getCurrentProfile(principal.getName());
         return ResponseEntity.ok(profile);
     }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteMyAccount(Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        authService.deleteMyAccount(principal.getName());
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestBody EmailRequest request, HttpServletRequest httpRequest) {
         String ip = resolveClientIp(httpRequest);
