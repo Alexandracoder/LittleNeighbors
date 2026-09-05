@@ -202,10 +202,21 @@ public class FamilyServiceImpl implements FamilyService {
             // ChildServiceImpl.deleteByIdAndFamilyEmail borra uno suelto.
             // Bloquearlo aquí solo impedía que familias reales con hijos
             // pudieran borrar su propio perfil.
-            familyRepository.delete(family);
-            loggedUser.getRoles().remove(Role.FAMILY);
-            loggedUser.getRoles().add(Role.USER);
-            userRepository.save(loggedUser);
+            //
+            // No se borra family directamente con familyRepository.delete():
+            // UserEntity.family es @OneToOne(mappedBy="user", cascade=ALL,
+            // orphanRemoval=true, fetch=EAGER), así que loggedUser ya tiene
+            // esa misma instancia cargada en su campo `family`. Borrarla a
+            // mano y luego hacer userRepository.save(loggedUser) hace que
+            // el cascade=ALL intente volver a mergear una entidad ya
+            // borrada -> ObjectDeletedException -> 500. En su lugar, se
+            // rompe la asociación en el dueño real de la familia y se deja
+            // que orphanRemoval haga el borrado en cascada al guardar.
+            UserEntity familyOwner = family.getUser();
+            familyOwner.setFamily(null);
+            familyOwner.getRoles().remove(Role.FAMILY);
+            familyOwner.getRoles().add(Role.USER);
+            userRepository.save(familyOwner);
         } else {
             throw new UnauthorizedAccessException("Not authorized");
         }
