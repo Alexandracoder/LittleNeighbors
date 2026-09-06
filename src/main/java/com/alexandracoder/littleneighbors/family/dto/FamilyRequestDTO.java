@@ -2,7 +2,6 @@ package com.alexandracoder.littleneighbors.family.dto;
 
 import com.alexandracoder.littleneighbors.enums.FamilyStatus;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -19,7 +18,13 @@ public record FamilyRequestDTO(
         )
         @Size(max = 2048)
         String profilePictureUrl,
-        @NotNull Long neighborhoodId,
+        // Uno de los dos es obligatorio (nunca los dos a la vez): si el
+        // barrio de la familia no está en la lista de barrios piloto, se
+        // manda customLocationName en su lugar. La comprobación de que
+        // venga al menos uno vive en FamilyServiceImpl, no aquí, porque
+        // Bean Validation no expresa bien "uno de estos dos" en un record.
+        Long neighborhoodId,
+        @Size(max = 255) String customLocationName,
         FamilyStatus status,
         List<String> familyInterests
 ) {}

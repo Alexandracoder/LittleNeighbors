@@ -77,9 +77,18 @@ public class FamilyServiceImpl implements FamilyService {
         }
 
         NeighborhoodEntity neighborhood = null;
+        String customLocationName = null;
         if (dto.neighborhoodId() != null) {
             neighborhood = neighborhoodRepository.findById(dto.neighborhoodId())
                     .orElseThrow(() -> new ResourceNotFoundException("Neighborhood not found"));
+        } else if (dto.customLocationName() != null && !dto.customLocationName().isBlank()) {
+            customLocationName = dto.customLocationName().trim();
+        } else {
+            // Petición de Luz García (usuaria real): vive en un pueblo
+            // fuera de los barrios piloto y no tenía forma de registrarse.
+            // Uno de los dos (barrio de la lista, o localidad a mano) es
+            // obligatorio, pero nunca ninguno de los dos.
+            throw new BusinessLogicException("You must select a neighborhood or enter your location");
         }
 
         // dto.profilePictureUrl() puede llegar como "" (no null) al crear
@@ -101,6 +110,7 @@ public class FamilyServiceImpl implements FamilyService {
                 .status(dto.status() != null ? dto.status() : FamilyStatus.SURPRISE)
                 .familyInterests(dto.familyInterests() != null ? dto.familyInterests() : new ArrayList<>())
                 .neighborhood(neighborhood)
+                .customLocationName(customLocationName)
                 .build();
 
         FamilyEntity saved = familyRepository.saveAndFlush(familyEntity);
@@ -190,7 +200,14 @@ public class FamilyServiceImpl implements FamilyService {
         if (dto.neighborhoodId() != null) {
             family.setNeighborhood(neighborhoodRepository.findById(dto.neighborhoodId())
                     .orElseThrow(() -> new ResourceNotFoundException("Neighborhood not found with id: " + dto.neighborhoodId())));
+            family.setCustomLocationName(null);
+        } else if (dto.customLocationName() != null && !dto.customLocationName().isBlank()) {
+            family.setNeighborhood(null);
+            family.setCustomLocationName(dto.customLocationName().trim());
         }
+        // Si no viene ninguno de los dos en la edición, se deja la
+        // ubicación actual tal cual (a diferencia de la creación, aquí no
+        // es obligatorio tocarla en cada guardado).
 
         FamilyEntity updated = familyRepository.save(family);
         return this.familyMapper.toResponse(updated);

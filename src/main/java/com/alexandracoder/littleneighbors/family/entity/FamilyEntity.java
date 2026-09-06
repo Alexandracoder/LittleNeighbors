@@ -58,8 +58,14 @@ public class FamilyEntity extends BaseEntity {
     private String photoRejectionReason;
 
     @ManyToOne
-    @JoinColumn(name = "neighborhood_id" , nullable = false)
+    @JoinColumn(name = "neighborhood_id", nullable = true)
     private NeighborhoodEntity neighborhood;
+
+    // Localidad escrita a mano cuando la familia vive fuera de los barrios
+    // piloto sembrados en `neighborhoods` (p.ej. un pueblo cercano a
+    // Valencia). Se usa en vez de `neighborhood` cuando este es null —
+    // nunca los dos a la vez, ver FamilyServiceImpl.
+    private String customLocationName;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

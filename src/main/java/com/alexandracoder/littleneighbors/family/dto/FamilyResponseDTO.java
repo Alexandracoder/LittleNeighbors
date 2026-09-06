@@ -12,6 +12,9 @@ public record FamilyResponseDTO(
         String profilePictureUrl,
         Long neighborhoodId,
         String neighborhoodName,
+        // Solo tiene valor cuando la familia no tiene barrio asignado
+        // (vive fuera de los barrios piloto) — ver FamilyServiceImpl.
+        String customLocationName,
         String streetName,
         String postalCode,
         String cityName,

@@ -55,6 +55,11 @@ public class FamilyMapper {
             if (neighborhood.getCity() != null && neighborhood.getCity().getName() != null) {
                 cityName = neighborhood.getCity().getName();
             }
+        } else if (entity.getCustomLocationName() != null && !entity.getCustomLocationName().isBlank()) {
+            // Sin barrio de la lista: usamos la localidad escrita a mano
+            // como "nombre de barrio" de cara al frontend, que ya sabe
+            // pintar neighborhoodName tal cual en todas las vistas.
+            neighborhoodName = entity.getCustomLocationName();
         }
 
         List<ChildSummaryDTO> children = (entity.getChildren() != null)
@@ -79,6 +84,7 @@ public class FamilyMapper {
                 photoUrl,
                 neighborhoodId,
                 neighborhoodName,
+                entity.getCustomLocationName(),
                 streetName,
                 postalCode,
                 cityName,
@@ -159,7 +165,9 @@ public class FamilyMapper {
 
         String neighborhoodName = (family.getNeighborhood() != null && family.getNeighborhood().getName() != null)
                 ? family.getNeighborhood().getName()
-                : "No neighborhood";
+                : (family.getCustomLocationName() != null && !family.getCustomLocationName().isBlank())
+                        ? family.getCustomLocationName()
+                        : "No neighborhood";
 
         return new FamilyExplorerDTO(
                 family.getId(),
