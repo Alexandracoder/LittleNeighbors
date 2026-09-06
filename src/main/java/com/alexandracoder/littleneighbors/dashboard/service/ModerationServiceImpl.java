@@ -6,6 +6,7 @@ import com.alexandracoder.littleneighbors.family.dto.FamilyResponseDTO;
 import com.alexandracoder.littleneighbors.family.entity.FamilyEntity;
 import com.alexandracoder.littleneighbors.family.repository.FamilyRepository;
 import com.alexandracoder.littleneighbors.shared.exceptions.ResourceNotFoundException;
+import com.alexandracoder.littleneighbors.shared.exceptions.BusinessLogicException;
 import com.alexandracoder.littleneighbors.user.entity.UserEntity;
 import com.alexandracoder.littleneighbors.enums.VerificationStatus;
 import com.alexandracoder.littleneighbors.user.repository.UserRepository;
@@ -75,6 +76,12 @@ public class ModerationServiceImpl implements ModerationService {
     public void approvePhoto(Long familyId) {
         FamilyEntity family = familyRepository.findById(familyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Family not found with id: " + familyId));
+        if (family.getProfilePictureUrl() == null || family.getProfilePictureUrl().isBlank()) {
+            // Red de seguridad: con el fix en createFamily/updateFamily no
+            // debería volver a pasar, pero si algo dejara PENDING sin una
+            // URL real, mejor un error claro que "aprobar" un hueco vacío.
+            throw new BusinessLogicException("This family has no photo to approve.");
+        }
         family.setPhotoModerationStatus(PhotoModerationStatus.APPROVED);
         family.setPhotoRejectionReason(null);
         familyRepository.save(family);

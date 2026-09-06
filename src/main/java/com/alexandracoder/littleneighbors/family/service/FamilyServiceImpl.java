@@ -82,13 +82,22 @@ public class FamilyServiceImpl implements FamilyService {
                     .orElseThrow(() -> new ResourceNotFoundException("Neighborhood not found"));
         }
 
+        // dto.profilePictureUrl() puede llegar como "" (no null) al crear
+        // la familia — en ese paso todavía no se ha subido ninguna foto
+        // (CreateFamily.tsx manda profilePictureUrl: '' a propósito). Antes
+        // esto comprobaba solo "!= null", y en Java "" != null es true, así
+        // que TODA familia nueva entraba en la cola de fotos pendientes
+        // desde el minuto uno, sin foto real que revisar — de ahí que
+        // llegaran peticiones de aprobar fotos que en realidad estaban
+        // vacías, y que aprobarlas no cambiara nada visible.
+        boolean hasRealPhoto = dto.profilePictureUrl() != null && !dto.profilePictureUrl().isBlank();
         FamilyEntity familyEntity = FamilyEntity.builder()
                 .user(user)
                 .familyName(dto.familyName())
                 .description(dto.description())
                 .representativeName(dto.representativeName())
-                .profilePictureUrl(dto.profilePictureUrl())
-                .photoModerationStatus(dto.profilePictureUrl() != null ? PhotoModerationStatus.PENDING : null)
+                .profilePictureUrl(hasRealPhoto ? dto.profilePictureUrl() : null)
+                .photoModerationStatus(hasRealPhoto ? PhotoModerationStatus.PENDING : null)
                 .status(dto.status() != null ? dto.status() : FamilyStatus.SURPRISE)
                 .familyInterests(dto.familyInterests() != null ? dto.familyInterests() : new ArrayList<>())
                 .neighborhood(neighborhood)
@@ -163,7 +172,10 @@ public class FamilyServiceImpl implements FamilyService {
         family.setDescription(dto.description());
 
         String previousPhotoUrl = family.getProfilePictureUrl();
-        String newPhotoUrl = dto.profilePictureUrl();
+        String rawNewPhotoUrl = dto.profilePictureUrl();
+        // Mismo caso que en createFamily: tratar "" igual que null, para
+        // no dejar un hueco por el que se cuele el mismo bug ahí también.
+        String newPhotoUrl = (rawNewPhotoUrl != null && !rawNewPhotoUrl.isBlank()) ? rawNewPhotoUrl : null;
         family.setProfilePictureUrl(newPhotoUrl);
 
         if (newPhotoUrl == null) {
