@@ -96,12 +96,24 @@ public class MatchServiceImpl implements MatchService {
             throw new BusinessLogicException("Your account must be VERIFIED to request a match.");
         }
 
-        if (childRequest.getFamily().getNeighborhood() == null || childTarget.getFamily().getNeighborhood() == null) {
-            throw new BusinessLogicException("Both families must have a neighborhood assigned to connect.");
-        }
+        FamilyEntity requestFamily = childRequest.getFamily();
+        FamilyEntity targetFamily = childTarget.getFamily();
+        boolean sameNeighborhood = requestFamily.getNeighborhood() != null
+                && targetFamily.getNeighborhood() != null
+                && requestFamily.getNeighborhood().getId().equals(targetFamily.getNeighborhood().getId());
+        boolean sameCustomLocation = requestFamily.getNeighborhood() == null
+                && targetFamily.getNeighborhood() == null
+                && requestFamily.getCustomLocationName() != null
+                && targetFamily.getCustomLocationName() != null
+                && requestFamily.getCustomLocationName().trim().equalsIgnoreCase(targetFamily.getCustomLocationName().trim());
 
-        if (!childRequest.getFamily().getNeighborhood().getId().equals(childTarget.getFamily().getNeighborhood().getId())) {
-            throw new BusinessLogicException("Connections are only allowed within the same neighborhood.");
+        if (!sameNeighborhood && !sameCustomLocation) {
+            // Antes esto exigía que las dos tuvieran neighborhood != null
+            // sin más, así que ninguna familia con localidad libre (fuera
+            // de los barrios piloto, ver V23) podía conectar con nadie —
+            // ni siquiera entre ellas. Ahora también vale que las dos
+            // hayan escrito la misma localidad a mano.
+            throw new BusinessLogicException("Connections are only allowed within the same neighborhood or location.");
         }
 
         if (blockService.isBlockedEitherWay(childRequest.getFamily().getId(), childTarget.getFamily().getId())) {

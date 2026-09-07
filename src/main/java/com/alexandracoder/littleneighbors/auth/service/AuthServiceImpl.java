@@ -202,7 +202,11 @@ public class AuthServiceImpl implements AuthService {
         NeighborhoodEntity neighborhood = family.getNeighborhood();
 
         Long neighborhoodId = (neighborhood != null) ? neighborhood.getId() : null;
-        String neighborhoodName = (neighborhood != null && neighborhood.getName() != null) ? neighborhood.getName() : "Not assigned";
+        String neighborhoodName = (neighborhood != null && neighborhood.getName() != null)
+                ? neighborhood.getName()
+                : (family.getCustomLocationName() != null && !family.getCustomLocationName().isBlank())
+                        ? family.getCustomLocationName()
+                        : "Not assigned";
         String street = (neighborhood != null) ? neighborhood.getStreetName() : "Not assigned";
         String zip = (neighborhood != null) ? neighborhood.getPostalCode() : "N/A";
         String city = (neighborhood != null && neighborhood.getCity() != null)
@@ -217,6 +221,7 @@ public class AuthServiceImpl implements AuthService {
                 family.getProfilePictureUrl(),
                 neighborhoodId,
                 neighborhoodName,
+                family.getCustomLocationName(),
                 street,
                 zip,
                 city,

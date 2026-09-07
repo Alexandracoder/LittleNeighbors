@@ -280,9 +280,17 @@ public class FamilyServiceImpl implements FamilyService {
         // Antes el frontend mandaba "scope" pero nunca llegaba al backend,
         // así que este toggle no hacía nada y el explore siempre filtraba
         // por barrio.
+        //
+        // myFamily.getNeighborhood() puede ser null si la familia usó
+        // localidad libre (ver V23, familias fuera de los barrios piloto).
+        // Antes esto llamaba directamente a .getId() sobre ese null y
+        // petaba con un NullPointerException en cuanto alguien así usara
+        // "solo mi barrio". Sin barrio asignado no hay forma de filtrar
+        // por proximidad, así que se trata como si fuera citywide.
+        boolean effectiveCitywide = citywide || myFamily.getNeighborhood() == null;
         Specification<FamilyEntity> spec = Specification
                 .where(FamilySpecifications.fetchAll())
-                .and(citywide ? null : FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId()))
+                .and(effectiveCitywide ? null : FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId()))
                 .and(FamilySpecifications.isNotMyFamily(myFamily.getId()))
                 .and(FamilySpecifications.hasChildWithCriteria(min, max, interestIds, includePregnant));
 
@@ -304,8 +312,12 @@ public class FamilyServiceImpl implements FamilyService {
         FamilyEntity myFamily = familyRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Family not found for: " + userEmail));
 
+        // Mismo caso que en explorePlaymateFamilies: sin barrio asignado
+        // (localidad libre) no hay forma de filtrar por proximidad, se
+        // trata como citywide para no petar con NPE.
+        boolean effectiveCitywide = citywide || myFamily.getNeighborhood() == null;
         Specification<FamilyEntity> spec = Specification
-                .where(citywide ? null : FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId()))
+                .where(effectiveCitywide ? null : FamilySpecifications.hasNeighborhood(myFamily.getNeighborhood().getId()))
                 .and(FamilySpecifications.isNotMyFamily(myFamily.getId()));
 
         List<Long> blockedFamilyIds = blockService.getBlockedFamilyIdsInvolving(myFamily.getId());
