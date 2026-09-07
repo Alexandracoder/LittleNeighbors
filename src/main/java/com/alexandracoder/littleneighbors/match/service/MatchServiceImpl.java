@@ -132,7 +132,6 @@ public class MatchServiceImpl implements MatchService {
                             .status(MatchStatus.PENDING)
                             .build());
 
-                    FamilyEntity targetFamily = childTarget.getFamily();
                     notificationService.createInternalNotification(
                             targetFamily,
                             NotificationType.MATCH_REQUEST,
