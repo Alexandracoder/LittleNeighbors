@@ -229,6 +229,13 @@ public class MatchServiceImpl implements MatchService {
         ChildEntity myChild = isRequester ? childRequest : childTarget;
         ChildEntity theirChild = isRequester ? childTarget : childRequest;
 
+        FamilyEntity theirFamily = theirChild.getFamily();
+        String theirLocation = theirFamily.getNeighborhood() != null
+                ? theirFamily.getNeighborhood().getName()
+                : (theirFamily.getCustomLocationName() != null && !theirFamily.getCustomLocationName().isBlank())
+                        ? theirFamily.getCustomLocationName()
+                        : "N/A";
+
         return MatchResponseDetailDTO.builder()
                 .matchId(match.getId())
                 .status(match.getStatus())
@@ -236,9 +243,10 @@ public class MatchServiceImpl implements MatchService {
                 .myChildGender(myChild.getGender().toString())
                 .theirChildId(theirChild.getId())
                 .theirChildGender(theirChild.getGender().toString())
-                .theirFamilyId(theirChild.getFamily().getId())
-                .theirFamilyName(theirChild.getFamily().getFamilyName())
-                .theirNeighborhoodName(theirChild.getFamily().getNeighborhood() != null ? theirChild.getFamily().getNeighborhood().getName() : "N/A")
+                .theirFamilyId(theirFamily.getId())
+                .theirFamilyName(theirFamily.getFamilyName())
+                .theirRepresentativeName(theirFamily.getRepresentativeName())
+                .theirNeighborhoodName(theirLocation)
                 .build();
     }
 
